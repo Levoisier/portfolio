@@ -27,8 +27,6 @@ const confidentialScene = (el: Element): Scene => {
   }
 
   function reactToFile(record: ConfidentialRecord, active: boolean): void {
-    const panda = el.querySelector<HTMLElement>('[data-confidential-panda]');
-
     gsap.to(record.card, {
       borderColor: active ? 'var(--scarlet)' : 'var(--glass-border)',
       duration: 0.22,
@@ -43,15 +41,6 @@ const confidentialScene = (el: Element): Scene => {
       scaleX: 1,
       scaleY: 1,
       duration: 0.2,
-      ease: 'expo.out',
-      overwrite: 'auto',
-    });
-
-    gsap.to(panda, {
-      opacity: active ? 0.24 : 0.14,
-      x: active ? -12 : 0,
-      rotation: active ? -4 : -8,
-      duration: 0.32,
       ease: 'expo.out',
       overwrite: 'auto',
     });
@@ -90,7 +79,6 @@ const confidentialScene = (el: Element): Scene => {
     init() {
       const grid = el.querySelector<HTMLElement>('[data-blueprint-grid-pulse]');
       const sheens = el.querySelectorAll<HTMLElement>('[data-redaction-sheen]');
-      const panda = el.querySelector<HTMLElement>('[data-confidential-panda]');
 
       el.querySelectorAll<HTMLElement>('[data-confidential-card]').forEach((card) => {
         const record: ConfidentialRecord = {
@@ -123,7 +111,6 @@ const confidentialScene = (el: Element): Scene => {
         );
         gsap.set(sheens, { opacity: 0, x: 0, xPercent: 0 });
         gsap.set(grid, { opacity: 0.6 });
-        gsap.set(panda, { opacity: 0.14, x: 0, y: 0, rotation: -8 });
         return;
       }
 
@@ -143,7 +130,6 @@ const confidentialScene = (el: Element): Scene => {
         cards.flatMap((record) => record.corners),
         { opacity: 0, scaleX: 0, scaleY: 0, transformOrigin: '50% 50%' }
       );
-      gsap.set(panda, { opacity: 0, x: 0, y: 24, rotation: -8, willChange: 'transform,opacity' });
 
       gridPulse = gsap.to(grid, {
         opacity: 1,
@@ -194,9 +180,6 @@ const confidentialScene = (el: Element): Scene => {
             '<'
           );
       });
-
-      const panda = el.querySelector<HTMLElement>('[data-confidential-panda]');
-      gsap.to(panda, { opacity: 0.14, y: 0, duration: 0.7, ease: 'expo.out', delay: 0.2 });
     },
 
     leave() {
@@ -218,9 +201,6 @@ const confidentialScene = (el: Element): Scene => {
             clearProps: 'opacity,transform,visibility',
           }
         );
-      });
-      gsap.set(el.querySelector<HTMLElement>('[data-confidential-panda]'), {
-        clearProps: 'opacity,transform,willChange',
       });
     },
   };

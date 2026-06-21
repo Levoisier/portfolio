@@ -8,8 +8,11 @@ function splitWords(el: HTMLElement): HTMLElement[] {
 
   return text.split(' ').map((word, index, words) => {
     const span = document.createElement('span');
-    span.textContent = index === words.length - 1 ? word : `${word} `;
+    span.textContent = word;
     span.style.display = 'inline-block';
+    if (index < words.length - 1) {
+      span.style.marginRight = '0.28em';
+    }
     span.setAttribute('aria-hidden', 'true');
     el.appendChild(span);
     return span;

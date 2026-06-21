@@ -30,8 +30,11 @@ function splitChars(el: HTMLElement): HTMLElement[] {
   el.setAttribute('aria-label', text);
   return text.split('').map((char) => {
     const span = document.createElement('span');
-    span.textContent = char === ' ' ? ' ' : char;
+    span.textContent = char === ' ' ? '\u00A0' : char;
     span.style.display = 'inline-block';
+    if (char === ' ') {
+      span.style.width = '0.32em';
+    }
     span.setAttribute('aria-hidden', 'true');
     el.appendChild(span);
     return span;
