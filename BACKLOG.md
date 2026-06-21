@@ -143,7 +143,7 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 
 ## Phase 8 — Responsive Passes
 
-### [ ] fix(responsive): mobile layout pass (375px–767px)
+### [x] fix(responsive): mobile layout pass (375px–767px)
 
 **Acceptance criteria:**
 
