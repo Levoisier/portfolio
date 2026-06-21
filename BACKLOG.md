@@ -106,7 +106,7 @@ These are live facts from the v1 build that every v2 phase must respect.
 
 ## Phase 14 — Skills reframe → "reagent shelf"
 
-### [ ] feat(skills): reagent-shelf layout + scrubbed assembly
+### [x] feat(skills): reagent-shelf layout + scrubbed assembly
 
 **Acceptance criteria:**
 
