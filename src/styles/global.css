@@ -104,6 +104,9 @@
 #scroll-stage .stage-layer {
   position: absolute;
   inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
   will-change: transform, opacity;
 }
 

@@ -72,3 +72,15 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Set the reduced-motion visible state directly in `hero.init()`, with opacity at 1 and motion transforms at rest.
 
 **Don't repeat:** Any scene that hides elements in `init()` must also fully reveal them in the reduced-motion branch of `init()`.
+
+---
+
+### [2026-06-20] Narrow optional scene config fields before mapping
+
+**Context:** Building the global backdrop scene from a readonly layer config array.
+
+**Problem/Dead-end:** TypeScript rejected `config.drift` because only one member of the readonly config union defines that optional field.
+
+**Fix/Decision:** Narrowed with `'drift' in config` before creating the runtime layer object.
+
+**Don't repeat:** With `noUncheckedIndexedAccess` and strict unions, narrow optional config fields before reading them from `as const` arrays.

@@ -19,11 +19,13 @@ import type { SceneFactory } from './types';
 // ─── Scene imports ────────────────────────────────────────────────────────────
 // ADD NEW SCENES HERE (import + registry entry). Touch nothing else.
 import heroSceneFactory from './scenes/hero';
+import backdropSceneFactory from './scenes/backdrop';
 import revealSceneFactory from './scenes/revealPlaceholder';
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 // key = value of data-scene attribute on the section element
 const SCENE_REGISTRY: Record<string, SceneFactory> = {
+  backdrop: backdropSceneFactory,
   hero: heroSceneFactory,
   skills: revealSceneFactory,
   projects: revealSceneFactory,

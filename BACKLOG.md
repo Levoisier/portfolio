@@ -45,7 +45,7 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 
 ## Phase 3 — Global Parallax Backdrop
 
-### [ ] feat(backdrop): global parallax scroll stage
+### [x] feat(backdrop): global parallax scroll stage
 
 **Acceptance criteria:**
 
