@@ -8,8 +8,9 @@
  * motion glides instead of snapping, and the pose cross-fade is a gentle turn
  * (opacity + a slight scale/slide on the incoming pose).
  *
- * Route: hero handoff → fade in LEFT (waving) · projects → RIGHT margin, builder
- * pose, walking DOWN per entry · confidential → per-CARD: hop to the side opposite
+ * Route: hero handoff → fade in LEFT (waving) · projects → builder pose, walking
+ * DOWN while hopping to the side opposite each staggered entry · confidential →
+ * per-CARD: hop to the side opposite
  * each card and read as a redacted brightness-0 head silhouette (stealth guard) ·
  * skills → LEFT · contact → CENTER waving, then drift to the bottom-right corner
  * while fading so it hands off to the in-section panda-wave watermark (no overlap).
@@ -201,8 +202,12 @@ const companionScene = (el: Element): Scene => {
           })
         );
 
-        // Projects (per-item walk): hold the right margin, builder pose, and ease
-        // y down across the pinned reveal so the panda walks past each entry.
+        // Projects (per-item walk): builder pose, easing y DOWN across the pinned
+        // reveal while hopping x to the side OPPOSITE the active entry's offset
+        // (even entries sit left → panda right; odd entries sit right → panda
+        // left), so the panda zig-zags in step with the staggered entries.
+        const projectCount =
+          document.querySelectorAll('#projects [data-project-entry]').length || 1;
         triggers.push(
           ScrollTrigger.create({
             trigger: '#projects',
@@ -217,6 +222,10 @@ const companionScene = (el: Element): Scene => {
               opacityTo(PROJECTS_OPACITY);
             },
             onUpdate: (self) => {
+              const idx = Math.min(projectCount - 1, Math.floor(self.progress * projectCount));
+              const onLeftMargin = idx % 2 === 1; // odd entry is right-shifted → panda left
+              xTo(targetX(onLeftMargin ? 0.15 : 0.85));
+              rotTo(onLeftMargin ? 4 : -4);
               yTo(targetY(PROJECTS_Y_TOP + self.progress * (PROJECTS_Y_BOTTOM - PROJECTS_Y_TOP)));
             },
           })
