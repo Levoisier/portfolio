@@ -177,7 +177,7 @@ Each phase below ends with a **Manual test (dev)** block — the exact things to
 
 ## Phase 23 — Narrative connective copy + lab through-line
 
-### [ ] feat(narrative): thread the sections into one arc
+### [x] feat(narrative): thread the sections into one arc
 
 **Acceptance criteria:**
 
