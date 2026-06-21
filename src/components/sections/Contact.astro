@@ -1,7 +1,7 @@
 ---
 /* CONTACT SECTION
-   Links: email, GitHub, LinkedIn.
-   Closing flourish: panda-wave.webp accent + scarlet light-leak texture.
+   Links: email, GitHub, WhatsApp, LinkedIn.
+   Closing flourish: panda-wave watermark + blueprint-paper texture.
    Animation: see BACKLOG item contact-section.
 */
 ---
@@ -10,168 +10,227 @@
   id="contact"
   class="portfolio-section relative section-pad overflow-hidden"
   data-scene="contact"
-  style="background-color: var(--ink);"
+  style="background-color: var(--paper);"
 >
-  <!-- Light-leak texture overlay -->
+  <!-- Blueprint paper texture -->
   <div
-    class="pointer-events-none absolute inset-0 opacity-20 mix-blend-screen"
-    data-contact-lightleak
-    data-contact-lightleak-src="/media/texture/lightleak.webp"
+    class="pointer-events-none absolute inset-0"
+    data-contact-texture
+    data-contact-texture-src="/media/texture/blueprint-paper.webp"
     aria-hidden="true"
     style="background-size: cover; background-position: center;"
   >
   </div>
 
-  <!-- Panda wave accent -->
+  <!-- Paper wash — lifts contrast over the blueprint texture -->
   <div
-    class="pointer-events-none absolute bottom-0 right-0 opacity-30"
-    data-contact-panda
+    class="pointer-events-none absolute inset-0"
     aria-hidden="true"
+    style="background: color-mix(in srgb, var(--paper) 68%, transparent);"
   >
-    <img
-      src="/media/panda/panda-wave.png"
-      alt=""
-      width="400"
-      height="500"
-      loading="lazy"
-      decoding="async"
-    />
   </div>
 
-  <div class="relative z-10 mx-auto max-w-3xl text-center">
-    <span
-      class="font-display mb-4 block text-xs uppercase tracking-widest"
-      data-contact-kicker
-      style="color: var(--scarlet);"
-    >
-      Let&apos;s build something
-    </span>
-
-    <h2
-      class="font-display mb-8 leading-tight tracking-normal"
-      data-contact-heading
-      style="font-size: clamp(2rem, 12vw, 3rem); color: var(--paper);"
-      aria-label="Get in touch"
-    >
-      Get in touch
-    </h2>
-
-    <p
-      class="font-body mx-auto mb-10 max-w-2xl leading-relaxed"
-      style="font-size: var(--text-base); color: color-mix(in srgb, var(--paper) 68%, transparent);"
-    >
-      Bring a clear problem, and I can help turn it into a production-ready build.
-    </p>
-
-    <!-- Contact links -->
-    <nav aria-label="Contact links">
-      <ul class="flex flex-col items-center gap-6 md:flex-row md:justify-center">
-        <li data-contact-link>
-          <a
-            href="mailto:c.zapata.iq@gmail.com"
-            class="group font-display flex items-center gap-3 transition-colors"
-            style="color: var(--paper);"
-            aria-label="Send email to Cristian"
-          >
-            <!-- Email icon -->
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-              class="transition-colors"
-              style="color: var(--scarlet);"
-            >
-              <rect
-                x="2"
-                y="5"
-                width="16"
-                height="12"
-                rx="1.5"
-                stroke="currentColor"
-                stroke-width="1.5"></rect>
-              <path d="M2 7l8 5 8-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-              ></path>
-            </svg>
-            <span
-              class="text-sm uppercase tracking-widest transition-colors group-hover:text-scarlet"
-              style="--tw-text-opacity: 1;"
-            >
-              c.zapata.iq@gmail.com
-            </span>
-          </a>
-        </li>
-
-        <li data-contact-link>
-          <a
-            href="https://github.com/levoisier"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="group font-display flex items-center gap-3 transition-colors"
-            style="color: var(--paper);"
-            aria-label="GitHub profile (opens in new tab)"
-          >
-            <!-- GitHub icon -->
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-              style="color: var(--scarlet);"
-            >
-              <path
-                d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-              ></path>
-            </svg>
-            <span class="text-sm uppercase tracking-widest"> github.com/levoisier </span>
-          </a>
-        </li>
-
-        <li data-contact-link>
-          <a
-            href="https://linkedin.com/in/levoisier"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="group font-display flex items-center gap-3 transition-colors"
-            style="color: var(--paper);"
-            aria-label="LinkedIn profile (opens in new tab)"
-          >
-            <!-- LinkedIn icon -->
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-              style="color: var(--scarlet);"
-            >
-              <path
-                d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
-              ></path>
-            </svg>
-            <span class="text-sm uppercase tracking-widest"> linkedin.com/in/levoisier </span>
-          </a>
-        </li>
-      </ul>
-    </nav>
-
-    <!-- Closing flourish -->
+  <div
+    class="relative z-10 mx-auto max-w-3xl overflow-hidden px-6 py-10 text-center md:px-12 md:py-14"
+    style="background: color-mix(in srgb, var(--paper) 92%, transparent); border: 1px solid color-mix(in srgb, var(--navy) 12%, transparent);"
+  >
+    <!-- Panda watermark -->
     <div
-      class="mt-16 border-t pt-8"
-      data-contact-closing
-      style="border-color: var(--glass-border);"
+      class="pointer-events-none absolute inset-0 flex items-end justify-end overflow-hidden"
+      data-contact-panda
+      aria-hidden="true"
     >
-      <p
-        class="font-display text-xs uppercase tracking-widest"
-        style="color: color-mix(in srgb, var(--paper) 30%, transparent);"
+      <img
+        src="/media/panda/panda-wave.png"
+        alt=""
+        width="400"
+        height="500"
+        loading="lazy"
+        decoding="async"
+        class="h-auto w-[min(72%,320px)] max-w-none translate-x-[8%] translate-y-[6%] object-contain opacity-[0.14] md:w-[min(58%,360px)]"
+      />
+    </div>
+
+    <div class="relative z-[1]">
+      <span
+        class="font-display mb-4 block text-xs uppercase tracking-widest"
+        data-contact-kicker
+        style="color: var(--scarlet);"
       >
-        Cristian Zapata Cartagena &mdash; {new Date().getFullYear()}
+        Let&apos;s build something
+      </span>
+
+      <h2
+        class="font-display mb-8 leading-tight tracking-normal"
+        data-contact-heading
+        style="font-size: clamp(2rem, 12vw, 3rem); color: var(--navy);"
+        aria-label="Get in touch"
+      >
+        Get in touch
+      </h2>
+
+      <p
+        class="font-body mx-auto mb-10 max-w-2xl leading-relaxed"
+        style="font-size: var(--text-base); color: color-mix(in srgb, var(--navy) 82%, transparent);"
+      >
+        Bring a clear problem, and I can help turn it into a production-ready build.
       </p>
+
+      <!-- Contact links -->
+      <nav aria-label="Contact links">
+        <div class="flex flex-col items-center gap-6 md:gap-8">
+          <ul class="flex flex-col items-center gap-6 md:flex-row md:justify-center md:gap-12">
+            <li data-contact-link>
+              <a
+                href="mailto:c.zapata.iq@gmail.com"
+                class="group font-display flex items-center gap-3 transition-colors"
+                style="color: var(--navy);"
+                aria-label="Send email to Cristian"
+              >
+                <!-- Email icon -->
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  class="transition-colors"
+                  style="color: var(--scarlet);"
+                >
+                  <rect
+                    x="2"
+                    y="5"
+                    width="16"
+                    height="12"
+                    rx="1.5"
+                    stroke="currentColor"
+                    stroke-width="1.5"></rect>
+                  <path
+                    d="M2 7l8 5 8-5"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"></path>
+                </svg>
+                <span
+                  class="text-sm uppercase tracking-widest transition-colors group-hover:text-scarlet"
+                >
+                  c.zapata.iq@gmail.com
+                </span>
+              </a>
+            </li>
+
+            <li data-contact-link>
+              <a
+                href="https://github.com/levoisier"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group font-display flex items-center gap-3 transition-colors"
+                style="color: var(--navy);"
+                aria-label="GitHub profile (opens in new tab)"
+              >
+                <!-- GitHub icon -->
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  style="color: var(--scarlet);"
+                >
+                  <path
+                    d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                  ></path>
+                </svg>
+                <span
+                  class="text-sm uppercase tracking-widest transition-colors group-hover:text-scarlet"
+                >
+                  github.com/levoisier
+                </span>
+              </a>
+            </li>
+          </ul>
+
+          <ul class="flex flex-col items-center gap-6 md:flex-row md:justify-center md:gap-12">
+            <li data-contact-link>
+              <a
+                href="https://wa.me/573015093825"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group font-display flex items-center gap-3 transition-colors"
+                style="color: var(--navy);"
+                aria-label="Message Cristian on WhatsApp (opens in new tab)"
+              >
+                <!-- WhatsApp icon -->
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  style="color: var(--scarlet);"
+                >
+                  <path
+                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+                  ></path>
+                </svg>
+                <span
+                  class="text-sm uppercase tracking-widest transition-colors group-hover:text-scarlet"
+                >
+                  +57 301 509 3825
+                </span>
+              </a>
+            </li>
+
+            <li data-contact-link>
+              <a
+                href="https://linkedin.com/in/levoisier"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group font-display flex items-center gap-3 transition-colors"
+                style="color: var(--navy);"
+                aria-label="LinkedIn profile (opens in new tab)"
+              >
+                <!-- LinkedIn icon -->
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  style="color: var(--scarlet);"
+                >
+                  <path
+                    d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+                  ></path>
+                </svg>
+                <span
+                  class="text-sm uppercase tracking-widest transition-colors group-hover:text-scarlet"
+                >
+                  linkedin.com/in/levoisier
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Closing flourish -->
+      <div
+        class="mt-16 border-t pt-8"
+        data-contact-closing
+        style="border-color: color-mix(in srgb, var(--navy) 18%, transparent);"
+      >
+        <p
+          class="font-display text-xs uppercase tracking-widest"
+          style="color: color-mix(in srgb, var(--navy) 52%, transparent);"
+        >
+          Cristian Zapata Cartagena &mdash; {new Date().getFullYear()}
+        </p>
+      </div>
     </div>
   </div>
 </section>

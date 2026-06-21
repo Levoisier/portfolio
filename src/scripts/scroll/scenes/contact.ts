@@ -19,8 +19,8 @@ function splitWords(el: HTMLElement): HTMLElement[] {
   });
 }
 
-function loadLightleak(el: HTMLElement | null): void {
-  const src = el?.dataset.contactLightleakSrc;
+function loadTexture(el: HTMLElement | null): void {
+  const src = el?.dataset.contactTextureSrc;
   if (!el || !src || el.style.backgroundImage) return;
 
   const image = new Image();
@@ -42,27 +42,27 @@ const contactScene = (el: Element): Scene => {
       const kicker = el.querySelector<HTMLElement>('[data-contact-kicker]');
       const links = Array.from(el.querySelectorAll<HTMLElement>('[data-contact-link]'));
       const panda = el.querySelector<HTMLElement>('[data-contact-panda]');
-      const lightleak = el.querySelector<HTMLElement>('[data-contact-lightleak]');
+      const texture = el.querySelector<HTMLElement>('[data-contact-texture]');
       const closing = el.querySelector<HTMLElement>('[data-contact-closing]');
 
       if (heading) headingWords = splitWords(heading);
-      if (prefersReducedMotion) loadLightleak(lightleak);
+      if (prefersReducedMotion) loadTexture(texture);
 
       if (prefersReducedMotion) {
-        gsap.set([kicker, ...headingWords, ...links, panda, lightleak, closing], {
+        gsap.set([kicker, ...headingWords, ...links, panda, texture, closing], {
           opacity: 1,
           x: 0,
           y: 0,
         });
-        gsap.set(lightleak, { opacity: 0.2 });
+        gsap.set(texture, { opacity: 1 });
         return;
       }
 
       gsap.set(kicker, { opacity: 0, y: 12 });
       gsap.set(headingWords, { opacity: 0, y: 24 });
       gsap.set(links, { opacity: 0, y: 24 });
-      gsap.set(panda, { opacity: 0, x: 60, y: 80, willChange: 'transform' });
-      gsap.set(lightleak, { opacity: 0 });
+      gsap.set(panda, { opacity: 0, scale: 1.04, willChange: 'transform,opacity' });
+      gsap.set(texture, { opacity: 0 });
       gsap.set(closing, { opacity: 0, y: 16 });
     },
 
@@ -73,17 +73,17 @@ const contactScene = (el: Element): Scene => {
       const kicker = el.querySelector<HTMLElement>('[data-contact-kicker]');
       const links = Array.from(el.querySelectorAll<HTMLElement>('[data-contact-link]'));
       const panda = el.querySelector<HTMLElement>('[data-contact-panda]');
-      const lightleak = el.querySelector<HTMLElement>('[data-contact-lightleak]');
+      const texture = el.querySelector<HTMLElement>('[data-contact-texture]');
       const closing = el.querySelector<HTMLElement>('[data-contact-closing]');
-      loadLightleak(lightleak);
+      loadTexture(texture);
 
       if (prefersReducedMotion) {
-        gsap.set([kicker, ...headingWords, ...links, panda, lightleak, closing], {
+        gsap.set([kicker, ...headingWords, ...links, panda, texture, closing], {
           opacity: 1,
           x: 0,
           y: 0,
         });
-        gsap.set(lightleak, { opacity: 0.2 });
+        gsap.set(texture, { opacity: 1 });
         return;
       }
 
@@ -91,8 +91,8 @@ const contactScene = (el: Element): Scene => {
       tl.to(kicker, { opacity: 1, y: 0, duration: 0.35 })
         .to(headingWords, { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 }, '-=0.1')
         .to(links, { opacity: 1, y: 0, duration: 0.45, stagger: 0.12 })
-        .to(panda, { opacity: 0.3, x: 0, y: 0, duration: 0.7 }, '<')
-        .to(lightleak, { opacity: 0.2, duration: 0.7 }, '<0.1')
+        .to(panda, { opacity: 1, scale: 1, duration: 0.9 }, '<')
+        .to(texture, { opacity: 1, duration: 0.7 }, '<0.1')
         .to(closing, { opacity: 1, y: 0, duration: 0.4 }, '-=0.1');
     },
 
@@ -100,13 +100,8 @@ const contactScene = (el: Element): Scene => {
       // Contact remains visible once revealed.
     },
 
-    progress(progress: number) {
-      if (prefersReducedMotion) return;
-
-      const panda = el.querySelector<HTMLElement>('[data-contact-panda]');
-      if (panda) {
-        gsap.set(panda, { y: -window.innerHeight * 0.08 * progress });
-      }
+    progress(_progress: number) {
+      // Watermark stays static inside the panel.
     },
 
     destroy() {
@@ -117,7 +112,7 @@ const contactScene = (el: Element): Scene => {
           ...headingWords,
           ...Array.from(el.querySelectorAll<HTMLElement>('[data-contact-link]')),
           el.querySelector<HTMLElement>('[data-contact-panda]'),
-          el.querySelector<HTMLElement>('[data-contact-lightleak]'),
+          el.querySelector<HTMLElement>('[data-contact-texture]'),
           el.querySelector<HTMLElement>('[data-contact-closing]'),
         ],
         { clearProps: 'opacity,transform,willChange' }

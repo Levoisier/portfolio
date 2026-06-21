@@ -57,10 +57,10 @@ review.
 
 ## Textures
 
-| Path                                  | Dimensions | Purpose / Scene                              | Transparent | Status |
-| ------------------------------------- | ---------- | -------------------------------------------- | ----------- | ------ |
-| `/media/texture/blueprint-paper.webp` | 2560×1440  | Section background texture (confidential)    | N           | final  |
-| `/media/texture/lightleak.webp`       | 2560×1440  | Scarlet light-leak overlay (contact section) | Y           | final  |
+| Path                                  | Dimensions | Purpose / Scene                      | Transparent | Status |
+| ------------------------------------- | ---------- | ------------------------------------ | ----------- | ------ |
+| `/media/texture/blueprint-paper.webp` | 2560×1440  | Section background texture (contact) | N           | final  |
+| `/media/texture/lightleak.webp`       | 2560×1440  | Scarlet light-leak overlay (unused)  | Y           | final  |
 
 ---
 
