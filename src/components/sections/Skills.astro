@@ -269,23 +269,9 @@ const elements: Element[] = [
 ---
 
 <section id="skills" class="portfolio-section overflow-hidden section-pad" data-scene="skills">
-  <!-- molecule-a: continuity thread drifting behind the shelf (data-speed).
-       Static under reduced motion. Desktop-gated, low opacity, behind content. -->
-  <img
-    src="/media/lab/molecule-a.webp"
-    alt=""
-    aria-hidden="true"
-    loading="lazy"
-    decoding="async"
-    width="112"
-    height="112"
-    data-speed="0.85"
-    class="pointer-events-none absolute right-1/4 top-12 hidden w-28 select-none opacity-[0.14] md:block"
-  />
-
   <div class="relative mx-auto max-w-7xl">
     <div class="flex flex-col gap-8 md:flex-row md:items-stretch md:gap-12">
-      <!-- Vertical display label — "reagent shelf" framing. -->
+      <!-- Vertical display label -->
       <div class="flex shrink-0 items-baseline gap-4 md:flex-col md:items-start md:gap-6">
         <span
           class="font-display text-xs uppercase tracking-[0.3em]"
@@ -301,44 +287,12 @@ const elements: Element[] = [
         </h2>
       </div>
 
-      <!-- Shelf: tile grid anchored left, glassware sitting on a bench line. -->
+      <!-- Tile grid anchored to the label side. -->
       <div class="relative flex-1">
-        <!-- Glassware on the bench (behind tiles); rises in via data-speed. -->
-        <div class="pointer-events-none absolute inset-0 z-0 hidden md:block" aria-hidden="true">
-          <img
-            src="/media/lab/flask-round.webp"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            width="128"
-            height="128"
-            data-speed="1.15"
-            class="absolute bottom-0 left-[6%] w-32 select-none opacity-[0.12]"
-          />
-          <img
-            src="/media/lab/beaker-reaction.webp"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            width="144"
-            height="144"
-            data-speed="1.1"
-            class="absolute bottom-0 left-[24%] w-36 select-none opacity-[0.12]"
-          />
-        </div>
-
-        <!-- Bench line -->
-        <div
-          class="absolute bottom-0 left-0 z-0 h-px w-full"
-          aria-hidden="true"
-          style="background: linear-gradient(90deg, transparent, var(--glass-border) 12%, var(--glass-border) 88%, transparent);"
-        >
-        </div>
-
         <!-- Periodic table grid -->
         <div
           id="skills-grid"
-          class="relative z-10 flex flex-wrap justify-center gap-3 pb-10 md:justify-start"
+          class="flex flex-wrap justify-center gap-3 md:justify-start"
           role="list"
           aria-label="Technology stack"
         >

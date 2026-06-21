@@ -45,15 +45,17 @@ These files are derived from canonical Panda sources for responsive delivery. Re
 
 ## Lab Decor
 
-| Path                               | Dimensions | Purpose / Scene                                      | Transparent | Status |
-| ---------------------------------- | ---------- | ---------------------------------------------------- | ----------- | ------ |
-| `/media/lab/flask-erlenmeyer.webp` | 1200×1200  | Projects divider accent (data-speed parallax)        | Y           | final  |
-| `/media/lab/flask-round.webp`      | 1200×1200  | Rises on hero→skills handoff (data-speed)            | Y           | final  |
-| `/media/lab/beaker-reaction.webp`  | 1200×1200  | Rises on hero→skills handoff (data-speed)            | Y           | final  |
-| `/media/lab/molecule-a.webp`       | 1200×1200  | Continuity thread — hero stage + skills/confidential | Y           | final  |
-| `/media/lab/molecule-b.webp`       | 1200×1200  | Continuity thread — projects + contact drift         | Y           | final  |
+| Path                               | Dimensions | Purpose / Scene                                    | Transparent | Status |
+| ---------------------------------- | ---------- | -------------------------------------------------- | ----------- | ------ |
+| `/media/lab/flask-erlenmeyer.webp` | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
+| `/media/lab/flask-round.webp`      | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
+| `/media/lab/beaker-reaction.webp`  | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
+| `/media/lab/molecule-a.webp`       | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
+| `/media/lab/molecule-b.webp`       | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
 
-All lab-decor placements are desktop-gated (`hidden md:block`), lazy-loaded, low opacity, `aria-hidden`, `pointer-events: none`, behind content. Drift is driven by ScrollSmoother `data-speed` (no per-frame scene math); inert/static under reduced motion. Molecule-a/b also appear in the fixed hero stage (see Layout.astro / hero scene).
+The lab assets are kept on disk but **not placed in the page** right now — the
+Phase 13/14 placements were removed (poorly positioned). They'll be re-introduced
+intentionally as part of the v3 narrative/character pass.
 
 ## Textures
 

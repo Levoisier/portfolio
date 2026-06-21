@@ -4,7 +4,7 @@
  * Desktop (≥768px, no reduced-motion): pinned scrub DEPTH INTRO.
  *   The hero pins for ~140vh of scroll. On scrub 0→1 the hero panda crossfades
  *   into the waving panda, the atmosphere darkens + drifts back (scale-up, no edge
- *   gap), the particles push toward the viewer, and the molecule thread drifts.
+ *   gap), and the particles push toward the viewer.
  *   Depth runs on the INNER .stage-depth channel so the backdrop's outer parallax
  *   keeps running with no conflict and no jump when the pin releases. The text
  *   entrance (name/role/hint) plays once on enter.
@@ -107,9 +107,7 @@ const heroScene = (_el: Element): Scene => {
             { scale: 1.05, opacity: 0.7 },
             0
           )
-          .fromTo('#stage-particles .stage-depth', { scale: 1, y: 0 }, { scale: 1.18, y: -60 }, 0)
-          .fromTo('#molecule-a', { x: 0, y: 0 }, { x: 30, y: -50 }, 0)
-          .fromTo('#molecule-b', { x: 0, y: 0 }, { x: -30, y: -30 }, 0);
+          .fromTo('#stage-particles .stage-depth', { scale: 1, y: 0 }, { scale: 1.18, y: -60 }, 0);
 
         return () => {
           depthTl.scrollTrigger?.kill();

@@ -85,7 +85,12 @@ These are live facts from the v1 build that every v2 phase must respect.
 
 ## Phase 13 — Molecular atmosphere thread (lab assets)
 
-### [x] feat(lab): wire the unused lab assets as a continuity thread
+### [ ] feat(lab): wire the unused lab assets as a continuity thread
+
+> **Reverted 2026-06-21.** The Phase 13 lab placements (section decor + hero-stage
+> molecules) and the Phase 14 bench glassware were removed — poorly positioned, not
+> reading well. Lab assets stay on disk; they'll be re-placed deliberately in the v3
+> narrative/character pass.
 
 **Acceptance criteria:**
 
