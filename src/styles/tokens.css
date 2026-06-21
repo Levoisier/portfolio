@@ -39,6 +39,7 @@
   --surface-2: #e0dcd5;
   --glass-bg: rgba(245, 243, 238, 0.08);
   --glass-border: rgba(245, 243, 238, 0.16);
+  --blueprint-grid-line: rgba(245, 243, 238, 0.04);
 
   /* ── Typography: variable fonts, self-hosted ──────────────── */
   /* Display: DM Mono (technical/geometric — monospaced precision)

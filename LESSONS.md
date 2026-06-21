@@ -210,3 +210,13 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Kept the outer `#panda-companion` as the fixed scene shell and added an inner `[data-companion-stage]` for all scene-owned opacity, transform, cursor tracking, and pose cross-fades.
 
 **Don't repeat:** For any persistent fixed scene, let the controller own the outer scene shell and animate an inner child.
+
+### [2026-06-21] v3 audit: browser-only metrics need the human dev server
+
+**Context:** Phase 24 required a reduced-motion, layout, accessibility, and performance audit after the v3 narrative pass.
+
+**Problem/Dead-end:** This session explicitly prohibited `agent-browser` and starting dev/preview servers, so real Lighthouse scores, CLS, and horizontal-scroll measurements could not be collected from a rendered page.
+
+**Fix/Decision:** Completed static audits instead: removed the remaining raw blueprint-grid color into `--blueprint-grid-line`, verified old project-gallery hooks were gone, confirmed reduced-motion branches guard the v3 scenes, updated architecture docs, and ran `pnpm verify`. Lighthouse numbers remain a manual follow-up in the human's running dev environment.
+
+**Don't repeat:** When browser tools are disallowed, record the audit boundary clearly and do not invent Lighthouse or CLS numbers.

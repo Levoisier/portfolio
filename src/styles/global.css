@@ -81,8 +81,8 @@
   /* Blueprint grid overlay — used by confidential cards */
   .blueprint-grid {
     background-image:
-      linear-gradient(rgba(245, 243, 238, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(245, 243, 238, 0.04) 1px, transparent 1px);
+      linear-gradient(var(--blueprint-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--blueprint-grid-line) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 

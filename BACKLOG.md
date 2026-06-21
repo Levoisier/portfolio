@@ -195,7 +195,7 @@ Each phase below ends with a **Manual test (dev)** block — the exact things to
 
 ## Phase 24 — v3 audit (motion · a11y · perf)
 
-### [ ] chore(v3): full cinematic + accessibility + performance audit
+### [x] chore(v3): full cinematic + accessibility + performance audit
 
 **Acceptance criteria:**
 

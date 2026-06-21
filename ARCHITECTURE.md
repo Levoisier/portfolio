@@ -25,7 +25,7 @@ src/
     tokens.css          ← SINGLE SOURCE OF TRUTH — all CSS custom properties
     global.css          ← Tailwind directives + font-face + scroll-stage CSS
   layouts/
-    Layout.astro        ← HTML shell, fixed #scroll-stage, imports controller
+    Layout.astro        ← HTML shell, fixed #scroll-stage + #panda-companion, imports controller
   pages/
     index.astro         ← Assembles all 5 sections in narrative order
   components/
@@ -37,7 +37,13 @@ src/
       controller.ts     ← GSAP engine; add scenes via SCENE_REGISTRY only
       scenes/
         hero.ts         ← REFERENCE scene — fully working choreography
-        revealPlaceholder.ts ← Generic fallback reveal for all other sections
+        backdrop.ts     ← Fixed parallax stage driven by global scroll progress
+        companion.ts    ← Fixed desktop panda companion, outside ScrollSmoother
+        projects.ts     ← v3 experiment-log reveal
+        confidential.ts ← Classified-file treatment
+        skills.ts       ← Periodic-table reagent shelf
+        contact.ts      ← Closing contact flourish
+        revealPlaceholder.ts ← Generic fallback reveal
 
 public/
   fonts/                ← Self-hosted variable woff2 files
@@ -50,6 +56,20 @@ public/
 scripts/
   verify.sh             ← pnpm verify entry point
 ```
+
+## Current Section Order
+
+`src/pages/index.astro` assembles the v3 narrative in this order:
+
+1. `Hero`
+2. `Projects`
+3. `ConfidentialProjects`
+4. `Skills`
+5. `Contact`
+
+The scroll controller queries `[data-scene]` in DOM order, so section reorder work
+should happen in `index.astro` unless a fixed scene belongs outside the smoother
+wrapper.
 
 ---
 
@@ -183,12 +203,16 @@ The page is scrolled by **GSAP ScrollSmoother**, not the native scrollbar alone.
 ```
 body
 ├─ #scroll-stage        ← fixed parallax stage, SIBLING OUTSIDE the wrapper (stays truly fixed)
+├─ #panda-companion     ← fixed desktop companion shell; inner stage owns opacity/transform
 └─ #smooth-wrapper      ← ScrollSmoother applies its styles here
    └─ #smooth-content   ← ScrollSmoother transforms this; all page content lives inside
       └─ main#scroll-content > <slot/>
 ```
 
-`#scroll-stage` **must** stay outside `#smooth-wrapper` — otherwise the smoother's transform would drag the "fixed" backdrop with the content.
+`#scroll-stage` and `#panda-companion` **must** stay outside `#smooth-wrapper` —
+otherwise the smoother's transform would drag the fixed layers with the content.
+The companion scene animates an inner `[data-companion-stage]` because the
+controller clears the global `[data-scene]` opacity guard on the outer shell.
 
 **Controller wiring:** `gsap.registerPlugin(ScrollTrigger, ScrollSmoother)`, then `initSmoothScroll()` runs **before** scenes mount, calling `ScrollSmoother.create({ wrapper, content, smooth: 1.2, effects: true, smoothTouch: 0 })`. `effects: true` enables `data-speed` / `data-lag` for later phases. The global `scroll:progress` event and every scene ScrollTrigger work unchanged — they read the smoothed scroll position automatically (no `scrollerProxy` needed; ScrollSmoother is GSAP-native).
 
