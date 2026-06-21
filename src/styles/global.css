@@ -129,7 +129,7 @@
   top: 0;
   z-index: var(--z-overlay);
   display: none;
-  width: clamp(7rem, 13vw, 12.5rem);
+  width: clamp(9rem, 16vw, 16rem);
   aspect-ratio: 4 / 5;
   pointer-events: none;
 }

@@ -6,7 +6,6 @@
 */
 
 interface Project {
-  number: string;
   title: string;
   description: string;
   stack: string[];
@@ -15,7 +14,6 @@ interface Project {
 
 const projects: Project[] = [
   {
-    number: '01',
     title: 'Le Parche',
     description:
       'Restaurant brand system and booking flow: cinematic Astro/GSAP frontage paired with Python-powered reservation operations.',
@@ -23,7 +21,6 @@ const projects: Project[] = [
     liveUrl: 'https://leparche.com.co/',
   },
   {
-    number: '02',
     title: 'Maison Cielare',
     description:
       'Shopify storefront and commerce setup for a sleepwear brand, with Liquid theme work, Mercado Pago, SellerChat, and a complete brand manual.',
@@ -31,7 +28,6 @@ const projects: Project[] = [
     liveUrl: 'https://maisoncielare.com/',
   },
   {
-    number: '03',
     title: 'Orquestia',
     description:
       'Agency landing page, portfolio, blog system, and brand manual built end-to-end with a focused Next.js and TypeScript stack.',
@@ -64,29 +60,34 @@ const projects: Project[] = [
       </p>
     </div>
 
-    <div class="grid gap-0" data-projects-log>
+    <div class="grid gap-0 lg:max-w-[72%]" data-projects-log>
       {
         projects.map((project) => (
           <article
-            class="group grid gap-6 border-t py-10 md:grid-cols-[7rem_minmax(0,1fr)_auto] md:items-start md:gap-8 lg:py-14"
+            class="group grid gap-6 border-t py-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-8 lg:py-14"
             style="border-color: var(--glass-border);"
             data-project-entry
           >
-            <p
-              class="font-display leading-none"
-              style="font-size: var(--text-3xl); color: var(--scarlet);"
-              aria-hidden="true"
-              data-project-number
-            >
-              {project.number}
-            </p>
-
             <div class="min-w-0">
-              <h3
-                class="font-display uppercase leading-none"
-                style="font-size: var(--text-3xl); color: var(--paper);"
-              >
-                {project.title}
+              <h3 class="font-display uppercase leading-none" style="font-size: var(--text-3xl);">
+                <a
+                  href={project.liveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-baseline gap-3 transition-colors"
+                  style="color: var(--paper);"
+                  aria-label={`Open live site for ${project.title}`}
+                  data-project-title
+                >
+                  <span>{project.title}</span>
+                  <span
+                    class="font-display text-base"
+                    style="color: var(--scarlet);"
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </a>
               </h3>
 
               <p
@@ -123,17 +124,10 @@ const projects: Project[] = [
               </div>
             </div>
 
-            <a
-              href={project.liveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="font-display inline-flex min-h-11 items-center justify-self-start border-b text-xs uppercase tracking-[0.24em] transition-colors md:justify-self-end"
-              style="border-color: var(--scarlet); color: var(--scarlet);"
-              aria-label={`Open live site for ${project.title}`}
-              data-project-link
-            >
-              Live →
-            </a>
+            <div
+              class="hidden h-full w-px justify-self-end md:block"
+              style="background: var(--scarlet-dim);"
+            />
           </article>
         ))
       }

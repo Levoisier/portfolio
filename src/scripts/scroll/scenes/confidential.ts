@@ -120,7 +120,7 @@ const confidentialScene = (el: Element): Scene => {
       );
       gsap.set(
         cards.map((record) => record.content),
-        { opacity: 0 }
+        { opacity: 1 }
       );
       gsap.set(
         cards.map((record) => record.scanLine),
@@ -167,7 +167,7 @@ const confidentialScene = (el: Element): Scene => {
         tl.set(record.scanLine, { opacity: 1, y: 0 })
           .to(record.scanLine, { y: cardHeight, duration: 0.6, ease: 'none' })
           .set(record.scanLine, { opacity: 0 })
-          .to(record.content, { opacity: 1, duration: 0.35 }, '-=0.1')
+          .fromTo(record.content, { opacity: 0.72 }, { opacity: 1, duration: 0.35 }, '-=0.1')
           .to(
             record.corners,
             {

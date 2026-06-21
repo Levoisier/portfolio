@@ -15,7 +15,7 @@ import type { Scene } from '../types';
 
 type ProjectRecord = {
   entry: HTMLElement;
-  number: HTMLElement | null;
+  title: HTMLElement | null;
   chips: HTMLElement[];
 };
 
@@ -38,8 +38,9 @@ const projectsScene = (el: Element): Scene => {
   }
 
   function reactToEntry(record: ProjectRecord, active: boolean): void {
-    gsap.to(record.number, {
-      x: active ? 8 : 0,
+    gsap.to(record.title, {
+      x: active ? 10 : 0,
+      skewX: active ? -4 : 0,
       duration: 0.24,
       ease: 'expo.out',
       overwrite: 'auto',
@@ -60,7 +61,7 @@ const projectsScene = (el: Element): Scene => {
       el.querySelectorAll<HTMLElement>('[data-project-entry]').forEach((entry) => {
         const record: ProjectRecord = {
           entry,
-          number: entry.querySelector<HTMLElement>('[data-project-number]'),
+          title: entry.querySelector<HTMLElement>('[data-project-title]'),
           chips: Array.from(entry.querySelectorAll<HTMLElement>('[data-project-chip]')),
         };
         records.push(record);
@@ -142,7 +143,7 @@ const projectsScene = (el: Element): Scene => {
       cleanup.splice(0).forEach((dispose) => dispose());
       mm?.revert();
       gsap.killTweensOf(records.map((record) => record.entry));
-      gsap.killTweensOf(records.flatMap((record) => [record.number, ...record.chips]));
+      gsap.killTweensOf(records.flatMap((record) => [record.title, ...record.chips]));
       gsap.set(
         records.map((record) => record.entry),
         {
@@ -150,7 +151,7 @@ const projectsScene = (el: Element): Scene => {
         }
       );
       gsap.set(
-        records.flatMap((record) => [record.number, ...record.chips]),
+        records.flatMap((record) => [record.title, ...record.chips]),
         {
           clearProps: 'opacity,transform',
         }

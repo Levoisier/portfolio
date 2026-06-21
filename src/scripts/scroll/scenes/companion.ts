@@ -26,14 +26,16 @@ const DESKTOP_QUERY = '(min-width: 1024px)';
 
 const PATH: PathPoint[] = [
   { p: 0, x: 0.5, y: 0.44, scale: 1.15, rotation: 0, opacity: 0, pose: 'hero' },
-  { p: 0.14, x: 0.5, y: 0.44, scale: 1.05, rotation: 0, opacity: 0, pose: 'hero' },
-  { p: 0.24, x: 0.78, y: 0.2, scale: 0.86, rotation: -7, opacity: 0.86, pose: 'master' },
-  { p: 0.42, x: 0.12, y: 0.54, scale: 0.92, rotation: 8, opacity: 0.88, pose: 'coding' },
-  { p: 0.58, x: 0.74, y: 0.5, scale: 0.9, rotation: -5, opacity: 0.86, pose: 'hero' },
-  { p: 0.74, x: 0.18, y: 0.24, scale: 0.82, rotation: 7, opacity: 0.82, pose: 'master' },
-  { p: 0.88, x: 0.74, y: 0.56, scale: 0.9, rotation: -3, opacity: 0.84, pose: 'wave' },
-  { p: 0.96, x: 0.82, y: 0.62, scale: 0.98, rotation: 0, opacity: 0, pose: 'wave' },
-  { p: 1, x: 0.82, y: 0.62, scale: 0.98, rotation: 0, opacity: 0, pose: 'wave' },
+  { p: 0.16, x: 0.5, y: 0.44, scale: 1.05, rotation: 0, opacity: 0, pose: 'hero' },
+  { p: 0.26, x: 0.86, y: 0.3, scale: 0.92, rotation: -5, opacity: 0.94, pose: 'master' },
+  { p: 0.4, x: 0.86, y: 0.62, scale: 0.98, rotation: -2, opacity: 0.95, pose: 'coding' },
+  { p: 0.54, x: 0.84, y: 0.48, scale: 0.94, rotation: -4, opacity: 0.92, pose: 'hero' },
+  { p: 0.66, x: 0.86, y: 0.36, scale: 0.92, rotation: -4, opacity: 0.94, pose: 'master' },
+  { p: 0.78, x: 0.86, y: 0.58, scale: 0.96, rotation: -2, opacity: 0.9, pose: 'coding' },
+  { p: 0.9, x: 0.8, y: 0.62, scale: 1, rotation: -2, opacity: 0.92, pose: 'wave' },
+  { p: 0.985, x: 0.82, y: 0.62, scale: 1.05, rotation: 0, opacity: 0.88, pose: 'wave' },
+  { p: 0.998, x: 0.82, y: 0.62, scale: 1.05, rotation: 0, opacity: 0, pose: 'wave' },
+  { p: 1, x: 0.82, y: 0.62, scale: 1.05, rotation: 0, opacity: 0, pose: 'wave' },
 ];
 
 function clamp01(value: number): number {
@@ -42,6 +44,11 @@ function clamp01(value: number): number {
 
 function interpolate(a: number, b: number, t: number): number {
   return a + (b - a) * t;
+}
+
+function documentProgress(): number {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  return max <= 0 ? 0 : clamp01(window.scrollY / max);
 }
 
 function pointForProgress(progress: number): PathPoint {
@@ -91,13 +98,13 @@ const companionScene = (el: Element): Scene => {
     const allPoses = Array.from(container.querySelectorAll<HTMLElement>('[data-companion-pose]'));
     gsap.to(allPoses, {
       opacity: 0,
-      duration: 0.38,
+      duration: 0.85,
       ease: 'expo.out',
       overwrite: 'auto',
     });
     gsap.to(poseEl(name), {
       opacity: 1,
-      duration: 0.5,
+      duration: 1.05,
       ease: 'expo.out',
       overwrite: 'auto',
     });
@@ -109,8 +116,8 @@ const companionScene = (el: Element): Scene => {
     const point = pointForProgress(progress);
     const width = container.offsetWidth;
     const height = container.offsetHeight;
-    const bob = point.opacity > 0 ? Math.sin(progress * Math.PI * 10) * 10 : 0;
-    const driftRotation = point.opacity > 0 ? Math.sin(progress * Math.PI * 8) * 3 : 0;
+    const bob = point.opacity > 0 ? Math.sin(progress * Math.PI * 8) * 8 : 0;
+    const driftRotation = point.opacity > 0 ? Math.sin(progress * Math.PI * 6) * 2.4 : 0;
 
     setPose(point.pose);
     gsap.set(stage, {
@@ -171,11 +178,10 @@ const companionScene = (el: Element): Scene => {
 
       mm.add(DESKTOP_QUERY, () => {
         setupCursorTracking();
-        render(0);
+        render(documentProgress());
 
-        progressHandler = (event: Event) => {
-          const progress = (event as CustomEvent<{ progress: number }>).detail?.progress ?? 0;
-          render(progress);
+        progressHandler = () => {
+          render(documentProgress());
         };
 
         window.addEventListener('scroll:progress', progressHandler);
