@@ -63,7 +63,7 @@ Each phase below ends with a **Manual test (dev)** block — the exact things to
 
 ## Phase 17 — Reorder: lead with the work
 
-### [ ] refactor(layout): reorder sections to projects-first
+### [x] refactor(layout): reorder sections to projects-first
 
 **Acceptance criteria:**
 
