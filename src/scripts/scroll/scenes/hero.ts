@@ -1,14 +1,22 @@
 /**
- * Hero Scene — the REFERENCE scene. Fully working entrance animation.
+ * Hero Scene — the REFERENCE scene.
  *
- * Sequence (reduced-motion: instant reveal, no motion):
- *   1. panda-body paints immediately for LCP
- *   2. panda-head parallax layer lazy-loads after the body is visible
- *   3. hero-name chars stagger in from the left (manual split — no SplitText required)
- *   4. hero-role fades up
- *   5. hero-scroll-hint bob loop
+ * Desktop (≥768px, no reduced-motion): pinned scrub DEPTH INTRO.
+ *   The hero pins for ~140vh of scroll. On scrub 0→1 the stage layers gain depth
+ *   (atmosphere recedes + darkens, mid-glass drifts laterally, particles push
+ *   toward the viewer), panda-head separates upward from panda-body, and the
+ *   molecule thread drifts. These run on the INNER .stage-depth channel so the
+ *   backdrop's outer parallax keeps running with no conflict and no jump when the
+ *   pin releases. The text entrance (name/role/hint) plays once on enter.
  *
- * Parallax: on progress(p), panda-head translates upward at 0.4× rate.
+ * Mobile (<768px): the v1 entrance choreography — no pin; panda-head parallax via
+ *   progress().
+ *
+ * Reduced motion: instant reveal, no pin/scrub/loops.
+ *
+ * LCP guard: panda-body is the LCP element and is NEVER written by this scene.
+ * Every depth tween uses fromTo() so the frame at scrub progress 0 is identical
+ * to the static painted hero.
  */
 
 import gsap from 'gsap';
@@ -20,7 +28,7 @@ function splitChars(el: HTMLElement): HTMLElement[] {
   el.setAttribute('aria-label', text);
   return text.split('').map((char) => {
     const span = document.createElement('span');
-    span.textContent = char === ' ' ? ' ' : char;
+    span.textContent = char === ' ' ? ' ' : char;
     span.style.display = 'inline-block';
     span.setAttribute('aria-hidden', 'true');
     el.appendChild(span);
@@ -33,15 +41,18 @@ function loadHeroHead(el: HTMLImageElement | null): void {
   if (!el || !src || el.src.endsWith(src)) return;
 
   el.onload = () => {
-    gsap.to(el, { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out', overwrite: true });
+    gsap.to(el, { opacity: 1, duration: 0.6, ease: 'expo.out', overwrite: 'auto' });
   };
   el.src = src;
 }
+
+const isDesktop = (): boolean => window.matchMedia('(min-width: 768px)').matches;
 
 const heroScene = (_el: Element): Scene => {
   let tl: gsap.core.Timeline | null = null;
   let bobTween: gsap.core.Tween | null = null;
   let chars: HTMLElement[] = [];
+  let mm: gsap.MatchMedia | null = null;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -64,11 +75,56 @@ const heroScene = (_el: Element): Scene => {
         loadHeroHead(pandaHead instanceof HTMLImageElement ? pandaHead : null);
         const pandaBody = document.getElementById('panda-body');
         gsap.set([pandaBody, pandaHead, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
-      } else {
-        gsap.set(pandaHead, { opacity: 0, y: 60 });
-        gsap.set(roleEl, { opacity: 0, y: 20 });
-        gsap.set(scrollHint, { opacity: 0 });
+        return;
       }
+
+      gsap.set(roleEl, { opacity: 0, y: 20 });
+      gsap.set(scrollHint, { opacity: 0 });
+
+      // ── Desktop pinned depth intro ───────────────────────────────────────────
+      // matchMedia adds/removes the pin on resize and reverts its inline styles.
+      mm = gsap.matchMedia();
+
+      mm.add('(min-width: 768px)', () => {
+        // Head starts at rest; the scrub separates it upward.
+        gsap.set(pandaHead, { opacity: 0, y: 0 });
+
+        const depthTl = gsap.timeline({
+          defaults: { ease: 'none' },
+          scrollTrigger: {
+            trigger: '#hero',
+            start: 'top top',
+            end: '+=140%',
+            pin: true,
+            scrub: 1,
+          },
+        });
+
+        // All depth tweens run in parallel (position 0) and use fromTo so the
+        // progress-0 frame equals the static hero. panda-body is untouched (LCP).
+        depthTl
+          .fromTo('#panda-head', { y: 0 }, { y: -170 }, 0)
+          .fromTo(
+            '#stage-atmosphere .stage-depth',
+            { scale: 1, opacity: 1 },
+            { scale: 0.92, opacity: 0.72 },
+            0
+          )
+          .fromTo('#stage-mid-glass .stage-depth', { x: 0 }, { x: 70 }, 0)
+          .fromTo('#stage-particles .stage-depth', { scale: 1, y: 0 }, { scale: 1.18, y: -60 }, 0)
+          .fromTo('#molecule-a', { x: 0, y: 0 }, { x: 40, y: -50 }, 0)
+          .fromTo('#molecule-b', { x: 0, y: 0 }, { x: -40, y: -30 }, 0);
+
+        return () => {
+          depthTl.scrollTrigger?.kill();
+          depthTl.kill();
+        };
+      });
+
+      // ── Mobile entrance: panda-head rises (v1) ───────────────────────────────
+      mm.add('(max-width: 767px)', () => {
+        gsap.set(pandaHead, { opacity: 0, y: 60 });
+      });
     },
 
     enter() {
@@ -85,6 +141,10 @@ const heroScene = (_el: Element): Scene => {
         gsap.set([pandaBody, pandaHead, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
         return;
       }
+
+      // On desktop the head is part of the pinned depth intro, so reveal it now
+      // (post-idle, post-LCP) instead of waiting for the first scroll.
+      if (isDesktop()) loadHeroHead(pandaHead);
 
       tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
 
@@ -123,7 +183,9 @@ const heroScene = (_el: Element): Scene => {
     },
 
     progress(p: number) {
-      if (prefersReducedMotion) return;
+      // Desktop panda-head is driven by the pinned depth intro; only mobile uses
+      // this per-frame parallax (avoids double-driving the head).
+      if (prefersReducedMotion || isDesktop()) return;
       const pandaHead = document.getElementById('panda-head') as HTMLImageElement | null;
       if (pandaHead) {
         if (window.scrollY > 16) loadHeroHead(pandaHead);
@@ -134,6 +196,7 @@ const heroScene = (_el: Element): Scene => {
     destroy() {
       tl?.kill();
       bobTween?.kill();
+      mm?.revert();
     },
   };
 };

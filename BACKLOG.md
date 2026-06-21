@@ -65,7 +65,7 @@ These are live facts from the v1 build that every v2 phase must respect.
 
 ## Phase 12 — Hero pinned depth intro
 
-### [ ] feat(hero): pinned scrub depth-intro choreography
+### [x] feat(hero): pinned scrub depth-intro choreography
 
 **Acceptance criteria:**
 

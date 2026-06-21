@@ -104,13 +104,38 @@
   overflow: hidden;
 }
 
+/* OUTER layer — backdrop scene drives parallax (x/y) + atmosphere opacity here. */
 #scroll-stage .stage-layer {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+}
+
+/* INNER depth — carries the image; hero pin drives depth (scale/translate) here.
+   Independent transform channel from the outer layer. */
+#scroll-stage .stage-depth {
   position: absolute;
   inset: 0;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
   will-change: transform, opacity;
+}
+
+/* Molecule continuity thread — desktop-only depth decor inside the particle layer. */
+#scroll-stage .stage-molecule {
+  position: absolute;
+  width: clamp(120px, 14vw, 220px);
+  height: auto;
+  opacity: 0.18;
+  will-change: transform;
+}
+
+@media (max-width: 767px) {
+  /* Lazy + display:none keeps these off the mobile network path (LCP budget). */
+  #scroll-stage .stage-molecule {
+    display: none;
+  }
 }
 
 /* ─── Section wrappers ────────────────────────────────────────────────────── */

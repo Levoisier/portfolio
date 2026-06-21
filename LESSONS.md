@@ -132,3 +132,15 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Verify ScrollSmoother is live by (a) the presence of its inline styles on `#smooth-content`, and (b) `scroll:progress` advancing as you scroll — not by a hardcoded wrapper `position`. Confirmed the reduced-motion branch by asserting **no** inline styles appear on wrapper/content (create() skipped) while all `[data-scene]` stay opacity 1. Also removed CSS `scroll-behavior: smooth` (set to `auto`) because it fights ScrollSmoother for control of scrolling.
 
 **Don't repeat:** Don't gate ScrollSmoother verification on a specific wrapper `position`; check its content inline-styles + a live progress signal. CSS `scroll-behavior: smooth` must not coexist with ScrollSmoother.
+
+---
+
+### [2026-06-21] Two scroll drivers on one stage: split them onto independent transform channels
+
+**Context:** Phase 12 — the hero pinned depth intro must drive the backdrop stage during the pin, while the global backdrop parallax (backdrop scene, `scroll:progress`) drives it for the rest of the page. Acceptance required "no double-driving and no positional jump at the handoff."
+
+**Problem/Dead-end:** Both drivers want to transform the same stage layers. If hero and backdrop both write `x`/`y` to `#stage-particles`, the last writer each frame wins and the handoff jumps. Suspending the backdrop during the pin and resuming it afterward also jumps, because the backdrop computes an absolute position from page progress that won't match the hero's end-state.
+
+**Fix/Decision:** Gave each stage layer an inner `.stage-depth` wrapper. The backdrop scene drives the OUTER `#stage-*` (parallax `x`/`y` + atmosphere opacity); the hero pin drives the INNER `.stage-depth` (depth scale/translate). Two independent transform contexts compose multiplicatively, so neither overwrites the other and there is nothing to hand off — the depth channel stops advancing when the pin releases while the parallax channel keeps going, seamlessly. Every depth tween uses `fromTo()` so scrub progress 0 = identity = the static hero, and `panda-body` (LCP) is never touched. Also: `loadHeroHead` must use `overwrite: 'auto'` (not `true`) — `true` would kill the pinned depth tween that shares the `#panda-head` target.
+
+**Don't repeat:** When two scroll systems must animate the same element, give each its own transform channel (nested element) instead of time-slicing one channel between them. And never `overwrite: true` a target that another (scrubbed) tween also animates.

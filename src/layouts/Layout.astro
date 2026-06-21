@@ -58,14 +58,43 @@ const {
          MUST stay a sibling OUTSIDE #smooth-wrapper so ScrollSmoother's
          transform never moves it; it remains truly fixed behind content. -->
     <div id="scroll-stage" aria-hidden="true" data-scene="backdrop">
+      <!-- Each layer = OUTER (#stage-*: backdrop parallax x/y) + INNER (.stage-depth:
+           hero pinned depth scale/translate). Independent transform channels so the
+           two drivers never fight and there is no jump when the hero pin releases. -->
       <div class="stage-layer" id="stage-atmosphere">
-        <!-- atmosphere.webp loaded by controller when media is ready -->
+        <div class="stage-depth"><!-- atmosphere.webp set by backdrop scene --></div>
       </div>
       <div class="stage-layer" id="stage-mid-glass">
-        <!-- mid-glass.webp -->
+        <div class="stage-depth"><!-- mid-glass.webp --></div>
       </div>
       <div class="stage-layer" id="stage-particles">
-        <!-- particles.webp -->
+        <div class="stage-depth"><!-- particles.webp --></div>
+        <!-- Molecule continuity thread (desktop depth decor; hidden < 768px).
+             Phase 13 extends these into a page-wide thread. -->
+        <img
+          id="molecule-a"
+          class="stage-molecule"
+          src="/media/lab/molecule-a.webp"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+          width="220"
+          height="220"
+          style="top: 16%; left: 11%;"
+        />
+        <img
+          id="molecule-b"
+          class="stage-molecule"
+          src="/media/lab/molecule-b.webp"
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+          width="220"
+          height="220"
+          style="top: 60%; left: 73%;"
+        />
       </div>
     </div>
 
