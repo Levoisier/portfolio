@@ -121,7 +121,7 @@ Each phase below ends with a **Manual test (dev)** block — the exact things to
 
 ## Phase 20 — Panda companion (existing poses) + cursor reactivity
 
-### [ ] feat(companion): scroll/cursor-aware panda companion
+### [x] feat(companion): scroll/cursor-aware panda companion
 
 **Acceptance criteria:**
 

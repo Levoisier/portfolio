@@ -72,6 +72,49 @@ const {
       </div>
     </div>
 
+    <!-- Fixed panda companion — sibling outside #smooth-wrapper so ScrollSmoother
+         never transforms it. Hidden on mobile by CSS; scene drives desktop poses. -->
+    <div id="panda-companion" data-scene="companion" aria-hidden="true">
+      <div class="panda-companion-stage" data-companion-stage>
+        <img
+          src="/media/panda/panda-coding.png"
+          alt=""
+          width="320"
+          height="400"
+          loading="lazy"
+          decoding="async"
+          data-companion-pose="projects"
+        />
+        <img
+          src="/media/panda/panda-head.png"
+          alt=""
+          width="320"
+          height="320"
+          loading="lazy"
+          decoding="async"
+          data-companion-pose="confidential"
+        />
+        <img
+          src="/media/panda/panda-hero.png"
+          alt=""
+          width="320"
+          height="400"
+          loading="lazy"
+          decoding="async"
+          data-companion-pose="skills"
+        />
+        <img
+          src="/media/panda/panda-wave.png"
+          alt=""
+          width="320"
+          height="400"
+          loading="lazy"
+          decoding="async"
+          data-companion-pose="contact"
+        />
+      </div>
+    </div>
+
     <!-- ScrollSmoother DOM contract: #smooth-wrapper > #smooth-content.
          ScrollSmoother (controller.ts) applies the fixed/overflow styles to
          the wrapper and transforms the content. Under reduced motion the

@@ -200,3 +200,13 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Let the pinned timeline own the accent's scroll `y` motion, and let hover/focus reactions touch only `x` and `rotation`. The generic `progress()` hook intentionally does no work for this scene.
 
 **Don't repeat:** Even for decorative accents, one element/property pair should have one driver; use separate properties for hover reactions.
+
+### [2026-06-21] Fixed scenes need an inner animation target
+
+**Context:** Phase 20 added a fixed panda companion as a `[data-scene]` element outside the ScrollSmoother wrapper.
+
+**Problem/Dead-end:** The scroll controller calls `scene.init(el)` and then immediately sets the `[data-scene]` element opacity to 1 to clear the global FOUC guard. If the companion scene also uses that same outer element for its own fade state, the controller can reveal it before the companion's section logic runs.
+
+**Fix/Decision:** Kept the outer `#panda-companion` as the fixed scene shell and added an inner `[data-companion-stage]` for all scene-owned opacity, transform, cursor tracking, and pose cross-fades.
+
+**Don't repeat:** For any persistent fixed scene, let the controller own the outer scene shell and animate an inner child.
