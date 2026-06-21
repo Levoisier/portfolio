@@ -107,7 +107,7 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 
 ## Phase 6 — Confidential: Redacted Card Treatment
 
-### [ ] feat(confidential): blueprint card animation + redaction
+### [x] feat(confidential): blueprint card animation + redaction
 
 **Acceptance criteria:**
 

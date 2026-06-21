@@ -48,11 +48,18 @@ const confidentialProjects: ConfidentialProject[] = [
 
 <section
   id="confidential"
-  class="portfolio-section section-pad blueprint-grid"
+  class="portfolio-section overflow-hidden section-pad"
   data-scene="confidential"
   style="background-color: var(--navy);"
 >
-  <div class="mx-auto max-w-6xl">
+  <div
+    class="blueprint-grid pointer-events-none absolute inset-0 opacity-60"
+    data-blueprint-grid-pulse
+    aria-hidden="true"
+  >
+  </div>
+
+  <div class="relative mx-auto max-w-6xl">
     <div class="mb-12 flex flex-col gap-2">
       <span class="font-display text-xs uppercase tracking-widest" style="color: var(--scarlet);">
         [CLASSIFIED]
@@ -77,16 +84,73 @@ const confidentialProjects: ConfidentialProject[] = [
         confidentialProjects.map((project, i) => (
           <article
             class="confidential-card relative overflow-hidden border"
-            style="border-color: var(--glass-border); background: rgba(15, 35, 66, 0.6);"
+            style="border-color: var(--glass-border); background: color-mix(in srgb, var(--navy) 60%, transparent);"
             data-index={i}
+            data-confidential-card
             aria-label={`Confidential project: ${project.industry}`}
           >
+            <span
+              class="pointer-events-none absolute left-0 top-0 h-px w-full origin-left"
+              data-scan-line
+              style="background: var(--scarlet); opacity: 0;"
+              aria-hidden="true"
+            />
+
+            <span
+              class="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l border-t"
+              data-corner-accent
+              style="border-color: var(--scarlet); opacity: 0;"
+              aria-hidden="true"
+            />
+            <span
+              class="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r border-t"
+              data-corner-accent
+              style="border-color: var(--scarlet); opacity: 0;"
+              aria-hidden="true"
+            />
+            <span
+              class="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b border-l"
+              data-corner-accent
+              style="border-color: var(--scarlet); opacity: 0;"
+              aria-hidden="true"
+            />
+            <span
+              class="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b border-r"
+              data-corner-accent
+              style="border-color: var(--scarlet); opacity: 0;"
+              aria-hidden="true"
+            />
+
             <div
-              class="flex items-center justify-between px-4 py-3"
+              class="relative flex items-center justify-between gap-4 px-4 py-3"
               style="background: var(--scarlet); color: var(--on-scarlet);"
             >
               <span class="font-display text-xs font-bold uppercase tracking-widest">
                 {project.industry}
+              </span>
+              <span class="flex flex-col gap-1.5" aria-hidden="true">
+                <span
+                  class="relative block h-1.5 w-16 overflow-hidden"
+                  data-redaction-bar
+                  style="background: var(--navy);"
+                >
+                  <span
+                    class="absolute inset-y-0 left-0 w-1/2"
+                    data-redaction-sheen
+                    style="background: linear-gradient(90deg, transparent, var(--paper), transparent); opacity: 0.35; transform: translateX(-120%);"
+                  />
+                </span>
+                <span
+                  class="relative block h-1.5 w-10 overflow-hidden"
+                  data-redaction-bar
+                  style="background: var(--navy);"
+                >
+                  <span
+                    class="absolute inset-y-0 left-0 w-1/2"
+                    data-redaction-sheen
+                    style="background: linear-gradient(90deg, transparent, var(--paper), transparent); opacity: 0.35; transform: translateX(-120%);"
+                  />
+                </span>
               </span>
               <svg
                 width="16"
@@ -101,7 +165,7 @@ const confidentialProjects: ConfidentialProject[] = [
               </svg>
             </div>
 
-            <div class="flex flex-col gap-4 p-5">
+            <div class="flex flex-col gap-4 p-5" data-confidential-content>
               <div>
                 <span
                   class="font-display text-xs uppercase tracking-widest"
@@ -173,12 +237,6 @@ const confidentialProjects: ConfidentialProject[] = [
                 </div>
               </div>
             </div>
-
-            <div
-              class="pointer-events-none absolute bottom-0 right-0"
-              aria-hidden="true"
-              style="width: 48px; height: 48px; border-top: 1px solid var(--scarlet); border-left: 1px solid var(--scarlet); opacity: 0.3;"
-            />
           </article>
         ))
       }

@@ -84,3 +84,15 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Narrowed with `'drift' in config` before creating the runtime layer object.
 
 **Don't repeat:** With `noUncheckedIndexedAccess` and strict unions, narrow optional config fields before reading them from `as const` arrays.
+
+---
+
+### [2026-06-20] Reduced-motion decorative elements may need explicit hiding
+
+**Context:** Building the Confidential section scan-line and redaction shimmer treatment.
+
+**Problem/Dead-end:** The first reduced-motion branch revealed all animation hooks, which left the scan line and shimmer sheen visible even though their motion loops were stopped.
+
+**Fix/Decision:** Revealed only the card content and corner accents, and explicitly hid scan-line and shimmer elements in the reduced-motion branch.
+
+**Don't repeat:** Reduced-motion fallbacks should reveal meaningful content but hide motion-only decorative layers.
