@@ -3,7 +3,7 @@
    The panda + name reveal is the reference scene (see src/scripts/scroll/scenes/hero.ts).
    All elements start opacity:0; the scene drives the entrance animation.
    Structure:
-     · #hero-panda        — centerpiece image (panda-hero.png + panda-head.png layers)
+     · #hero-panda        — centerpiece (panda-hero.png; panda-wave.png crossfades in on scrub)
      · #hero-name         — "Cristian Zapata Cartagena" (chars split for stagger)
      · #hero-role         — role line
      · #hero-scroll-hint  — animated chevron
@@ -36,14 +36,16 @@
         fetchpriority="high"
       />
     </picture>
+    <!-- Wave panda: crossfades IN over the hero panda during the pin scrub
+         (desktop). Same 4:5 box, centered over panda-body. Deferred load. -->
     <img
-      id="panda-head"
+      id="panda-wave"
       src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
-      data-hero-head-src="/media/panda/panda-head.png"
+      data-panda-wave-src="/media/panda/panda-wave.png"
       alt=""
-      width="300"
-      height="300"
-      class="absolute aspect-square w-[45vw] max-w-[300px] select-none object-contain"
+      width="400"
+      height="500"
+      class="absolute left-1/2 top-1/2 aspect-[4/5] w-[60vw] max-w-[400px] -translate-x-1/2 -translate-y-1/2 select-none object-contain"
       loading="lazy"
       decoding="async"
       fetchpriority="low"
