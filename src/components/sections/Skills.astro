@@ -16,6 +16,8 @@ interface Element {
   proficiency: number;
 }
 
+import GlassSurface from '../ui/GlassSurface.astro';
+
 const elements: Element[] = [
   // Languages
   {
@@ -291,14 +293,16 @@ const elements: Element[] = [
 
       <!-- Tile grid anchored to the label side. -->
       <div class="relative flex-1">
-        <p
-          class="font-body mb-8 max-w-3xl leading-relaxed"
-          style="font-size: var(--text-base); color: color-mix(in srgb, var(--paper) 70%, transparent);"
-          data-i18n="skills.description"
-        >
-          Lenguajes, frameworks, plataformas y herramientas de testing que uso para llevar proyectos
-          a producción.
-        </p>
+        <GlassSurface class="mb-8 max-w-3xl px-5 py-4">
+          <p
+            class="font-body leading-relaxed"
+            style="font-size: var(--text-base); color: var(--paper);"
+            data-i18n="skills.description"
+          >
+            Lenguajes, frameworks, plataformas y herramientas de testing que uso para llevar
+            proyectos a producción.
+          </p>
+        </GlassSurface>
 
         <!-- Periodic table grid -->
         <div

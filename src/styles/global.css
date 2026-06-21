@@ -95,6 +95,84 @@
   }
 }
 
+/* ─── Liquid-glass material (v4) ───────────────────────────────────────────────
+   Reusable refractive surface for copy that rides the backdrop art. Reads as
+   glass — translucent fill, a bright rim, and a soft inner-top specular sheen —
+   not a flat frosted card; the backdrop stays visible through and around it.
+
+   Layering:
+   - base    : --glass-fill-solid (opaque-ish tint) so text is AA-readable even
+               without backdrop-filter (mobile / unsupported browsers).
+   - ::before: a top→down specular gradient (the "glass" cue), static.
+   - ::after : a diagonal sheen sweep that slowly drifts — DECORATIVE ONLY; the
+               global reduced-motion rule pins animation-duration to 0.01ms, so
+               it is effectively disabled under prefers-reduced-motion.
+   - @supports + desktop: upgrade to the translucent --glass-fill + backdrop
+               blur/saturate so the art shows through. Mobile keeps the lean
+               no-blur tint to protect the LCP budget.                          */
+.liquid-glass {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--glass-rim);
+  border-radius: var(--glass-radius);
+  background-color: var(--glass-fill-solid);
+  overflow: hidden;
+}
+
+.liquid-glass > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Static inner-top specular highlight — the primary "this is glass" read. */
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, var(--glass-sheen) 0%, transparent 42%);
+}
+
+/* Drifting diagonal sheen sweep — decorative; disabled under reduced motion. */
+.liquid-glass::after {
+  content: '';
+  position: absolute;
+  inset: -40% -10%;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    var(--glass-sheen-soft) 50%,
+    transparent 62%
+  );
+  transform: translateX(-30%);
+  animation: glass-sheen-drift 9s ease-in-out infinite;
+}
+
+@keyframes glass-sheen-drift {
+  0%,
+  100% {
+    transform: translateX(-30%);
+  }
+  50% {
+    transform: translateX(30%);
+  }
+}
+
+/* Upgrade to true refractive glass only where it is cheap + supported. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media (min-width: 1024px) {
+    .liquid-glass {
+      background-color: var(--glass-fill);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
+  }
+}
+
 /* ─── Scroll stage (fixed background layers) ──────────────────────────────── */
 #scroll-stage {
   position: fixed;

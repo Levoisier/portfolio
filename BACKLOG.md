@@ -82,7 +82,7 @@ Each phase ends with a **Manual test (dev)** block — the exact things to check
 
 ## Phase 25 — Liquid-glass readability primitive
 
-### [ ] feat(ui): reusable liquid-glass surface + prove it on Skills
+### [x] feat(ui): reusable liquid-glass surface + prove it on Skills
 
 **Acceptance criteria:**
 

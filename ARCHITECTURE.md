@@ -218,6 +218,25 @@ controller clears the global `[data-scene]` opacity guard on the outer shell.
 
 **Reduced motion:** `initSmoothScroll()` returns early — `ScrollSmoother.create()` is skipped entirely, leaving native scroll. CSS `scroll-behavior` is `auto` (never `smooth`) so it cannot fight the smoother.
 
+## Liquid-glass material (v4)
+
+A reusable refractive surface for copy that rides the backdrop art. Tokens live in
+`tokens.css` (`--glass-fill`, `--glass-fill-solid`, `--glass-rim`, `--glass-sheen`,
+`--glass-sheen-soft`, `--glass-blur`, `--glass-saturate`, `--glass-radius`); the
+`.liquid-glass` utility is in `global.css`, and `src/components/ui/GlassSurface.astro`
+wraps it for markup reuse (pass `class` for Tailwind padding/layout).
+
+- **Base** renders the opaque-ish `--glass-fill-solid` tint so text is AA-readable
+  even with no `backdrop-filter` (mobile / unsupported browsers — protects mobile LCP).
+- `::before` paints a static inner-top specular gradient (the "this is glass" cue);
+  `::after` is a decorative diagonal sheen sweep, disabled under reduced motion via the
+  global `animation-duration: 0.01ms` rule.
+- `@supports (backdrop-filter) + (min-width: 1024px)` upgrades the fill to the
+  translucent `--glass-fill` plus `blur()/saturate()` so the art shows through.
+
+Use it for over-backdrop copy (Skills intro; Hero block; Projects text columns). Never
+hardcode the material's colors — extend the tokens instead.
+
 ## How to add a new section
 
 1. Create `src/components/sections/MySection.astro` with `data-scene="my-section"`.

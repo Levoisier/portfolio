@@ -41,6 +41,20 @@
   --glass-border: rgba(245, 243, 238, 0.16);
   --blueprint-grid-line: rgba(245, 243, 238, 0.04);
 
+  /* ── Liquid-glass material (v4) ────────────────────────────────
+     Reusable refractive surface for over-backdrop copy. The blur
+     path uses the translucent --glass-fill; mobile / unsupported
+     browsers fall back to the more opaque --glass-fill-solid so
+     text stays AA-readable with no backdrop-filter.              */
+  --glass-fill: rgba(12, 22, 40, 0.34); /* translucent tint (blur path) */
+  --glass-fill-solid: rgba(12, 22, 40, 0.66); /* lean fallback: no blur, more opaque */
+  --glass-rim: rgba(245, 243, 238, 0.22); /* bright 1px rim */
+  --glass-sheen: rgba(245, 243, 238, 0.16); /* specular top highlight */
+  --glass-sheen-soft: rgba(245, 243, 238, 0.06); /* drifting sheen sweep */
+  --glass-blur: 14px;
+  --glass-saturate: 1.4;
+  --glass-radius: 1.1rem;
+
   /* ── Typography: variable fonts, self-hosted ──────────────── */
   /* Display: DM Mono (technical/geometric — monospaced precision)
      Body: Inter (clean neutral sans)
