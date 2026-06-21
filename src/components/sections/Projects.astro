@@ -16,21 +16,21 @@ const projects: Project[] = [
   {
     title: 'Le Parché',
     description:
-      'Restaurant brand system and booking flow: cinematic Astro/GSAP frontage paired with Python-powered reservation operations.',
+      'Sistema de marca y flujo de reservas para restaurante: fachada cinematográfica con Astro/GSAP combinada con operaciones de reservas impulsadas por Python.',
     stack: ['Astro', 'GSAP', 'React', 'TypeScript', 'Python'],
     liveUrl: 'https://leparche.com.co/',
   },
   {
     title: 'Maison Cielare',
     description:
-      'Shopify storefront and commerce setup for a sleepwear brand, with Liquid theme work, Mercado Pago, SellerChat, and a complete brand manual.',
+      'Tienda en Shopify y configuración de comercio para una marca de ropa de dormir, con trabajo en tema Liquid, Mercado Pago, SellerChat, y manual de marca completo.',
     stack: ['Shopify', 'Liquid', 'HTML', 'CSS', 'Mercado Pago'],
     liveUrl: 'https://maisoncielare.com/',
   },
   {
     title: 'Orquestia',
     description:
-      'Agency landing page, portfolio, blog system, and brand manual built end-to-end with a focused Next.js and TypeScript stack.',
+      'Landing de agencia, portafolio, sistema de blog y manual de marca construidos de punta a punta con Next.js y TypeScript.',
     stack: ['Next.js', 'React', 'TypeScript', 'Blog', 'Brand System'],
     liveUrl: 'https://www.orquestia.io/',
   },
@@ -43,20 +43,22 @@ const projects: Project[] = [
       <h2
         class="font-display max-w-4xl uppercase leading-none"
         style="font-size: var(--text-4xl); color: var(--paper);"
+        data-i18n="projects.heading"
       >
-        Built work, measured in outcomes.
+        Trabajo construido, medido en resultados.
       </h2>
       <p
         class="font-body mt-6 max-w-2xl leading-relaxed"
         style="font-size: var(--text-lg); color: color-mix(in srgb, var(--paper) 76%, transparent);"
+        data-i18n="projects.subheading"
       >
-        Live projects across brand, commerce, content, and production workflows.
+        Proyectos en producción: marca, comercio, contenido y flujos operativos.
       </p>
     </div>
 
     <div class="grid gap-0 lg:max-w-[72%]" data-projects-log>
       {
-        projects.map((project) => (
+        projects.map((project, index) => (
           <article
             class="group grid gap-6 border-t py-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-8 lg:py-14"
             style="border-color: var(--glass-border);"
@@ -70,7 +72,8 @@ const projects: Project[] = [
                   rel="noopener noreferrer"
                   class="inline-flex items-baseline gap-3 transition-colors"
                   style="color: var(--paper);"
-                  aria-label={`Open live site for ${project.title}`}
+                  aria-label={`Abrir sitio en vivo de ${project.title}`}
+                  data-i18n-aria={`projects.${index}.live-aria`}
                   data-project-title
                 >
                   <span>{project.title}</span>
@@ -87,6 +90,7 @@ const projects: Project[] = [
               <p
                 class="font-body mt-5 max-w-3xl leading-relaxed"
                 style="font-size: var(--text-base); color: color-mix(in srgb, var(--paper) 72%, transparent);"
+                data-i18n={`projects.${index}.description`}
               >
                 {project.description}
               </p>

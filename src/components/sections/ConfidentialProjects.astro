@@ -21,35 +21,35 @@ const confidentialProjects: ConfidentialProject[] = [
     role: 'Full Stack Developer',
     stack: ['Next.js', 'React', 'TypeScript', 'Auth', 'Wompi', 'ERP'],
     impact:
-      'Built a custom ecommerce platform with authentication, user profile management, order tracking, ERP synchronization, Wompi payments, and a manual bank-transfer approval flow.',
-    duration: '10+ months',
+      'Desarrollé una plataforma de ecommerce personalizada con autenticación, gestión de perfil de usuario, seguimiento de pedidos, sincronización con ERP, pagos Wompi, y flujo de aprobación de transferencias bancarias manuales.',
+    duration: '10+ meses',
     teamSize: '4-6',
   },
   {
-    industry: 'Logistics / Warehousing',
+    industry: 'Logística / Almacenamiento',
     role: 'Full Stack Developer',
     stack: ['Next.js', 'React', 'TypeScript', 'Python', 'AWS EKS'],
     impact:
-      'Delivered a WMS wired to ecommerce orders, with smart task assignment, operational automations, issue tickets, KPI reporting, and outbound shipping workflows.',
-    duration: '12+ months',
+      'Entregué un WMS conectado a pedidos de ecommerce, con asignación inteligente de tareas, automatizaciones operativas, tickets de incidencias, reportes de KPIs, y flujos de despacho de salida.',
+    duration: '12+ meses',
     teamSize: '6-8',
   },
   {
-    industry: 'Sales Operations',
+    industry: 'Operaciones de Ventas',
     role: 'Full Stack Developer',
     stack: ['Next.js', 'React', 'TypeScript', 'Python', 'AWS EKS'],
     impact:
-      'Built a CRM with automated follow-up flows, lead and account pipelines, task queues, activity history, reporting views, and role-based access control.',
-    duration: '8+ months',
+      'Desarrollé un CRM con flujos de seguimiento automatizados, pipelines de leads y cuentas, colas de tareas, historial de actividad, vistas de reportes, y control de acceso por roles.',
+    duration: '8+ meses',
     teamSize: '4-6',
   },
   {
-    industry: 'Finance / ERP',
+    industry: 'Finanzas / ERP',
     role: 'Full Stack Developer',
     stack: ['Python', 'ERP', 'DIAN', 'Billing', 'Accounting'],
     impact:
-      'Implemented a financial ERP module covering electronic invoicing through DIAN, billing operations, accounting workflows, document state tracking, and audit-ready records.',
-    duration: '9+ months',
+      'Implementé un módulo de ERP financiero que cubre facturación electrónica a través de DIAN, operaciones de facturación, flujos de contabilidad, seguimiento de estados de documentos, y registros listos para auditoría.',
+    duration: '9+ meses',
     teamSize: '4-6',
   },
 ];
@@ -70,21 +70,27 @@ const confidentialProjects: ConfidentialProject[] = [
 
   <div class="relative mx-auto max-w-6xl">
     <div class="mb-12 flex flex-col gap-2">
-      <span class="font-display text-xs uppercase tracking-widest" style="color: var(--scarlet);">
-        [CLASSIFIED]
+      <span
+        class="font-display text-xs uppercase tracking-widest"
+        style="color: var(--scarlet);"
+        data-i18n="confidential.classified"
+      >
+        [CLASIFICADO]
       </span>
       <h2
         class="font-display uppercase tracking-widest"
         style="font-size: var(--text-2xl); color: var(--paper);"
+        data-i18n="confidential.heading"
       >
-        Confidential Work
+        Trabajo Confidencial
       </h2>
       <p
         class="font-body max-w-prose"
         style="font-size: var(--text-sm); color: color-mix(in srgb, var(--paper) 60%, transparent);"
+        data-i18n="confidential.subheading"
       >
-        NDA engagements abstracted to protect confidentiality: no screenshots, repositories, or
-        identifying information are disclosed.
+        Proyectos bajo NDA resumidos para proteger la confidencialidad: sin capturas de pantalla,
+        repositorios ni información identificable.
       </p>
     </div>
 
@@ -101,7 +107,8 @@ const confidentialProjects: ConfidentialProject[] = [
             data-index={i}
             data-confidential-card
             tabindex="0"
-            aria-label={`Confidential project: ${project.industry}`}
+            aria-label={`Proyecto confidencial: ${project.industry}`}
+            data-i18n-aria={`confidential.${i}.card-aria`}
           >
             <span
               class="pointer-events-none absolute left-0 top-0 h-px w-full origin-left"
@@ -140,10 +147,10 @@ const confidentialProjects: ConfidentialProject[] = [
               style="background: var(--scarlet); color: var(--on-scarlet);"
             >
               <div>
-                <p class="font-display text-xs uppercase tracking-[0.28em] opacity-80">
-                  FILE {String(i + 1).padStart(2, '0')}
-                </p>
-                <h3 class="font-display mt-4 text-lg font-bold uppercase tracking-widest">
+                <h3
+                  class="font-display text-lg font-bold uppercase tracking-widest"
+                  data-i18n={`confidential.${i}.industry`}
+                >
                   {project.industry}
                 </h3>
               </div>
@@ -179,8 +186,9 @@ const confidentialProjects: ConfidentialProject[] = [
                 <span
                   class="font-display text-xs uppercase tracking-widest"
                   style="color: var(--scarlet-soft);"
+                  data-i18n="confidential.field.role"
                 >
-                  Role
+                  Rol
                 </span>
                 <p class="font-body mt-1" style="font-size: var(--text-sm); color: var(--paper);">
                   {project.role}
@@ -191,6 +199,7 @@ const confidentialProjects: ConfidentialProject[] = [
                 <span
                   class="font-display text-xs uppercase tracking-widest"
                   style="color: var(--scarlet-soft);"
+                  data-i18n="confidential.field.stack"
                 >
                   Stack
                 </span>
@@ -210,12 +219,14 @@ const confidentialProjects: ConfidentialProject[] = [
                 <span
                   class="font-display text-xs uppercase tracking-widest"
                   style="color: var(--scarlet-soft);"
+                  data-i18n="confidential.field.impact"
                 >
-                  Impact
+                  Impacto
                 </span>
                 <p
                   class="font-body mt-1 leading-relaxed"
                   style="font-size: var(--text-sm); color: color-mix(in srgb, var(--paper) 80%, transparent);"
+                  data-i18n={`confidential.${i}.impact`}
                 >
                   {project.impact}
                 </p>
@@ -229,10 +240,15 @@ const confidentialProjects: ConfidentialProject[] = [
                   <span
                     class="font-display text-xs uppercase tracking-widest"
                     style="color: var(--scarlet-soft);"
+                    data-i18n="confidential.field.duration"
                   >
-                    Duration
+                    Duración
                   </span>
-                  <p class="font-body mt-0.5 text-xs" style="color: var(--paper);">
+                  <p
+                    class="font-body mt-0.5 text-xs"
+                    style="color: var(--paper);"
+                    data-i18n={`confidential.${i}.duration`}
+                  >
                     {project.duration}
                   </p>
                 </div>
@@ -240,8 +256,9 @@ const confidentialProjects: ConfidentialProject[] = [
                   <span
                     class="font-display text-xs uppercase tracking-widest"
                     style="color: var(--scarlet-soft);"
+                    data-i18n="confidential.field.team"
                   >
-                    Team
+                    Equipo
                   </span>
                   <p class="font-body mt-0.5 text-xs" style="color: var(--paper);">
                     {project.teamSize}

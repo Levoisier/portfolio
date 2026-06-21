@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import LangSwitch from '../components/ui/LangSwitch.astro';
 
 interface Props {
   title?: string;
@@ -13,7 +14,7 @@ const {
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="es-419">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -129,6 +130,14 @@ const {
         </main>
       </div>
     </div>
+
+    <!-- Language switch UI — fixed pill outside smooth-wrapper -->
+    <LangSwitch />
+
+    <!-- i18n init — restores user's last language choice on page load -->
+    <script>
+      import '../scripts/i18n';
+    </script>
 
     <!-- GSAP ScrollTrigger controller — deferred so static hero content can paint first. -->
     <script>

@@ -276,14 +276,16 @@ const elements: Element[] = [
         <span
           class="font-display text-xs uppercase tracking-[0.3em]"
           style="color: var(--scarlet);"
+          data-i18n="skills.eyebrow"
         >
-          // Toolkit behind the builds
+          // El toolkit detrás de los builds
         </span>
         <h2
           class="font-display uppercase leading-none tracking-[0.2em] md:[writing-mode:vertical-rl] md:rotate-180"
           style="font-size: var(--text-3xl); color: var(--paper);"
+          data-i18n="skills.heading"
         >
-          The Reagents
+          Los Reactivos
         </h2>
       </div>
 
@@ -292,8 +294,10 @@ const elements: Element[] = [
         <p
           class="font-body mb-8 max-w-3xl leading-relaxed"
           style="font-size: var(--text-base); color: color-mix(in srgb, var(--paper) 70%, transparent);"
+          data-i18n="skills.description"
         >
-          Languages, frameworks, platforms, and testing tools I use to ship production work.
+          Lenguajes, frameworks, plataformas y herramientas de testing que uso para llevar proyectos
+          a producción.
         </p>
 
         <!-- Periodic table grid -->
@@ -301,7 +305,8 @@ const elements: Element[] = [
           id="skills-grid"
           class="flex flex-wrap justify-center gap-3 md:justify-start"
           role="list"
-          aria-label="Technology stack"
+          aria-label="Stack tecnológico"
+          data-i18n-aria="skills.grid-aria"
         >
           {
             elements.map((el) => (
@@ -368,26 +373,35 @@ const elements: Element[] = [
     <!-- Category legend -->
     <div
       class="mt-10 flex flex-wrap justify-center gap-4 md:justify-start"
-      aria-label="Category legend"
+      aria-label="Leyenda de categorías"
+      data-i18n-aria="skills.legend-aria"
     >
       {
         [
-          { label: 'Languages', token: 'var(--cat-languages)' },
-          { label: 'Frontend', token: 'var(--cat-frontend)' },
-          { label: 'Backend', token: 'var(--cat-backend)' },
-          { label: 'Data/Auth', token: 'var(--cat-data-auth)' },
-          { label: 'DevOps', token: 'var(--cat-devops)' },
-          { label: 'AI', token: 'var(--cat-ai)' },
-          { label: 'Enterprise', token: 'var(--cat-enterprise)' },
-          { label: 'Testing', token: 'var(--cat-testing)' },
-        ].map(({ label, token }) => (
+          { label: 'Lenguajes', i18nKey: 'skills.legend.languages', token: 'var(--cat-languages)' },
+          { label: 'Frontend', i18nKey: 'skills.legend.frontend', token: 'var(--cat-frontend)' },
+          { label: 'Backend', i18nKey: 'skills.legend.backend', token: 'var(--cat-backend)' },
+          {
+            label: 'Datos/Auth',
+            i18nKey: 'skills.legend.data-auth',
+            token: 'var(--cat-data-auth)',
+          },
+          { label: 'DevOps', i18nKey: 'skills.legend.devops', token: 'var(--cat-devops)' },
+          { label: 'IA', i18nKey: 'skills.legend.ai', token: 'var(--cat-ai)' },
+          {
+            label: 'Empresarial',
+            i18nKey: 'skills.legend.enterprise',
+            token: 'var(--cat-enterprise)',
+          },
+          { label: 'Testing', i18nKey: 'skills.legend.testing', token: 'var(--cat-testing)' },
+        ].map(({ label, i18nKey, token }) => (
           <span class="font-body flex items-center gap-2 text-xs" style={`color: var(--paper);`}>
             <span
               class="inline-block h-2.5 w-2.5 rounded-sm"
               style={`background-color: ${token};`}
               aria-hidden="true"
             />
-            {label}
+            <span data-i18n={i18nKey}>{label}</span>
           </span>
         ))
       }
