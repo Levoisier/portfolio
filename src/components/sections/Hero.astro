@@ -2,14 +2,24 @@
 /* HERO SECTION
    The panda + name reveal is the reference scene (see src/scripts/scroll/scenes/hero.ts).
    All elements start opacity:0; the scene drives the entrance animation.
+
+   Layout (v4 Phase 26):
+     · Mobile: centered vertical stack (panda over copy) — unchanged.
+     · Desktop (lg+): editorial asymmetric split — panda anchored LEFT, the
+       premise/name/role block RIGHT-aligned in the right column, on the
+       liquid-glass surface, with deliberate negative space. Pure CSS layout
+       (grid placement) — NOT a GSAP move — so the LCP panda paints immediately
+       and its scroll-0 frame equals the static state.
    Structure:
      · #hero-panda        — centerpiece (panda-hero.png; LCP image remains untouched)
-     · #hero-reaction-glow — non-LCP flask reaction layer
+     · #hero-reaction-glow — non-LCP flask reaction layer (child of #hero-panda)
      · #hero-premise      — story opener
      · #hero-name         — "Cristian Zapata Cartagena" (chars split for stagger)
      · #hero-role         — role line
      · #hero-scroll-hint  — animated chevron
 */
+
+import GlassSurface from '../ui/GlassSurface.astro';
 ---
 
 <section
@@ -17,69 +27,80 @@
   class="portfolio-section relative flex min-h-screen flex-col items-center justify-center overflow-hidden section-pad"
   data-scene="hero"
 >
-  <!-- Panda centerpiece -->
   <div
-    id="hero-panda"
-    class="relative z-10 mb-8 flex items-center justify-center"
-    aria-hidden="true"
+    class="mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-8 lg:grid lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-16"
   >
-    <picture>
-      <source media="(max-width: 767px)" srcset="/media/panda/generated/panda-hero-320.webp" />
-      <source media="(min-width: 768px)" srcset="/media/panda/generated/panda-hero-800.webp" />
-      <img
-        id="panda-body"
-        src="/media/panda/panda-hero.png"
-        alt=""
-        width="400"
-        height="500"
-        class="aspect-[4/5] w-[60vw] max-w-[400px] select-none object-contain"
-        loading="eager"
-        decoding="sync"
-        fetchpriority="high"
-      />
-    </picture>
+    <!-- Panda centerpiece — left column on desktop -->
     <div
-      id="hero-reaction-glow"
-      class="pointer-events-none absolute left-[54%] top-[44%] h-[18%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full"
-      style="
-        opacity: 0;
-        background: radial-gradient(circle, var(--scarlet-soft), var(--scarlet-dim) 48%, transparent 72%);
-        filter: blur(18px);
-        mix-blend-mode: screen;
-        will-change: opacity, transform;
-      "
+      id="hero-panda"
+      class="relative z-10 flex items-center justify-center lg:justify-start"
+      aria-hidden="true"
     >
+      <picture>
+        <source media="(max-width: 767px)" srcset="/media/panda/generated/panda-hero-320.webp" />
+        <source media="(min-width: 768px)" srcset="/media/panda/generated/panda-hero-800.webp" />
+        <img
+          id="panda-body"
+          src="/media/panda/panda-hero.png"
+          alt=""
+          width="400"
+          height="500"
+          class="aspect-[4/5] w-[60vw] max-w-[400px] select-none object-contain"
+          loading="eager"
+          decoding="sync"
+          fetchpriority="high"
+        />
+      </picture>
+      <div
+        id="hero-reaction-glow"
+        class="pointer-events-none absolute left-[54%] top-[44%] h-[18%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style="
+          opacity: 0;
+          background: radial-gradient(circle, var(--scarlet-soft), var(--scarlet-dim) 48%, transparent 72%);
+          filter: blur(18px);
+          mix-blend-mode: screen;
+          will-change: opacity, transform;
+        "
+      >
+      </div>
+    </div>
+
+    <!-- Copy block — right column on desktop, right-aligned over the glass -->
+    <div class="flex w-full flex-col items-center lg:items-end">
+      <GlassSurface
+        class="w-full px-6 py-7 text-center lg:w-auto lg:max-w-xl lg:px-9 lg:py-9 lg:text-right"
+      >
+        <p
+          id="hero-premise"
+          class="font-display mb-4 uppercase tracking-[0.18em] sm:tracking-[0.24em]"
+          style="font-size: var(--text-sm); color: var(--paper); opacity: 0;"
+          data-i18n="hero.premise"
+        >
+          Conoce un poco de mi trabajo
+        </p>
+
+        <!-- Name — characters are split by the hero scene for stagger animation -->
+        <h1
+          id="hero-name"
+          class="font-display mx-auto max-w-[12ch] leading-[0.96] tracking-normal sm:max-w-[16ch] lg:ml-auto lg:mr-0 lg:max-w-none"
+          style="font-size: var(--text-hero); color: var(--paper);"
+          aria-label="Cristian Zapata Cartagena"
+        >
+          Cristian Zapata Cartagena
+        </h1>
+
+        <!-- Role line -->
+        <p
+          id="hero-role"
+          class="font-body mt-4 uppercase tracking-widest"
+          style="font-size: var(--text-lg); color: var(--scarlet); opacity: 0;"
+          data-i18n="hero.role"
+        >
+          Full Stack Developer &amp; Ingeniero Químico
+        </p>
+      </GlassSurface>
     </div>
   </div>
-
-  <p
-    id="hero-premise"
-    class="font-display mb-4 max-w-3xl px-4 text-center uppercase tracking-[0.18em] sm:tracking-[0.24em]"
-    style="font-size: var(--text-sm); color: var(--paper); opacity: 0;"
-    data-i18n="hero.premise"
-  >
-    Conoce un poco de mi trabajo
-  </p>
-
-  <!-- Name — characters are split by the hero scene for stagger animation -->
-  <h1
-    id="hero-name"
-    class="font-display max-w-[12ch] text-center leading-[0.96] tracking-normal sm:max-w-[16ch] md:max-w-none"
-    style="font-size: var(--text-hero); color: var(--paper);"
-    aria-label="Cristian Zapata Cartagena"
-  >
-    Cristian Zapata Cartagena
-  </h1>
-
-  <!-- Role line -->
-  <p
-    id="hero-role"
-    class="font-body mt-4 text-center uppercase tracking-widest"
-    style="font-size: var(--text-lg); color: var(--scarlet); opacity: 0;"
-    data-i18n="hero.role"
-  >
-    Full Stack Developer &amp; Ingeniero Químico
-  </p>
 
   <!-- Scroll hint -->
   <div

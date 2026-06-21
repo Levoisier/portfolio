@@ -102,7 +102,7 @@ Each phase ends with a **Manual test (dev)** block — the exact things to check
 
 ## Phase 26 — Hero: de-center (panda left / text right)
 
-### [ ] feat(hero): desktop asymmetric split + glass text block
+### [x] feat(hero): desktop asymmetric split + glass text block
 
 **Acceptance criteria:**
 
