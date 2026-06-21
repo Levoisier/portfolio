@@ -71,7 +71,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'contact.kicker': 'Construyamos algo',
     'contact.heading': 'Hablemos',
     'contact.body':
-      'Trae un problema claro, y puedo ayudarte a convertirlo en un build listo para producción.',
+      'Trae un problema y te ayudo a convertirlo en la próxima oportunidad de crecimiento.',
     'contact.email-aria': 'Enviar email a Cristian',
     'contact.github-aria': 'Perfil de GitHub (abre en nueva pestaña)',
     'contact.whatsapp-aria': 'Escribirle a Cristian por WhatsApp (abre en nueva pestaña)',
