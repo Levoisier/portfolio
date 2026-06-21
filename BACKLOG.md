@@ -125,7 +125,7 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 
 ## Phase 7 — Contact Section
 
-### [ ] feat(contact): contact section animation + flourish
+### [x] feat(contact): contact section animation + flourish
 
 **Acceptance criteria:**
 

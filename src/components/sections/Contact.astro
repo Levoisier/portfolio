@@ -15,13 +15,18 @@
   <!-- Light-leak texture overlay -->
   <div
     class="pointer-events-none absolute inset-0 opacity-20 mix-blend-screen"
+    data-contact-lightleak
     aria-hidden="true"
     style="background-image: url('/media/texture/lightleak.webp'); background-size: cover; background-position: center;"
   >
   </div>
 
   <!-- Panda wave accent -->
-  <div class="pointer-events-none absolute bottom-0 right-0 opacity-30" aria-hidden="true">
+  <div
+    class="pointer-events-none absolute bottom-0 right-0 opacity-30"
+    data-contact-panda
+    aria-hidden="true"
+  >
     <img
       src="/media/panda/panda-wave.png"
       alt=""
@@ -35,6 +40,7 @@
   <div class="relative z-10 mx-auto max-w-3xl text-center">
     <span
       class="font-display mb-4 block text-xs uppercase tracking-widest"
+      data-contact-kicker
       style="color: var(--scarlet);"
     >
       Let&apos;s build something
@@ -42,7 +48,9 @@
 
     <h2
       class="font-display mb-8 leading-tight"
+      data-contact-heading
       style="font-size: var(--text-3xl); color: var(--paper);"
+      aria-label="Get in touch"
     >
       Get in touch
     </h2>
@@ -50,7 +58,7 @@
     <!-- Contact links -->
     <nav aria-label="Contact links">
       <ul class="flex flex-col items-center gap-6 md:flex-row md:justify-center">
-        <li>
+        <li data-contact-link>
           <a
             href="mailto:c.zapata.iq@gmail.com"
             class="group font-display flex items-center gap-3 transition-colors"
@@ -88,7 +96,7 @@
           </a>
         </li>
 
-        <li>
+        <li data-contact-link>
           <a
             href="https://github.com/levoisier"
             target="_blank"
@@ -115,7 +123,7 @@
           </a>
         </li>
 
-        <li>
+        <li data-contact-link>
           <a
             href="https://linkedin.com/in/levoisier"
             target="_blank"
@@ -145,7 +153,11 @@
     </nav>
 
     <!-- Closing flourish -->
-    <div class="mt-16 border-t pt-8" style="border-color: var(--glass-border);">
+    <div
+      class="mt-16 border-t pt-8"
+      data-contact-closing
+      style="border-color: var(--glass-border);"
+    >
       <p
         class="font-display text-xs uppercase tracking-widest"
         style="color: color-mix(in srgb, var(--paper) 30%, transparent);"

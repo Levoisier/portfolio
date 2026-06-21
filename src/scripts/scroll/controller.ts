@@ -23,7 +23,7 @@ import backdropSceneFactory from './scenes/backdrop';
 import skillsSceneFactory from './scenes/skills';
 import projectsSceneFactory from './scenes/projects';
 import confidentialSceneFactory from './scenes/confidential';
-import revealSceneFactory from './scenes/revealPlaceholder';
+import contactSceneFactory from './scenes/contact';
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 // key = value of data-scene attribute on the section element
@@ -33,7 +33,7 @@ const SCENE_REGISTRY: Record<string, SceneFactory> = {
   skills: skillsSceneFactory,
   projects: projectsSceneFactory,
   confidential: confidentialSceneFactory,
-  contact: revealSceneFactory,
+  contact: contactSceneFactory,
 };
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
