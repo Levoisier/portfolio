@@ -19,6 +19,18 @@ Cristian generates final assets with **Nano Banana**.
 | `/media/panda/panda-coding.png` | 1600×2000  | Companion builder pose                                         | Y           | final  |
 | `/media/panda/panda-wave.png`   | 1600×2000  | Contact accent + companion goodbye pose                        | Y           | final  |
 
+### Pose expansion — "Classified Investigation" sequence (v5)
+
+5-frame timelapse (approach → inspect → read → stamp → shush). Each frame doubles as a Confidential-section pose (retiring `panda-head`) and as a looping hero GIF/sprite frame. Generation prompts live in `BACKLOG.md` (`# v5`). Keep identical character scale/lighting/anchor across all five so they sequence cleanly.
+
+| Path                             | Dimensions | Purpose / Scene                            | Transparent | Status  |
+| -------------------------------- | ---------- | ------------------------------------------ | ----------- | ------- |
+| `/media/panda/panda-peek.png`    | 1600×2000  | Frame 1 — approach (stealth peek)          | Y           | pending |
+| `/media/panda/panda-magnify.png` | 1600×2000  | Frame 2 — inspect (magnifying glass)       | Y           | pending |
+| `/media/panda/panda-files.png`   | 1600×2000  | Frame 3 — read dossier (Confidential pose) | Y           | pending |
+| `/media/panda/panda-stamp.png`   | 1600×2000  | Frame 4 — stamp CLASSIFIED                 | Y           | pending |
+| `/media/panda/panda-shush.png`   | 1600×2000  | Frame 5 — shush (loop-back / resting)      | Y           | pending |
+
 ### Generated Panda Derivatives
 
 These files are derived from canonical Panda sources for responsive delivery. Regenerate them after replacing the matching source asset.

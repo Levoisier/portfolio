@@ -220,3 +220,87 @@ Each phase ends with a **Manual test (dev)** block — the exact things to check
 **Manual test (dev):** toggle reduced motion and scroll end-to-end — glass static, companion a single pose, everything instant and readable; resize 375→2560 with no sideways scroll or jumps; the page reads as one impressive, legible story.
 
 **Files:** various, `LESSONS.md`, `ARCHITECTURE.md`, `ASSETS.md`, `BACKLOG.md`
+
+---
+
+# v5 — Panda pose library & hero timelapse
+
+**Goal:** enrich the panda mascot with a coherent **5-frame "Classified Investigation" sequence**. It serves two purposes at once: (1) each frame is a stronger pose for the **Confidential** section — retiring the `panda-head` brightness-0 silhouette; (2) the five frames play in order as a **looping hero GIF/sprite timelapse** with logical movement (approach → inspect → read → stamp → shush).
+
+**Who generates these:** Codex (image-capable). Cristian reviews. Drop each finished PNG at the exact path below — zero code changes to place the file (swap contract). Wiring the poses into the site is a **separate follow-up** (see end); generation comes first so nothing references a missing path.
+
+## Shared character bible (paste into EVERY pose prompt)
+
+> The same friendly cartoon **giant panda mascot** used across this portfolio: rounded chubby body, clean black-and-white fur, large expressive dark eyes, simple confident proportions. **Flat modern vector-illustration style** with soft cel shading and a subtle rim light; no outline sketchiness, no 3D render, no photorealism. Small props may use a single **scarlet accent (#E11D2A)**; everything else stays black/white/grey. **Fully transparent background (alpha PNG), no ground shadow, no text, no watermark.**
+
+## Timelapse alignment rules (paste into EVERY pose prompt)
+
+> This is **frame N of 5** in an animation sequence. Keep the character **identical in scale, proportion, line weight, palette, and lighting** across all frames. **Anchor the panda at the same position and size** within a 1600×2000 (4:5 portrait) canvas — feet/base at the same baseline, head at the same height — so the five frames sequence cleanly with **only the pose and props changing**. Face direction as specified. Center the body horizontally.
+
+---
+
+## Pose 1 — `panda-peek`
+
+### [ ] chore(assets): generate `/media/panda/panda-peek.png`
+
+**Prompt (prepend the character bible + alignment rules):**
+
+> **Frame 1 of 5 — "approach."** The panda leans in cautiously from the right, peeking as if rounding a corner: weight on one foot, one paw raised near its mouth, eyes wide and curious glancing toward the viewer's left. Body slightly crouched, sneaky/stealthy body language. A faint scarlet "CONFIDENTIAL" tag clipped to its chest is allowed as the only accent. Facing 3/4 left.
+
+**Specs:** 1600×2000, transparent PNG, 4:5. **Path:** `/media/panda/panda-peek.png`. Add the ASSETS.md row (status `pending` → `final` once delivered).
+
+---
+
+## Pose 2 — `panda-magnify`
+
+### [ ] chore(assets): generate `/media/panda/panda-magnify.png`
+
+**Prompt (prepend the character bible + alignment rules):**
+
+> **Frame 2 of 5 — "inspect."** The panda stands upright holding a **magnifying glass** up to one eye with one paw, inspecting something off-frame; the lens rim is scarlet, the eye behind it comically enlarged. Other paw on hip. Focused, detective expression. (This pose intentionally echoes the site's magnifier-loupe interaction.) Facing 3/4 left.
+
+**Specs:** 1600×2000, transparent PNG, 4:5. **Path:** `/media/panda/panda-magnify.png`. Add the ASSETS.md row.
+
+---
+
+## Pose 3 — `panda-files`
+
+### [ ] chore(assets): generate `/media/panda/panda-files.png`
+
+**Prompt (prepend the character bible + alignment rules):**
+
+> **Frame 3 of 5 — "read."** The panda holds an open **manila dossier folder** in both paws, reading intently, brow furrowed. The visible page shows abstract **redaction bars** (solid black/scarlet rectangles over fake lines) — NO real or legible text, NO logos. A small scarlet "TOP SECRET" band on the folder edge. Facing the viewer, slightly downward gaze into the folder.
+
+**Specs:** 1600×2000, transparent PNG, 4:5. **Path:** `/media/panda/panda-files.png`. Add the ASSETS.md row. (Replaces `panda-head` as the Confidential companion pose.)
+
+---
+
+## Pose 4 — `panda-stamp`
+
+### [ ] chore(assets): generate `/media/panda/panda-stamp.png`
+
+**Prompt (prepend the character bible + alignment rules):**
+
+> **Frame 4 of 5 — "stamp."** Mid-action: the panda swings a **rubber stamp** down onto the dossier (now on a surface in front of it), one arm raised/bent at the elbow at the top of the stamping motion, a small scarlet ink "✓"/"CLASSIFIED" mark implied beneath (abstract, no legible text). Determined, satisfied expression, slight lean into the motion. Facing 3/4 right.
+
+**Specs:** 1600×2000, transparent PNG, 4:5. **Path:** `/media/panda/panda-stamp.png`. Add the ASSETS.md row.
+
+---
+
+## Pose 5 — `panda-shush`
+
+### [ ] chore(assets): generate `/media/panda/panda-shush.png`
+
+**Prompt (prepend the character bible + alignment rules):**
+
+> **Frame 5 of 5 — "secret kept."** The panda stands relaxed facing the viewer, one paw raised with a single claw/finger to its lips in a **"shh" gesture**, a knowing wink/half-smile. Calm, confident, conspiratorial. This is the resting/loop-back frame, so the silhouette should sit comfortably next to Frame 1. Facing front.
+
+**Specs:** 1600×2000, transparent PNG, 4:5. **Path:** `/media/panda/panda-shush.png`. Add the ASSETS.md row.
+
+---
+
+## Follow-up (after the 5 PNGs land — do NOT do until assets exist)
+
+- **Generate derivatives** if any pose is used as an LCP/hero element (per ASSETS.md derivative protocol).
+- **Confidential rewire:** swap the companion's Confidential reaction from the `panda-head` brightness-0 silhouette to `panda-files` (with `panda-peek` on arrival); remove the `[data-companion-pose="head"]` image + its `brightness(0)` CSS. Mark `panda-head` unused again in ASSETS.md.
+- **Hero timelapse:** wire the 5 frames as a looping sequence (sprite/`<canvas>` or pre-baked GIF/APNG/`<video>`), desktop-gated, reduced-motion = a single static frame, and **never on the LCP `#panda-body`** (orbit a sibling element, per the LCP guard). New BACKLOG phase to be written then.
