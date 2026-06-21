@@ -173,7 +173,7 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 
 ## Phase 9 — Reduced-Motion Audit
 
-### [ ] fix(a11y): reduced-motion global audit
+### [x] fix(a11y): reduced-motion global audit
 
 **Acceptance criteria:**
 
