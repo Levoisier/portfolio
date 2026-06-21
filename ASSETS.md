@@ -46,14 +46,14 @@ These files are derived from canonical Panda sources for responsive delivery. Re
 | Path                               | Dimensions | Purpose / Scene                                    | Transparent | Status |
 | ---------------------------------- | ---------- | -------------------------------------------------- | ----------- | ------ |
 | `/media/lab/flask-erlenmeyer.webp` | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
-| `/media/lab/flask-round.webp`      | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
+| `/media/lab/flask-round.webp`      | 1200×1200  | Skills reagent-shelf background accent             | Y           | final  |
 | `/media/lab/beaker-reaction.webp`  | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
 | `/media/lab/molecule-a.webp`       | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
 | `/media/lab/molecule-b.webp`       | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
 
-The lab assets are kept on disk but **not placed in the page** right now — the
-Phase 13/14 placements were removed (poorly positioned). They'll be re-introduced
-intentionally as part of the v3 narrative/character pass.
+Most lab assets are kept on disk but **not placed in the page** right now — the
+Phase 13/14 placements were removed (poorly positioned). v3 re-introduces only
+deliberate, documented accents.
 
 ## Textures
 

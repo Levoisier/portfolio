@@ -158,7 +158,7 @@ Each phase below ends with a **Manual test (dev)** block — the exact things to
 
 ## Phase 22 — Stack (periodic table) refresh, below Confidential
 
-### [ ] feat(skills): refresh the reagent stack in its new position
+### [x] feat(skills): refresh the reagent stack in its new position
 
 **Acceptance criteria:**
 
