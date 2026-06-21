@@ -120,3 +120,103 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Kept the hero section paintable before controller startup, stopped touching the LCP image in the normal animation path, deferred non-critical decorative media to scene hooks, and served small WebP derivatives via `srcset`.
 
 **Don't repeat:** Treat the LCP element as critical HTML: reserve its dimensions, preload the selected source, and avoid startup opacity/transform writes on that element.
+
+---
+
+### [2026-06-21] ScrollSmoother: modern versions use a relative wrapper, not a fixed one
+
+**Context:** Phase 11 — integrating GSAP ScrollSmoother and verifying it in a headless browser.
+
+**Problem/Dead-end:** Older ScrollSmoother docs/tutorials describe a `position: fixed; overflow: hidden` `#smooth-wrapper`, so I expected to assert that. In gsap 3.15 the active smoother instead leaves the wrapper effectively `position: relative` and writes inline styles like `box-sizing: border-box; width: 100%; overflow: visible` to `#smooth-content`. Asserting the old fixed-wrapper shape would have produced a false "smoother not working" reading. Headless Chrome also does **not** default to `prefers-reduced-motion: reduce` here, but it needed `set media ... reduced-motion` (the CLI verb is `set media`, not `media`) to emulate it.
+
+**Fix/Decision:** Verify ScrollSmoother is live by (a) the presence of its inline styles on `#smooth-content`, and (b) `scroll:progress` advancing as you scroll — not by a hardcoded wrapper `position`. Confirmed the reduced-motion branch by asserting **no** inline styles appear on wrapper/content (create() skipped) while all `[data-scene]` stay opacity 1. Also removed CSS `scroll-behavior: smooth` (set to `auto`) because it fights ScrollSmoother for control of scrolling.
+
+**Don't repeat:** Don't gate ScrollSmoother verification on a specific wrapper `position`; check its content inline-styles + a live progress signal. CSS `scroll-behavior: smooth` must not coexist with ScrollSmoother.
+
+---
+
+### [2026-06-21] Two scroll drivers on one stage: split them onto independent transform channels
+
+**Context:** Phase 12 — the hero pinned depth intro must drive the backdrop stage during the pin, while the global backdrop parallax (backdrop scene, `scroll:progress`) drives it for the rest of the page. Acceptance required "no double-driving and no positional jump at the handoff."
+
+**Problem/Dead-end:** Both drivers want to transform the same stage layers. If hero and backdrop both write `x`/`y` to `#stage-particles`, the last writer each frame wins and the handoff jumps. Suspending the backdrop during the pin and resuming it afterward also jumps, because the backdrop computes an absolute position from page progress that won't match the hero's end-state.
+
+**Fix/Decision:** Gave each stage layer an inner `.stage-depth` wrapper. The backdrop scene drives the OUTER `#stage-*` (parallax `x`/`y` + atmosphere opacity); the hero pin drives the INNER `.stage-depth` (depth scale/translate). Two independent transform contexts compose multiplicatively, so neither overwrites the other and there is nothing to hand off — the depth channel stops advancing when the pin releases while the parallax channel keeps going, seamlessly. Every depth tween uses `fromTo()` so scrub progress 0 = identity = the static hero, and `panda-body` (LCP) is never touched. Also: `loadHeroHead` must use `overwrite: 'auto'` (not `true`) — `true` would kill the pinned depth tween that shares the `#panda-head` target.
+
+**Don't repeat:** When two scroll systems must animate the same element, give each its own transform channel (nested element) instead of time-slicing one channel between them. And never `overwrite: true` a target that another (scrubbed) tween also animates.
+
+---
+
+### [2026-06-21] ScrollSmoother data-speed gives the reduced-motion fallback for free
+
+**Context:** Phase 13 — wiring the lab-asset continuity thread (molecules/flasks) as decorative parallax across the page.
+
+**Problem/Dead-end:** I expected to need a scene + per-frame math + an explicit `prefers-reduced-motion` branch to stop the drift, like the backdrop scene does.
+
+**Fix/Decision:** Used ScrollSmoother `data-speed` attributes (enabled by `effects: true` from Phase 11) on plain `<img>` decor instead. Because Phase 11 skips `ScrollSmoother.create()` entirely under reduced motion, the `data-speed` attributes are simply never activated — the decor sits static at its CSS position with no extra code. So this phase needed **no JS scene at all**: just markup + Tailwind. Placements are `position: absolute` (no CLS), `hidden md:block` + `loading="lazy"` (not fetched on mobile, protects the LCP budget), inside `overflow-hidden` sections placed before a `relative` content wrapper so content paints on top (the existing `projects-accent` / `blueprint-grid` pattern).
+
+**Don't repeat:** For decorative scroll drift, reach for `data-speed`/`data-lag` before writing a scene — it's less code and its reduced-motion fallback is automatic. Only write per-frame scene math when an element must be driven by something other than its own scroll position (e.g. the fixed backdrop stage).
+
+---
+
+### [2026-06-21] Coexisting scrub + hover on the same tiles: split by property AND element
+
+**Context:** Phase 14 — the skills tiles assemble on a scrubbed reveal, but must keep the v1 hover (active scale 1.08, neighbour dim to 70%, badge, bar).
+
+**Problem/Dead-end:** Both behaviours want to animate the tiles. The hover used `overwrite: true`, which kills _all_ other tweens of the target — so the first hover would detach the scrubbed assemble tween from its ScrollTrigger (it then never reverses on scroll-back). Putting both on the same property (tile opacity) also fights.
+
+**Fix/Decision:** Gave each behaviour its own channel. Assemble drives the **tile** transform (y/scale/rotate) + the **card** opacity (fade-in). Hover drives the **card** scale + the **tile** opacity (dim) + badge + bar. No element/property pair is touched by both. Then switched the hover tweens from `overwrite: true` to `overwrite: 'auto'` so they only override the exact conflicting property and leave the scrub tween intact. The assemble's scrub range ends (`top 35%`) well before the section settles for interaction, so the two effectively never run at the same instant anyway.
+
+**Don't repeat:** When two animation systems share elements, separate them by element _and_ property and prefer `overwrite: 'auto'`. `overwrite: true` is a footgun next to scrubbed/ScrollTrigger-bound tweens.
+
+---
+
+### [2026-06-21] Horizontal pinned gallery: gate the flex layout behind a JS class
+
+**Context:** Phase 15 — the Projects section becomes a desktop horizontal pinned gallery (pin + scrub the card track sideways), but must stay a reachable vertical stack on tablet/mobile and under reduced motion.
+
+**Problem/Dead-end:** If the horizontal layout (`flex-nowrap` with cards wider than the viewport) lives in the markup/CSS, then under reduced motion / no-JS — where the pin+scrub never runs — the off-screen cards are clipped by the section's `overflow-hidden` and become permanently unreachable.
+
+**Fix/Decision:** Kept the default layout the vertical grid stack (`grid md:grid-cols-2 lg:grid-cols-3`). The horizontal track is opt-in via an `.is-horizontal` class the projects scene adds **only** inside its `(min-width: 1024px)` `matchMedia` branch (and removes on cleanup). So reduced-motion/no-JS always get the safe stack. For the pin: animate the track's `x` to `-(scrollWidth - clientWidth)` via a **function** with `invalidateOnRefresh: true` and a function-based `end`, so the travel distance recomputes on resize and the last card is never clipped.
+
+**Don't repeat:** Any layout that only works because JS is driving it (horizontal scroll, pinned tracks) must be applied by that JS, not baked into static CSS — otherwise the no-JS/reduced-motion path traps content.
+
+### [2026-06-21] Hero story beat: animate a sibling, not the LCP panda
+
+**Context:** Phase 18 needed to remove the hero panda-to-wave crossfade but keep a subtle flask "reaction begins" beat during the pinned scrub.
+
+**Problem/Dead-end:** Reusing the old scrub target would still write opacity or transform to `#panda-body`, which is the LCP element and must paint exactly like the static hero at scroll 0.
+
+**Fix/Decision:** Removed the hero `panda-wave` overlay entirely and added a separate `#hero-reaction-glow` layer positioned over the flask. The scrub intensifies only that overlay plus the existing backdrop depth layers; `#panda-body` is not targeted by GSAP at all.
+
+**Don't repeat:** Hero character reactions can orbit the LCP image, but they must not animate the LCP image itself.
+
+### [2026-06-21] Projects rewrite: keep scrub and hover on separate properties
+
+**Context:** Phase 19 replaced the horizontal project cards with a pinned editorial experiment log and kept the panda-coding accent reactive.
+
+**Problem/Dead-end:** The first scene draft let the pinned timeline and the generic section `progress()` hook both write `y` to the panda accent. That repeats the two-scroll-drivers problem from the backdrop work at a smaller scale.
+
+**Fix/Decision:** Let the pinned timeline own the accent's scroll `y` motion, and let hover/focus reactions touch only `x` and `rotation`. The generic `progress()` hook intentionally does no work for this scene.
+
+**Don't repeat:** Even for decorative accents, one element/property pair should have one driver; use separate properties for hover reactions.
+
+### [2026-06-21] Fixed scenes need an inner animation target
+
+**Context:** Phase 20 added a fixed panda companion as a `[data-scene]` element outside the ScrollSmoother wrapper.
+
+**Problem/Dead-end:** The scroll controller calls `scene.init(el)` and then immediately sets the `[data-scene]` element opacity to 1 to clear the global FOUC guard. If the companion scene also uses that same outer element for its own fade state, the controller can reveal it before the companion's section logic runs.
+
+**Fix/Decision:** Kept the outer `#panda-companion` as the fixed scene shell and added an inner `[data-companion-stage]` for all scene-owned opacity, transform, cursor tracking, and pose cross-fades.
+
+**Don't repeat:** For any persistent fixed scene, let the controller own the outer scene shell and animate an inner child.
+
+### [2026-06-21] v3 audit: browser-only metrics need the human dev server
+
+**Context:** Phase 24 required a reduced-motion, layout, accessibility, and performance audit after the v3 narrative pass.
+
+**Problem/Dead-end:** This session explicitly prohibited `agent-browser` and starting dev/preview servers, so real Lighthouse scores, CLS, and horizontal-scroll measurements could not be collected from a rendered page.
+
+**Fix/Decision:** Completed static audits instead: removed the remaining raw blueprint-grid color into `--blueprint-grid-line`, verified old project-gallery hooks were gone, confirmed reduced-motion branches guard the v3 scenes, updated architecture docs, and ran `pnpm verify`. Lighthouse numbers remain a manual follow-up in the human's running dev environment.
+
+**Don't repeat:** When browser tools are disallowed, record the audit boundary clearly and do not invent Lighthouse or CLS numbers.

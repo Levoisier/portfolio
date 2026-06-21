@@ -6,14 +6,74 @@ type ConfidentialRecord = {
   content: HTMLElement | null;
   scanLine: HTMLElement | null;
   corners: HTMLElement[];
+  sheens: HTMLElement[];
 };
 
 const confidentialScene = (el: Element): Scene => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const cards: ConfidentialRecord[] = [];
+  const cleanup: Array<() => void> = [];
   let entered = false;
   let gridPulse: gsap.core.Tween | null = null;
   let shimmer: gsap.core.Tween | null = null;
+
+  function bind<K extends keyof HTMLElementEventMap>(
+    target: HTMLElement,
+    type: K,
+    handler: (event: HTMLElementEventMap[K]) => void
+  ): void {
+    target.addEventListener(type, handler);
+    cleanup.push(() => target.removeEventListener(type, handler));
+  }
+
+  function reactToFile(record: ConfidentialRecord, active: boolean): void {
+    gsap.to(record.card, {
+      borderColor: active ? 'var(--scarlet)' : 'var(--glass-border)',
+      duration: 0.22,
+      ease: 'expo.out',
+      overwrite: 'auto',
+    });
+
+    if (prefersReducedMotion) return;
+
+    gsap.to(record.corners, {
+      opacity: active ? 1 : 0.75,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 0.2,
+      ease: 'expo.out',
+      overwrite: 'auto',
+    });
+
+    if (active && record.scanLine) {
+      const cardHeight = record.card.getBoundingClientRect().height;
+      gsap.fromTo(
+        record.scanLine,
+        { opacity: 1, y: 0 },
+        {
+          opacity: 0,
+          y: cardHeight,
+          duration: 0.42,
+          ease: 'none',
+          overwrite: 'auto',
+        }
+      );
+    }
+
+    if (active) {
+      gsap.fromTo(
+        record.sheens,
+        { xPercent: -120, opacity: 0.35 },
+        {
+          xPercent: 260,
+          duration: 0.62,
+          ease: 'none',
+          stagger: 0.06,
+          overwrite: 'auto',
+        }
+      );
+    }
+  }
 
   return {
     init() {
@@ -21,12 +81,19 @@ const confidentialScene = (el: Element): Scene => {
       const sheens = el.querySelectorAll<HTMLElement>('[data-redaction-sheen]');
 
       el.querySelectorAll<HTMLElement>('[data-confidential-card]').forEach((card) => {
-        cards.push({
+        const record: ConfidentialRecord = {
           card,
           content: card.querySelector<HTMLElement>('[data-confidential-content]'),
           scanLine: card.querySelector<HTMLElement>('[data-scan-line]'),
           corners: Array.from(card.querySelectorAll<HTMLElement>('[data-corner-accent]')),
-        });
+          sheens: Array.from(card.querySelectorAll<HTMLElement>('[data-redaction-sheen]')),
+        };
+        cards.push(record);
+
+        bind(card, 'mouseenter', () => reactToFile(record, true));
+        bind(card, 'mouseleave', () => reactToFile(record, false));
+        bind(card, 'focusin', () => reactToFile(record, true));
+        bind(card, 'focusout', () => reactToFile(record, false));
       });
 
       if (prefersReducedMotion) {
@@ -53,7 +120,7 @@ const confidentialScene = (el: Element): Scene => {
       );
       gsap.set(
         cards.map((record) => record.content),
-        { opacity: 0 }
+        { opacity: 1 }
       );
       gsap.set(
         cards.map((record) => record.scanLine),
@@ -100,7 +167,7 @@ const confidentialScene = (el: Element): Scene => {
         tl.set(record.scanLine, { opacity: 1, y: 0 })
           .to(record.scanLine, { y: cardHeight, duration: 0.6, ease: 'none' })
           .set(record.scanLine, { opacity: 0 })
-          .to(record.content, { opacity: 1, duration: 0.35 }, '-=0.1')
+          .fromTo(record.content, { opacity: 0.72 }, { opacity: 1, duration: 0.35 }, '-=0.1')
           .to(
             record.corners,
             {
@@ -124,12 +191,16 @@ const confidentialScene = (el: Element): Scene => {
     },
 
     destroy() {
+      cleanup.splice(0).forEach((dispose) => dispose());
       gridPulse?.kill();
       shimmer?.kill();
       cards.forEach((record) => {
-        gsap.set([record.card, record.content, record.scanLine, ...record.corners], {
-          clearProps: 'opacity,transform,visibility',
-        });
+        gsap.set(
+          [record.card, record.content, record.scanLine, ...record.corners, ...record.sheens],
+          {
+            clearProps: 'opacity,transform,visibility',
+          }
+        );
       });
     },
   };

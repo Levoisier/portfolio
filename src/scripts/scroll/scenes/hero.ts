@@ -1,14 +1,24 @@
 /**
- * Hero Scene — the REFERENCE scene. Fully working entrance animation.
+ * Hero Scene — the REFERENCE scene.
  *
- * Sequence (reduced-motion: instant reveal, no motion):
- *   1. panda-body paints immediately for LCP
- *   2. panda-head parallax layer lazy-loads after the body is visible
- *   3. hero-name chars stagger in from the left (manual split — no SplitText required)
- *   4. hero-role fades up
- *   5. hero-scroll-hint bob loop
+ * Desktop (≥768px, no reduced-motion): pinned scrub DEPTH INTRO.
+ *   The hero pins for ~140vh of scroll. On scrub 0→1 the atmosphere darkens +
+ *   drifts back (scale-up, no edge gap), the particles push toward the viewer,
+ *   and a separate non-LCP reaction glow intensifies over the flask.
+ *   Depth runs on the INNER .stage-depth channel so the backdrop's outer parallax
+ *   keeps running with no conflict and no jump when the pin releases. The text
+ *   entrance (premise/name/role/hint) plays once on enter.
  *
- * Parallax: on progress(p), panda-head translates upward at 0.4× rate.
+ *   NOTE: no lateral (x) drift on the full-bleed stage layers — moving them
+ *   sideways exposes the (black) ink behind their edges. Darken + scale-up only.
+ *
+ * Mobile (<768px): the v1 entrance choreography — no pin, hero panda only.
+ *
+ * Reduced motion: instant reveal, no pin/scrub/loops.
+ *
+ * LCP guard: panda-body is the LCP element. This scene never writes opacity or
+ * transform to it, so the frame at scroll progress 0 is identical to the static
+ * painted hero.
  */
 
 import gsap from 'gsap';
@@ -20,28 +30,22 @@ function splitChars(el: HTMLElement): HTMLElement[] {
   el.setAttribute('aria-label', text);
   return text.split('').map((char) => {
     const span = document.createElement('span');
-    span.textContent = char === ' ' ? ' ' : char;
+    span.textContent = char === ' ' ? '\u00A0' : char;
     span.style.display = 'inline-block';
+    if (char === ' ') {
+      span.style.width = '0.32em';
+    }
     span.setAttribute('aria-hidden', 'true');
     el.appendChild(span);
     return span;
   });
 }
 
-function loadHeroHead(el: HTMLImageElement | null): void {
-  const src = el?.dataset.heroHeadSrc;
-  if (!el || !src || el.src.endsWith(src)) return;
-
-  el.onload = () => {
-    gsap.to(el, { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out', overwrite: true });
-  };
-  el.src = src;
-}
-
 const heroScene = (_el: Element): Scene => {
   let tl: gsap.core.Timeline | null = null;
   let bobTween: gsap.core.Tween | null = null;
   let chars: HTMLElement[] = [];
+  let mm: gsap.MatchMedia | null = null;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -56,19 +60,62 @@ const heroScene = (_el: Element): Scene => {
         });
       }
 
-      const pandaHead = document.getElementById('panda-head');
+      const premiseEl = document.getElementById('hero-premise');
       const roleEl = document.getElementById('hero-role');
       const scrollHint = document.getElementById('hero-scroll-hint');
+      const reactionGlow = document.getElementById('hero-reaction-glow');
 
       if (prefersReducedMotion) {
-        loadHeroHead(pandaHead instanceof HTMLImageElement ? pandaHead : null);
-        const pandaBody = document.getElementById('panda-body');
-        gsap.set([pandaBody, pandaHead, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
-      } else {
-        gsap.set(pandaHead, { opacity: 0, y: 60 });
-        gsap.set(roleEl, { opacity: 0, y: 20 });
-        gsap.set(scrollHint, { opacity: 0 });
+        gsap.set([premiseEl, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
+        gsap.set(reactionGlow, { opacity: 0.14, scale: 1, x: 0, y: 0 });
+        return;
       }
+
+      gsap.set(premiseEl, { opacity: 0, y: 14 });
+      gsap.set(roleEl, { opacity: 0, y: 20 });
+      gsap.set(scrollHint, { opacity: 0 });
+      gsap.set(reactionGlow, { opacity: 0, scale: 0.85 });
+
+      // ── Desktop pinned depth intro ───────────────────────────────────────────
+      // matchMedia adds/removes the pin on resize and reverts its inline styles.
+      mm = gsap.matchMedia();
+
+      mm.add('(min-width: 768px)', () => {
+        const depthTl = gsap.timeline({
+          defaults: { ease: 'none' },
+          scrollTrigger: {
+            trigger: '#hero',
+            start: 'top top',
+            end: '+=140%',
+            pin: true,
+            scrub: 1,
+          },
+        });
+
+        // All depth tweens run in parallel (position 0) and use fromTo so the
+        // progress-0 frame equals the static hero. The LCP panda body is not a
+        // target. No lateral drift on full-bleed layers (would expose black
+        // edges); atmosphere scales UP while darkening.
+        depthTl
+          .fromTo(
+            '#hero-reaction-glow',
+            { opacity: 0, scale: 0.85 },
+            { opacity: 0.44, scale: 1.2 },
+            0
+          )
+          .fromTo(
+            '#stage-atmosphere .stage-depth',
+            { scale: 1, opacity: 1 },
+            { scale: 1.05, opacity: 0.7 },
+            0
+          )
+          .fromTo('#stage-particles .stage-depth', { scale: 1, y: 0 }, { scale: 1.18, y: -60 }, 0);
+
+        return () => {
+          depthTl.scrollTrigger?.kill();
+          depthTl.kill();
+        };
+      });
     },
 
     enter() {
@@ -76,28 +123,30 @@ const heroScene = (_el: Element): Scene => {
       bobTween?.kill();
       bobTween = null;
 
-      const pandaHead = document.getElementById('panda-head') as HTMLImageElement | null;
+      const premiseEl = document.getElementById('hero-premise');
       const roleEl = document.getElementById('hero-role');
       const scrollHint = document.getElementById('hero-scroll-hint');
+      const reactionGlow = document.getElementById('hero-reaction-glow');
 
       if (prefersReducedMotion) {
-        const pandaBody = document.getElementById('panda-body');
-        gsap.set([pandaBody, pandaHead, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
+        gsap.set([premiseEl, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
+        gsap.set(reactionGlow, { opacity: 0.14, scale: 1, x: 0, y: 0 });
         return;
       }
 
       tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
 
-      tl.to(
-        chars,
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.6,
-          stagger: { each: 0.035, from: 'start' },
-        },
-        '+=0.1'
-      )
+      tl.to(premiseEl, { opacity: 1, y: 0, duration: 0.5 })
+        .to(
+          chars,
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.6,
+            stagger: { each: 0.035, from: 'start' },
+          },
+          '-=0.2'
+        )
         .to(roleEl, { opacity: 1, y: 0, duration: 0.6 })
         .to(
           scrollHint,
@@ -122,18 +171,15 @@ const heroScene = (_el: Element): Scene => {
       bobTween?.pause();
     },
 
-    progress(p: number) {
-      if (prefersReducedMotion) return;
-      const pandaHead = document.getElementById('panda-head') as HTMLImageElement | null;
-      if (pandaHead) {
-        if (window.scrollY > 16) loadHeroHead(pandaHead);
-        gsap.set(pandaHead, { y: p * -120 });
-      }
+    progress(_p: number) {
+      // Desktop depth is driven by the pinned scrub; mobile hero is a static panda.
+      // No per-frame work needed here.
     },
 
     destroy() {
       tl?.kill();
       bobTween?.kill();
+      mm?.revert();
     },
   };
 };

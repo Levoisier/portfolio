@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import LangSwitch from '../components/ui/LangSwitch.astro';
 
 interface Props {
   title?: string;
@@ -13,7 +14,7 @@ const {
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="es-419">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -54,23 +55,89 @@ const {
     </style>
   </head>
   <body>
-    <!-- Fixed parallax stage — layers driven by global scroll progress -->
+    <!-- Fixed parallax stage — layers driven by global scroll progress.
+         MUST stay a sibling OUTSIDE #smooth-wrapper so ScrollSmoother's
+         transform never moves it; it remains truly fixed behind content. -->
     <div id="scroll-stage" aria-hidden="true" data-scene="backdrop">
+      <!-- Each layer = OUTER (#stage-*: backdrop parallax x/y) + INNER (.stage-depth:
+           hero pinned depth scale/translate). Independent transform channels so the
+           two drivers never fight and there is no jump when the hero pin releases. -->
       <div class="stage-layer" id="stage-atmosphere">
-        <!-- atmosphere.webp loaded by controller when media is ready -->
+        <div class="stage-depth"><!-- atmosphere.webp set by backdrop scene --></div>
       </div>
       <div class="stage-layer" id="stage-mid-glass">
-        <!-- mid-glass.webp -->
+        <div class="stage-depth"><!-- mid-glass.webp --></div>
       </div>
       <div class="stage-layer" id="stage-particles">
-        <!-- particles.webp -->
+        <div class="stage-depth"><!-- particles.webp --></div>
       </div>
     </div>
 
-    <!-- Page content scrolls above the fixed stage -->
-    <main id="scroll-content">
-      <slot />
-    </main>
+    <!-- Fixed panda companion — sibling outside #smooth-wrapper so ScrollSmoother
+         never transforms it. Hidden on mobile by CSS; scene drives desktop poses. -->
+    <div id="panda-companion" data-scene="companion" aria-hidden="true">
+      <div class="panda-companion-stage" data-companion-stage>
+        <div class="panda-companion-look" data-companion-look>
+          <img
+            src="/media/panda/panda-hero.png"
+            alt=""
+            width="320"
+            height="400"
+            loading="lazy"
+            decoding="async"
+            data-companion-pose="hero"
+          />
+          <img
+            src="/media/panda/panda-master.png"
+            alt=""
+            width="320"
+            height="320"
+            loading="lazy"
+            decoding="async"
+            data-companion-pose="master"
+          />
+          <img
+            src="/media/panda/panda-coding.png"
+            alt=""
+            width="320"
+            height="400"
+            loading="lazy"
+            decoding="async"
+            data-companion-pose="coding"
+          />
+          <img
+            src="/media/panda/panda-wave.png"
+            alt=""
+            width="320"
+            height="400"
+            loading="lazy"
+            decoding="async"
+            data-companion-pose="wave"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- ScrollSmoother DOM contract: #smooth-wrapper > #smooth-content.
+         ScrollSmoother (controller.ts) applies the fixed/overflow styles to
+         the wrapper and transforms the content. Under reduced motion the
+         controller skips create() and these stay plain divs (native scroll). -->
+    <div id="smooth-wrapper">
+      <div id="smooth-content">
+        <!-- Page content scrolls above the fixed stage -->
+        <main id="scroll-content">
+          <slot />
+        </main>
+      </div>
+    </div>
+
+    <!-- Language switch UI — fixed pill outside smooth-wrapper -->
+    <LangSwitch />
+
+    <!-- i18n init — restores user's last language choice on page load -->
+    <script>
+      import '../scripts/i18n';
+    </script>
 
     <!-- GSAP ScrollTrigger controller — deferred so static hero content can paint first. -->
     <script>

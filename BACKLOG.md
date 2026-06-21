@@ -2,240 +2,210 @@
 
 Ordered build backlog for the loop agent. Work top-to-bottom — each item builds on the last and the build must never break mid-item.
 
-**Before starting any item:** read AGENTS.md (Golden Rules + verify gate).  
+**Before starting any item:** read AGENTS.md (Golden Rules + verify gate).
 **Before checking an item done:** run `pnpm verify` and confirm it exits 0.
 
 ---
 
-## Phase 1 — Foundation & Fonts
+## Shipped — v1 (foundation)
 
-### [x] feat: self-hosted variable fonts
+Phases 1–10. One-line orientation ledger only — **do not re-implement.**
 
-**Acceptance criteria:**
-
-- Download DM Mono variable (`DMMono-VariableFont_wght.woff2`) and Inter variable (`Inter-VariableFont_opsz,wght.woff2`) — open-licensed, SIL OFL.
-- Place both in `/public/fonts/`.
-- Uncomment the `@font-face` blocks in `src/styles/global.css`.
-- Verify text renders with the correct fonts in `pnpm dev` (DevTools → Fonts tab).
-- Confirm `font-display: swap` is set (already scaffolded).
-- `pnpm verify` passes.
-
-**Files:** `public/fonts/`, `src/styles/global.css`
-
----
-
-## Phase 2 — Hero Choreography
-
-### [x] feat(hero): full entrance choreography polish
-
-**Acceptance criteria:**
-
-- Panda body image (`panda-hero.webp`) fades + slides up on load (already wired in hero.ts; verify it works once real asset is placed).
-- Hero name ("Cristian Zapata Cartagena") char-stagger animation plays correctly — each character enters sequentially from left.
-- Role line ("Full Stack Developer & Chemical Engineer") fades up after name completes.
-- Scroll hint bob loop starts after role appears.
-- Panda-head layer (`panda-head.webp`) moves upward at 0.4× scroll rate (parallax in `progress()`).
-- Reduced-motion: all elements appear instantly at full opacity, no motion.
-- Works on mobile (375px) and desktop (1440px).
-- `pnpm verify` passes.
-
-**Files:** `src/scripts/scroll/scenes/hero.ts`, `src/components/sections/Hero.astro`
+- Self-hosted variable fonts (DM Mono + Inter).
+- Hero entrance choreography. **→ Superseded by v2/v3.**
+- Global 3-layer parallax backdrop stage (`scroll:progress`).
+- Skills periodic-table hover/tap + proficiency bars.
+- Projects scroll-reveal + hover. **→ Superseded by v2, then v3.**
+- Confidential redacted / scan-line / blueprint treatment.
+- Contact section animation + flourish.
+- Responsive passes (375px–2560px) + reduced-motion audit.
+- Lighthouse baseline: desktop 99 / mobile 88; A11y, Best Practices, SEO 100.
 
 ---
 
-## Phase 3 — Global Parallax Backdrop
+## Shipped — v2 (cinematic restructure)
 
-### [x] feat(backdrop): global parallax scroll stage
+Phases 11–16. One-line orientation ledger only — **do not re-implement.** v3 (below) intentionally supersedes several; tags say which.
 
-**Acceptance criteria:**
-
-- Create `src/scripts/scroll/scenes/backdrop.ts` implementing the global progress listener (`scroll:progress` event).
-- Layer stack in `#scroll-stage`:
-  - `#stage-atmosphere` — `atmosphere.webp`, opacity 1, parallax rate 0.05× (slowest)
-  - `#stage-mid-glass` — `mid-glass.webp`, parallax rate 0.15×, subtle horizontal drift
-  - `#stage-particles` — `particles.webp`, parallax rate 0.3× (fastest)
-- As global progress 0→1, layers move upward at their respective rates.
-- Transition: atmosphere darkens slightly mid-scroll (opacity 0.8 at progress 0.5).
-- Images lazy-loaded via JS (not as `<img>` tags — set `background-image` in JS once asset is confirmed present; skip silently if 404).
-- Reduced-motion: no parallax, layers static.
-- `pnpm verify` passes.
-
-**Files:** `src/scripts/scroll/scenes/backdrop.ts`, `src/layouts/Layout.astro`
+- **ScrollSmoother** smooth-scroll foundation — the one sanctioned controller-core edit; `effects: true` enables `data-speed`/`data-lag`. Skipped under reduced motion. (ARCHITECTURE “Smooth scroll”.)
+- **Hero pinned depth scrub intro** — pinned ~140vh; `panda-hero`→`panda-wave` crossfade; atmosphere darkens/scales, particles push forward; depth runs on an inner `.stage-depth` channel so the backdrop parallax never fights it. **→ Reworked by v3 Phase 18 (story-open; crossfade dropped).**
+- **Backdrop stage** kept (atmosphere / mid-glass / particles), outer-layer parallax + inner depth channel.
+- **Skills reagent-shelf** — asymmetric vertical label + anchored grid + scrubbed tile assemble; hover/focus interaction preserved. **→ Moves below Confidential + refreshed by v3 Phase 22.**
+- **Projects horizontal pinned gallery** (classic cards). **→ Superseded by v3 Phase 19 (creative, card-less).**
+- **Lab-asset continuity thread** — built then **reverted** (poorly placed); lab `.webp`s kept on disk for deliberate re-placement in v3.
 
 ---
 
-## Phase 4 — Skills: Periodic Table Interactive
+## Carry-forward constraints (must not regress)
 
-### [x] feat(skills): periodic table hover/tap interactions
+Live facts every v3 phase must respect.
 
-**Acceptance criteria:**
-
-- Create `src/scripts/scroll/scenes/skills.ts` replacing `revealPlaceholder` for the skills section.
-- On enter: tiles stagger-reveal in reading order (top-left → bottom-right), 30ms between tiles.
-- On hover/focus (`:hover`, `:focus-visible`):
-  - Tile scales to 1.08×.
-  - Category badge (bottom-right) fades in.
-  - A small proficiency bar extends along the bottom border (height 2px, filled scarlet).
-  - Neighbouring tiles dim to 70% opacity.
-- On leave: all return to rest state.
-- Proficiency data lives in the `elements` array in `Skills.astro` — add a `proficiency: number` (0–100) field per element.
-- Touch: tap toggles the hover state (tap away to dismiss).
-- Reduced-motion: no scale/opacity changes; category badge toggles via CSS only.
-- `pnpm verify` passes.
-
-**Files:** `src/scripts/scroll/scenes/skills.ts`, `src/components/sections/Skills.astro`, `src/scripts/scroll/controller.ts` (registry entry)
+- **LCP guard.** The hero panda (`panda-body`, `panda-hero.png`) is the LCP element. Never set startup opacity/transform on it; its frame at scroll progress `0` must equal the static painted state. Any v3 hero change keeps this. (LESSONS 2026-06-20.)
+- **Mobile LCP is still open** (~3.2s vs ≤2.5s target). Do not make it worse — desktop-gate heavy effects, keep mobile lean.
+- **Existing media only.** No new media can be generated right now. Build everything from the assets already in `/public/media` — the **four panda poses** (`panda-hero`, `panda-head`, `panda-coding`, `panda-wave`), the backdrop layers, the lab `.webp`s, and the textures. Reuse poses creatively (CSS transforms, flip, crop, filters); never reference a media path that does not exist.
+- **Derivative regen.** When `/media/panda/panda-hero.png` is replaced, regenerate `panda-hero-{320,480,800}.webp`.
+- **Engine intact.** Smooth scroll + the `[data-scene]` → `SCENE_REGISTRY` pattern stay as-is; add scenes via one registry line, never edit the controller core (ScrollSmoother infra is the sole exception, already in place).
+- **Standing gate for every phase:** `pnpm verify` exits 0 · reduced-motion fallback correct (no pin/scrub/loops/cursor-tracking; instant reveal) · no hardcoded colors outside `tokens.css` · no horizontal scroll / no CLS at 375–2560px · Lighthouse stays ≥ desktop 90 / mobile 80 / A11y 95.
 
 ---
 
-## Phase 5 — Projects: Scroll Reveal + Hover
+# v3 — Narrative & Character
 
-### [x] feat(projects): card scroll-reveal and hover treatment
+**Vision:** lead with the work, carry it with a character. The page is reordered to open on the **projects**, move through **confidential** work, reveal the **stack** (periodic table) as the toolkit behind it all, and close at **contact**. A single panda "engineer" threads the whole page — present in the hero, presenting the projects, guarding the classified lab, standing by the reagents, waving goodbye — reacting to scroll and cursor. Everything is built from the **four existing panda poses** (no new art) plus the existing lab/backdrop/texture media.
 
-**Acceptance criteria:**
+**Target section order:** Hero → **Projects** → **Confidential** → **Skills (Stack)** → Contact.
 
-- Create `src/scripts/scroll/scenes/projects.ts`.
-- On enter: cards stagger-reveal with 100ms offset between cards (slide up 30px + fade).
-- On hover: card border transitions from `--glass-border` to `--scarlet` over 200ms.
-- Screenshot slot: on hover, image opacity transitions from 0.4 → 0.7 (already has `group-hover:opacity-60` — replace with JS-controlled value for consistency).
-- Panda-coding accent image (`panda-coding.webp`) parallaxes within the section at 0.2× rate.
-- Reduced-motion: instant reveal on enter; no hover motion (border colour only).
-- `pnpm verify` passes.
+**Tooling (locked):** GSAP + ScrollSmoother only (no three.js / framer-motion / React). Heavy effects desktop-gated via `gsap.matchMedia()`; mobile stays a lean vertical reveal. Existing media only.
 
-**Files:** `src/scripts/scroll/scenes/projects.ts`, `src/components/sections/Projects.astro`, controller registry
+Each phase below ends with a **Manual test (dev)** block — the exact things to check in a running `pnpm dev`. The build must pass `pnpm verify` and be committed before moving on.
 
 ---
 
-## Phase 6 — Confidential: Redacted Card Treatment
+## Phase 17 — Reorder: lead with the work
 
-### [x] feat(confidential): blueprint card animation + redaction
+### [x] refactor(layout): reorder sections to projects-first
 
 **Acceptance criteria:**
 
-- Create `src/scripts/scroll/scenes/confidential.ts`.
-- On enter: cards reveal with a "scan-line" effect — a horizontal scarlet line sweeps top → bottom over 600ms, then card content fades in.
-- Blueprint grid background (already `.blueprint-grid` CSS class) pulses subtly in opacity (0.6 ↔ 1.0, 4s loop).
-- Redacted header bars have a faint shimmer animation (linear-gradient sweep, 3s loop).
-- Corner accent brackets animate in (draw from corner outward).
-- Reduced-motion: instant reveal, no shimmer, no scan-line.
+- `src/pages/index.astro` order becomes: `Hero`, `Projects`, `ConfidentialProjects`, `Skills`, `Contact`.
+- Every scene still registers and fires after the reorder (controller queries `[data-scene]` in DOM order; pin/refresh order follows automatically). No console errors.
+- Smooth scroll, the backdrop stage, and the hero pin still behave; no positional jump introduced by the new order.
+- No hardcoded colors; no layout break at any viewport.
 - `pnpm verify` passes.
 
-**Files:** `src/scripts/scroll/scenes/confidential.ts`, `src/components/sections/ConfidentialProjects.astro`, controller registry
+**Manual test (dev):** Scroll top→bottom — order is Hero → Projects → Confidential → Stack → Contact. Each section’s animation still triggers; backdrop stays continuous; no console errors; no sideways scrollbar.
+
+**Files:** `src/pages/index.astro`
 
 ---
 
-## Phase 7 — Contact Section
+## Phase 18 — Hero: open the story
 
-### [x] feat(contact): contact section animation + flourish
+### [x] feat(hero): premise story-open + drop the wave crossfade
 
 **Acceptance criteria:**
 
-- Create `src/scripts/scroll/scenes/contact.ts`.
-- On enter: heading stagger-reveal (word-by-word), then contact links fade up sequentially.
-- Panda-wave image (`panda-wave.webp`) enters from bottom-right, parallaxes slightly on scroll.
-- Light-leak texture (`lightleak.webp`) fades in at 0.2 opacity.
-- Closing line fades in last.
-- Reduced-motion: instant reveal.
+- Add a short **premise/story kicker** to the hero that frames the narrative (e.g. a one-line lead above or below the name). Copy only — colors/spacing via tokens. Must stay legible over the backdrop.
+- **Drop** the hero scroll crossfade into `panda-wave` (the wave belongs to the Contact goodbye). The hero centerpiece stays `panda-hero` (the flask) throughout.
+- Replace the crossfade with a subtle **“reaction begins” beat** on the flask — a gentle, transforms/opacity-only life (e.g. soft glow/scale pulse or a scrub-driven intensification). No layout thrash; 60fps.
+- Keep the pinned depth scrub (atmosphere darken/scale, particles push) — it works.
+- **LCP guard (blocking):** the panda paints immediately and is identical to the static hero at scroll 0; never hidden/transformed at startup.
+- Reduced motion: instant, static, premise copy visible, no pulse.
 - `pnpm verify` passes.
 
-**Files:** `src/scripts/scroll/scenes/contact.ts`, `src/components/sections/Contact.astro`, controller registry
+**Manual test (dev):** Hero shows the premise line; the panda no longer morphs into the waving panda on scroll; the flask has a subtle life (still under reduced motion); the panda is fully painted and unmoved at the very top.
+
+**Files:** `src/components/sections/Hero.astro`, `src/scripts/scroll/scenes/hero.ts`
 
 ---
 
-## Phase 8 — Responsive Passes
+## Phase 19 — Projects: creative “experiment log” (no cards)
 
-### [x] fix(responsive): mobile layout pass (375px–767px)
-
-**Acceptance criteria:**
-
-- Hero: panda scales to 60% width, name font scales via fluid `var(--text-hero)` (verify no overflow).
-- Skills: tile grid wraps correctly; min tile width 56px.
-- Projects: cards stack to 1-col below 768px (already `md:grid-cols-2` — verify).
-- Confidential: cards stack to 1-col; blueprint grid visible.
-- Contact: links stack vertically (already flex-col below md — verify).
-- No horizontal scroll at any viewport width.
-- `pnpm verify` passes.
-
-**Files:** All section components, `src/styles/global.css` if needed
-
-### [x] fix(responsive): tablet/large-desktop polish (768px–2560px)
+### [x] feat(projects): card-less creative project presentation
 
 **Acceptance criteria:**
 
-- Periodic table grid flows to a natural 6–8 columns at 1024px+.
-- Project cards hit 3-col at 1280px (already `lg:grid-cols-3` — verify).
-- Hero panda is centered and does not clip on ultra-wide (2560px).
-- Scroll stage backdrop layers are `background-size: cover` and don't show seams at any ratio.
+- **Remove the classic card grid / horizontal gallery.** Present the three real projects (Le Parche, Maison Cielare, Orquestia) as an editorial, non-card layout — e.g. large numbered entries (`01–03`), oversized project name, the stack rendered as an inline “formula” of element-style chips, a one-line description, and a `Live →` link. Strong typography, generous space, scarlet accents — all via tokens.
+- `panda-coding` returns as a **recurring “builder” accent** that reacts (parallax and/or hover), desktop-gated.
+- Desktop: one cohesive cinematic reveal (scrub or pinned step-through) that feels like _presenting results_ — smooth under ScrollSmoother, last entry never clipped. Mobile: lean vertical reveal.
+- Accessibility: each project is a semantic heading + content with a keyboard-reachable link (`target="_blank"` + `rel="noopener noreferrer"`); meaningful order.
+- Remove dead code from the old card/gallery scene that no longer applies (keep `projects.ts` building cleanly).
+- Reduced motion: static, instant, fully readable. No horizontal page scroll; no CLS.
 - `pnpm verify` passes.
 
-**Files:** Section components, Layout.astro, global.css
+**Manual test (dev):** Projects reads as a creative experiment log, **not** cards; the 3 real projects show with working Live links; desktop has a smooth reveal, mobile stacks cleanly, reduced-motion is instant/static; `panda-coding` accent present on desktop; no sideways scrollbar.
+
+**Files:** `src/components/sections/Projects.astro`, `src/scripts/scroll/scenes/projects.ts`, `src/styles/global.css`
 
 ---
 
-## Phase 9 — Reduced-Motion Audit
+## Phase 20 — Panda companion (existing poses) + cursor reactivity
 
-### [x] fix(a11y): reduced-motion global audit
+### [x] feat(companion): scroll/cursor-aware panda companion
 
 **Acceptance criteria:**
 
-- Enable DevTools → Rendering → "Emulate CSS media feature: prefers-reduced-motion: reduce".
-- Every section reveals instantly at full opacity — no translate, scale, or rotate motion.
-- No loops running (bob animation, shimmer, scan-line all stopped).
-- Periodic table hover: category badge appears via CSS `:hover` (opacity 0→1) only — no JS motion.
-- Hero name readable immediately (chars already visible at opacity 1).
-- Document any deviations found in LESSONS.md.
+- Add a persistent **desktop** panda companion that changes pose per section using the existing four poses (sensible mapping, e.g. Projects → `panda-coding`, Confidential → `panda-head` redacted/silhouette, Stack → `panda-hero`, Contact → `panda-wave`; the hero keeps its own centerpiece so the companion can fade in after it).
+- The companion **tilts/looks toward the cursor** (subtle rotation/translation) and **cross-fades pose** as sections change. Fixed position, behind content, `pointer-events: none`, `aria-hidden`.
+- Implement as a new scene `src/scripts/scroll/scenes/companion.ts` registered with **one** line in `SCENE_REGISTRY`, driven by a fixed `data-scene="companion"` element that lives **outside `#smooth-wrapper`** (like `#scroll-stage`) so it stays truly fixed. Pose cross-fade driven by `scroll:progress` or per-section ScrollTriggers — no double-driving.
+- Pose images lazy-loaded + `decoding="async"`; transforms/opacity only; desktop-gated.
+- Mobile: no fixed companion (lean); reduced motion: a single static pose (or none), no cursor tracking, no cross-fade.
 - `pnpm verify` passes.
 
-**Files:** All scene files, `src/styles/global.css` @media block
+**Manual test (dev):** On desktop a panda sits in a corner, looks toward the cursor, and changes pose as you scroll between sections; it never blocks clicks or text; on mobile it’s absent; under reduced motion it’s a single static pose with no tracking.
+
+**Files:** `src/scripts/scroll/scenes/companion.ts`, `src/scripts/scroll/controller.ts` (one registry line), `src/layouts/Layout.astro`, `src/styles/global.css`, `ASSETS.md`
 
 ---
 
-## Phase 10 — Performance & Lighthouse
+## Phase 21 — Confidential: redacted-lab treatment + peek
 
-### [ ] perf: Lighthouse audit pass
-
-**Acceptance criteria:**
-
-- Run Lighthouse against `pnpm preview` on localhost.
-- Performance ≥ 90 (desktop), ≥ 80 (mobile).
-- Accessibility ≥ 95.
-- Best Practices = 100.
-- SEO ≥ 90.
-- Identified issues: add missing `alt` text, check colour contrast ratios for scarlet-on-navy, verify font-display:swap is active.
-- LCP ≤ 2.5s: ensure panda-hero.webp has `loading="eager"` and is properly sized.
-- No CLS: all images have explicit `width` and `height` attributes.
-- GSAP bundle: verify it tree-shakes — only `ScrollTrigger` is imported, not the full GSDevTools or other plugins.
-- Document findings in LESSONS.md.
-- `pnpm verify` passes.
-
-**Files:** All section components, Layout.astro, potentially GSAP imports in scenes
-
-### [ ] perf: image optimisation pass
+### [x] feat(confidential): classified-lab creative pass
 
 **Acceptance criteria:**
 
-- All webp assets are at correct dimensions per ASSETS.md (Cristian supplies finals via Nano Banana).
-- Backdrop images: lazy-loaded via JS (not `<img>` tags).
-- Panda-hero and panda-head: `loading="eager"` (above the fold, already set).
-- All other images: `loading="lazy"` (already set).
-- `decoding="async"` on all images (already set).
-- Verify no images load that aren't visible in the initial viewport.
+- **Golden Rule 5 holds:** no client/employer names, no screenshots, no repo/demo links. Allowed: industry, role, stack, abstracted impact, duration, team size.
+- Lean further into the “classified lab files” aesthetic (redaction bars, blueprint grid, scan lines already exist). Add a **redacted panda “peek”** using an existing pose with a silhouette/redaction CSS treatment (e.g. brightness-0 filter) so it reads as a stealth panda behind the files.
+- Micro-interaction: hovering/focusing a file gives a subtle reaction (existing scan-line/sheen + a small panda or accent response). Keyboard accessible.
+- Reduced motion: content readable, motion-only decor hidden (per existing LESSON), redacted panda static.
 - `pnpm verify` passes.
 
-**Files:** All section components
+**Manual test (dev):** Confidential reads as classified files with a redacted panda peeking; hovering/focusing a file has a subtle reaction; no client-identifying info anywhere; reduced motion is calm and readable.
 
-## Handoff
+**Files:** `src/components/sections/ConfidentialProjects.astro`, `src/scripts/scroll/scenes/confidential.ts`
 
-Stopped during `perf: Lighthouse audit pass` with the build green but the item intentionally unchecked because one acceptance criterion is not met yet.
+---
 
-Done in this pass:
+## Phase 22 — Stack (periodic table) refresh, below Confidential
 
-- Desktop Lighthouse: Performance 99, Accessibility 100, Best Practices 100, SEO 100.
-- Mobile Lighthouse: Performance 88, Accessibility 100, Best Practices 100, SEO 100.
-- Cleared console/favicon failure, colour contrast, font-display, render-blocking, modern format, responsive image, and total-byte-weight audits.
-- Added responsive generated WebP derivatives for `/media/panda/panda-hero.png` and kept the canonical PNG as the fallback/source path.
-- Deferred non-critical media and the GSAP controller so the static hero can paint first.
+### [x] feat(skills): refresh the reagent stack in its new position
 
-Still open:
+**Acceptance criteria:**
 
-- Default mobile Lighthouse reports LCP at 3.2s (`panda-hero-320.webp`) against the backlog target of <=2.5s. The image transfer is already small; the remaining delay is Lighthouse mobile render timing/FCP under throttling.
-- When Cristian replaces `/media/panda/panda-hero.png`, regenerate `/media/panda/generated/panda-hero-320.webp`, `panda-hero-480.webp`, and `panda-hero-800.webp` from the new source.
+- Periodic-table tiles + the hover/focus interaction (scale 1.08, category badge, proficiency bar, neighbour dim to 70%) + the scrubbed assemble are **preserved**.
+- Reframe for its new spot after the work: copy/label tuned (e.g. “The Reagents” / “toolkit behind the builds”) so it reads as the toolkit, not a generic stack.
+- Re-introduce **one tasteful lab accent** (a single existing glassware/molecule) deliberately placed — low opacity, behind content, no overflow, no clutter (do not repeat the reverted over-placement). Reduced-motion static.
+- Responsive: grid wraps cleanly 375–2560px, min tile width 56px, no overflow.
+- Reduced motion: instant full-opacity grid; hover badge CSS-only.
+- `pnpm verify` passes.
+
+**Manual test (dev):** Stack sits below Confidential; tiles still assemble on scroll and the hover interaction is intact; the reframed copy reads as a toolkit; a single tasteful glassware accent sits behind it with no overflow/clutter; reduced motion shows the full grid instantly.
+
+**Files:** `src/components/sections/Skills.astro`, `src/scripts/scroll/scenes/skills.ts`
+
+---
+
+## Phase 23 — Narrative connective copy + lab through-line
+
+### [x] feat(narrative): thread the sections into one arc
+
+**Acceptance criteria:**
+
+- Add short story/connective copy (kickers, section leads, a closing line at Contact) so reading top→bottom feels like one arc led by the panda-engineer, consistent with the new order. Tokens only; no client info in/near Confidential.
+- Re-introduce the molecule motif as a **subtle** through-line only where it earns its place (e.g. one molecule drifting via `data-speed` in 1–2 spots), deliberately placed, low opacity, behind content; reduced-motion static. Avoid the prior over-placement.
+- Contact: keep `panda-wave` + lightleak; ensure the close reads as the end of the arc.
+- No horizontal scroll / no CLS at any viewport.
+- `pnpm verify` passes.
+
+**Manual test (dev):** Reading the whole page feels like one continuous story; a subtle molecule motif appears in a spot or two without clutter; the contact close lands as an ending; nothing overflows.
+
+**Files:** section components, `ASSETS.md`, optional small scene in `src/scripts/scroll/scenes/`
+
+---
+
+## Phase 24 — v3 audit (motion · a11y · perf)
+
+### [x] chore(v3): full cinematic + accessibility + performance audit
+
+**Acceptance criteria:**
+
+- Full **reduced-motion sweep** across every v3 change: no pin/scrub/loops/companion motion/cursor-tracking running; every section reveals instantly and is readable.
+- No horizontal scroll and no CLS at 375–2560px.
+- **Lighthouse:** desktop ≥90, mobile ≥80, A11y ≥95, Best Practices / SEO maintained; record the numbers in `LESSONS.md`. Confirm the LCP guard is intact and mobile LCP is not worse than baseline.
+- Remove any dead code/markup left from the removed card system; update `ARCHITECTURE.md` (companion + new section order) and append `LESSONS.md` entries for anything non-obvious.
+- Check off Phases 17–24.
+- `pnpm verify` passes.
+
+**Manual test (dev):** Toggle reduced motion and scroll the whole page — everything is instant/static, nothing janky; resize 375→2560 with no sideways scroll or jumps; the page reads as one story end-to-end.
+
+**Files:** various, `LESSONS.md`, `ARCHITECTURE.md`, `BACKLOG.md`

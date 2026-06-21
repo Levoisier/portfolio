@@ -1,0 +1,132 @@
+---
+/* LANG SWITCH
+   Floating pill fixed at bottom-right. Toggles between ES (default) and EN.
+   Sits outside #smooth-wrapper so ScrollSmoother never transforms it.
+   Script derives current lang from localStorage on mount and listens
+   for the 'lang:change' event dispatched by src/scripts/i18n.ts.
+*/
+---
+
+<div
+  id="lang-switch"
+  aria-label="Selector de idioma"
+  style="
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: var(--z-modal);
+  "
+>
+  <button
+    id="lang-toggle"
+    aria-label="Cambiar idioma / Switch language"
+    style="
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      border: 1px solid var(--glass-border);
+      background: color-mix(in srgb, var(--ink) 88%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      cursor: pointer;
+      font-family: var(--font-display), 'Courier New', monospace;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      transition: border-color 0.2s ease;
+    "
+  >
+    <span
+      id="lang-label-es"
+      data-lang="es"
+      aria-hidden="true"
+      style="transition: color 0.2s ease, opacity 0.2s ease;"
+    >
+      ES
+    </span>
+    <span id="lang-sep" aria-hidden="true" style="color: var(--glass-border);"> · </span>
+    <span
+      id="lang-label-en"
+      data-lang="en"
+      aria-hidden="true"
+      style="transition: color 0.2s ease, opacity 0.2s ease;"
+    >
+      EN
+    </span>
+  </button>
+</div>
+
+<style>
+  /* Mobile base: +10% over original (0.375rem / 0.65rem) */
+  #lang-toggle {
+    padding: 0.4125rem 0.825rem;
+    font-size: 0.715rem;
+  }
+
+  #lang-sep {
+    font-size: 0.66rem;
+  }
+
+  /* Desktop: +50% over original */
+  @media (min-width: 1024px) {
+    #lang-toggle {
+      padding: 0.5625rem 1.125rem;
+      font-size: 0.975rem;
+    }
+
+    #lang-sep {
+      font-size: 0.9rem;
+    }
+  }
+
+  #lang-toggle:hover {
+    border-color: var(--scarlet-soft);
+  }
+
+  #lang-toggle:focus-visible {
+    outline: 2px solid var(--scarlet);
+    outline-offset: 3px;
+  }
+
+  [data-lang][data-active='true'] {
+    color: var(--scarlet);
+    opacity: 1;
+  }
+
+  [data-lang][data-active='false'] {
+    color: var(--paper);
+    opacity: 0.35;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #lang-toggle,
+    [data-lang] {
+      transition: none !important;
+    }
+  }
+</style>
+
+<script>
+  import { getCurrentLang, applyLang } from '../../scripts/i18n';
+
+  const esLabel = document.getElementById('lang-label-es');
+  const enLabel = document.getElementById('lang-label-en');
+  const toggleBtn = document.getElementById('lang-toggle');
+
+  function syncIndicator(lang: string) {
+    if (esLabel) esLabel.dataset.active = String(lang === 'es');
+    if (enLabel) enLabel.dataset.active = String(lang === 'en');
+  }
+
+  // Sync on mount
+  syncIndicator(getCurrentLang());
+
+  // Keep in sync when any module triggers a lang change
+  window.addEventListener('lang:change', (e) => {
+    syncIndicator((e as CustomEvent<{ lang: string }>).detail.lang);
+  });
+
+  toggleBtn?.addEventListener('click', () => {
+    const next = getCurrentLang() === 'es' ? 'en' : 'es';
+    applyLang(next as 'es' | 'en');
+  });
+</script>

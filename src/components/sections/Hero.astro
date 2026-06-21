@@ -3,7 +3,9 @@
    The panda + name reveal is the reference scene (see src/scripts/scroll/scenes/hero.ts).
    All elements start opacity:0; the scene drives the entrance animation.
    Structure:
-     · #hero-panda        — centerpiece image (panda-hero.png + panda-head.png layers)
+     · #hero-panda        — centerpiece (panda-hero.png; LCP image remains untouched)
+     · #hero-reaction-glow — non-LCP flask reaction layer
+     · #hero-premise      — story opener
      · #hero-name         — "Cristian Zapata Cartagena" (chars split for stagger)
      · #hero-role         — role line
      · #hero-scroll-hint  — animated chevron
@@ -36,25 +38,33 @@
         fetchpriority="high"
       />
     </picture>
-    <img
-      id="panda-head"
-      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
-      data-hero-head-src="/media/panda/panda-head.png"
-      alt=""
-      width="300"
-      height="300"
-      class="absolute aspect-square w-[45vw] max-w-[300px] select-none object-contain"
-      loading="lazy"
-      decoding="async"
-      fetchpriority="low"
-      style="opacity: 0;"
-    />
+    <div
+      id="hero-reaction-glow"
+      class="pointer-events-none absolute left-[54%] top-[44%] h-[18%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+      style="
+        opacity: 0;
+        background: radial-gradient(circle, var(--scarlet-soft), var(--scarlet-dim) 48%, transparent 72%);
+        filter: blur(18px);
+        mix-blend-mode: screen;
+        will-change: opacity, transform;
+      "
+    >
+    </div>
   </div>
+
+  <p
+    id="hero-premise"
+    class="font-display mb-4 max-w-3xl px-4 text-center uppercase tracking-[0.18em] sm:tracking-[0.24em]"
+    style="font-size: var(--text-sm); color: var(--paper); opacity: 0;"
+    data-i18n="hero.premise"
+  >
+    Conoce un poco de mi trabajo
+  </p>
 
   <!-- Name — characters are split by the hero scene for stagger animation -->
   <h1
     id="hero-name"
-    class="font-display text-center leading-none tracking-tight"
+    class="font-display max-w-[12ch] text-center leading-[0.96] tracking-normal sm:max-w-[16ch] md:max-w-none"
     style="font-size: var(--text-hero); color: var(--paper);"
     aria-label="Cristian Zapata Cartagena"
   >
@@ -66,8 +76,9 @@
     id="hero-role"
     class="font-body mt-4 text-center uppercase tracking-widest"
     style="font-size: var(--text-lg); color: var(--scarlet); opacity: 0;"
+    data-i18n="hero.role"
   >
-    Full Stack Developer &amp; Chemical Engineer
+    Full Stack Developer &amp; Ingeniero Químico
   </p>
 
   <!-- Scroll hint -->

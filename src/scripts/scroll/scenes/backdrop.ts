@@ -10,7 +10,8 @@ import gsap from 'gsap';
 import type { Scene } from '../types';
 
 type BackdropLayer = {
-  el: HTMLElement;
+  el: HTMLElement; // OUTER layer — receives parallax transform + opacity
+  fill: HTMLElement; // INNER .stage-depth — receives the background image
   path: string;
   rate: number;
   drift?: number;
@@ -26,11 +27,11 @@ function loadLayer(layer: BackdropLayer): void {
   const image = new Image();
 
   image.onload = () => {
-    layer.el.style.backgroundImage = `url("${layer.path}")`;
+    layer.fill.style.backgroundImage = `url("${layer.path}")`;
   };
 
   image.onerror = () => {
-    layer.el.style.backgroundImage = '';
+    layer.fill.style.backgroundImage = '';
   };
 
   image.src = layer.path;
@@ -64,10 +65,11 @@ const backdropScene = (_el: Element): Scene => {
     init() {
       layers = LAYER_CONFIG.flatMap((config) => {
         const el = document.getElementById(config.id);
+        const fill = el?.querySelector<HTMLElement>('.stage-depth') ?? null;
         const drift = 'drift' in config ? config.drift : undefined;
 
-        return el instanceof HTMLElement
-          ? [{ el, path: config.path, rate: config.rate, drift }]
+        return el instanceof HTMLElement && fill instanceof HTMLElement
+          ? [{ el, fill, path: config.path, rate: config.rate, drift }]
           : [];
       });
 
@@ -105,7 +107,8 @@ const backdropScene = (_el: Element): Scene => {
       }
 
       layers.forEach((layer) => {
-        gsap.set(layer.el, { clearProps: 'transform,opacity,backgroundImage' });
+        gsap.set(layer.el, { clearProps: 'transform,opacity' });
+        gsap.set(layer.fill, { clearProps: 'backgroundImage' });
       });
     },
   };

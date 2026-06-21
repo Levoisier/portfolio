@@ -31,7 +31,10 @@
   }
 
   html {
-    scroll-behavior: smooth;
+    /* No CSS scroll-behavior: ScrollSmoother owns scrolling and CSS smooth
+       scroll fights it. Under reduced motion the smoother is skipped and the
+       media query below keeps native scroll explicit. */
+    scroll-behavior: auto;
     font-family: var(--font-body), system-ui, sans-serif;
     background-color: var(--ink);
     color: var(--paper);
@@ -78,8 +81,8 @@
   /* Blueprint grid overlay — used by confidential cards */
   .blueprint-grid {
     background-image:
-      linear-gradient(rgba(245, 243, 238, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(245, 243, 238, 0.04) 1px, transparent 1px);
+      linear-gradient(var(--blueprint-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--blueprint-grid-line) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
@@ -101,7 +104,16 @@
   overflow: hidden;
 }
 
+/* OUTER layer — backdrop scene drives parallax (x/y) + atmosphere opacity here. */
 #scroll-stage .stage-layer {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+}
+
+/* INNER depth — carries the image; hero pin drives depth (scale/translate) here.
+   Independent transform channel from the outer layer. */
+#scroll-stage .stage-depth {
   position: absolute;
   inset: 0;
   background-position: center;
@@ -110,8 +122,65 @@
   will-change: transform, opacity;
 }
 
+/* ─── Fixed panda companion ────────────────────────────────────────────────── */
+#panda-companion {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: var(--z-overlay);
+  display: none;
+  width: clamp(9rem, 16vw, 16rem);
+  aspect-ratio: 4 / 5;
+  pointer-events: none;
+}
+
+#panda-companion .panda-companion-stage {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform-origin: 50% 80%;
+  will-change: transform, opacity;
+}
+
+#panda-companion .panda-companion-look {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 78%;
+  will-change: transform;
+}
+
+#panda-companion .panda-companion-look img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transform-origin: 50% 80%;
+  will-change: opacity;
+}
+
+#panda-companion .panda-companion-look img[data-companion-pose='master'] {
+  aspect-ratio: 1;
+  height: auto;
+  top: 8%;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+@media (min-width: 1024px) {
+  #panda-companion {
+    display: block;
+  }
+}
+
 /* ─── Section wrappers ────────────────────────────────────────────────────── */
 .portfolio-section {
   position: relative;
   z-index: var(--z-content);
+}
+
+.confidential-card:focus-visible {
+  outline: 2px solid var(--scarlet);
+  outline-offset: 4px;
 }

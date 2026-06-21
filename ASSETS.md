@@ -11,13 +11,13 @@ Cristian generates final assets with **Nano Banana**.
 
 ## Panda
 
-| Path                            | Dimensions | Purpose / Scene                       | Transparent | Status |
-| ------------------------------- | ---------- | ------------------------------------- | ----------- | ------ |
-| `/media/panda/panda-master.png` | 1600×1600  | Style reference (not shipped to prod) | N           | final  |
-| `/media/panda/panda-hero.png`   | 1600×2000  | Hero centerpiece (body layer)         | Y           | final  |
-| `/media/panda/panda-head.png`   | 1200×1200  | Hero focal parallax layer (head)      | Y           | final  |
-| `/media/panda/panda-coding.png` | 1600×2000  | Projects section accent               | Y           | final  |
-| `/media/panda/panda-wave.png`   | 1600×2000  | Contact section accent                | Y           | final  |
+| Path                            | Dimensions | Purpose / Scene                         | Transparent | Status |
+| ------------------------------- | ---------- | --------------------------------------- | ----------- | ------ |
+| `/media/panda/panda-master.png` | 1254×1254  | Companion seated pose                   | Y           | final  |
+| `/media/panda/panda-hero.png`   | 1600×2000  | Hero centerpiece + Stack companion pose | Y           | final  |
+| `/media/panda/panda-head.png`   | 1200×1200  | Reserved pose (not currently placed)    | Y           | final  |
+| `/media/panda/panda-coding.png` | 1600×2000  | Companion builder pose                  | Y           | final  |
+| `/media/panda/panda-wave.png`   | 1600×2000  | Contact accent + companion goodbye pose | Y           | final  |
 
 ### Generated Panda Derivatives
 
@@ -29,6 +29,10 @@ These files are derived from canonical Panda sources for responsive delivery. Re
 | `/media/panda/generated/panda-hero-480.webp` | 480×600    | `/media/panda/panda-hero.png` | Hero LCP tablet source  | Y           | generated |
 | `/media/panda/generated/panda-hero-800.webp` | 800×1000   | `/media/panda/panda-hero.png` | Hero LCP desktop source | Y           | generated |
 
+> **Project media note.** The v3 Featured Projects section is a card-less
+> experiment log and does not reference project screenshots. It uses
+> `/media/panda/panda-coding.png` only as a desktop builder accent.
+
 ## Backdrop
 
 | Path                              | Dimensions | Purpose / Scene                            | Transparent | Status |
@@ -39,20 +43,24 @@ These files are derived from canonical Panda sources for responsive delivery. Re
 
 ## Lab Decor
 
-| Path                               | Dimensions | Purpose / Scene              | Transparent | Status |
-| ---------------------------------- | ---------- | ---------------------------- | ----------- | ------ |
-| `/media/lab/flask-erlenmeyer.webp` | 1200×1200  | Scattered decorative element | Y           | final  |
-| `/media/lab/flask-round.webp`      | 1200×1200  | Scattered decorative element | Y           | final  |
-| `/media/lab/beaker-reaction.webp`  | 1200×1200  | Scattered decorative element | Y           | final  |
-| `/media/lab/molecule-a.webp`       | 1200×1200  | Scattered decorative element | Y           | final  |
-| `/media/lab/molecule-b.webp`       | 1200×1200  | Scattered decorative element | Y           | final  |
+| Path                               | Dimensions | Purpose / Scene                                    | Transparent | Status |
+| ---------------------------------- | ---------- | -------------------------------------------------- | ----------- | ------ |
+| `/media/lab/flask-erlenmeyer.webp` | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
+| `/media/lab/flask-round.webp`      | 1200×1200  | Lab decor (not currently placed — reserved)        | Y           | final  |
+| `/media/lab/beaker-reaction.webp`  | 1200×1200  | Lab decor (not currently placed — reserved for v3) | Y           | final  |
+| `/media/lab/molecule-a.webp`       | 1200×1200  | Lab decor (not currently placed — reserved)        | Y           | final  |
+| `/media/lab/molecule-b.webp`       | 1200×1200  | Lab decor (not currently placed — reserved)        | Y           | final  |
+
+The lab assets are kept on disk but **not placed in the page** right now — the
+Phase 13/14 placements and later molecule/glassware accents were removed after
+review.
 
 ## Textures
 
-| Path                                  | Dimensions | Purpose / Scene                              | Transparent | Status |
-| ------------------------------------- | ---------- | -------------------------------------------- | ----------- | ------ |
-| `/media/texture/blueprint-paper.webp` | 2560×1440  | Section background texture (confidential)    | N           | final  |
-| `/media/texture/lightleak.webp`       | 2560×1440  | Scarlet light-leak overlay (contact section) | Y           | final  |
+| Path                                  | Dimensions | Purpose / Scene                      | Transparent | Status |
+| ------------------------------------- | ---------- | ------------------------------------ | ----------- | ------ |
+| `/media/texture/blueprint-paper.webp` | 2560×1440  | Section background texture (contact) | N           | final  |
+| `/media/texture/lightleak.webp`       | 2560×1440  | Scarlet light-leak overlay (unused)  | Y           | final  |
 
 ---
 

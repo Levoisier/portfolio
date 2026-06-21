@@ -268,102 +268,140 @@ const elements: Element[] = [
 ];
 ---
 
-<section id="skills" class="portfolio-section section-pad" data-scene="skills">
-  <div class="mx-auto max-w-7xl">
-    <h2
-      class="font-display mb-12 text-center uppercase tracking-widest"
-      style="font-size: var(--text-2xl); color: var(--paper);"
-    >
-      Stack
-    </h2>
+<section id="skills" class="portfolio-section overflow-hidden section-pad" data-scene="skills">
+  <div class="relative mx-auto max-w-7xl">
+    <div class="flex flex-col gap-8 md:flex-row md:items-stretch md:gap-12">
+      <!-- Vertical display label -->
+      <div class="flex shrink-0 items-baseline gap-4 md:flex-col md:items-start md:gap-6">
+        <span
+          class="font-display text-xs uppercase tracking-[0.3em]"
+          style="color: var(--scarlet);"
+          data-i18n="skills.eyebrow"
+        >
+          // El toolkit detrás de los builds
+        </span>
+        <h2
+          class="font-display uppercase leading-none tracking-[0.2em] md:[writing-mode:vertical-rl] md:rotate-180"
+          style="font-size: var(--text-3xl); color: var(--paper);"
+          data-i18n="skills.heading"
+        >
+          Los Reactivos
+        </h2>
+      </div>
 
-    <!-- Periodic table grid -->
-    <div
-      id="skills-grid"
-      class="mx-auto flex max-w-[38rem] flex-wrap justify-center gap-3"
-      role="list"
-      aria-label="Technology stack"
-    >
-      {
-        elements.map((el) => (
-          <div
-            class="element-tile group relative cursor-default"
-            role="listitem"
-            data-category={el.category}
-            data-skill-tile
-            data-proficiency={el.proficiency}
-            style={`--tile-color: ${el.categoryToken};`}
-            tabindex="0"
-            aria-label={`${el.name} — ${el.category} — ${el.proficiency}% proficiency`}
-          >
-            <div
-              class="relative flex h-20 w-16 flex-col items-center justify-center overflow-hidden border"
-              data-skill-card
-              style="border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 8%, var(--ink));"
-            >
-              <span
-                class="font-display absolute left-1 top-1 leading-none"
-                style="font-size: 0.5rem; color: var(--tile-color); opacity: 0.7;"
-                aria-hidden="true"
+      <!-- Tile grid anchored to the label side. -->
+      <div class="relative flex-1">
+        <p
+          class="font-body mb-8 max-w-3xl leading-relaxed"
+          style="font-size: var(--text-base); color: color-mix(in srgb, var(--paper) 70%, transparent);"
+          data-i18n="skills.description"
+        >
+          Lenguajes, frameworks, plataformas y herramientas de testing que uso para llevar proyectos
+          a producción.
+        </p>
+
+        <!-- Periodic table grid -->
+        <div
+          id="skills-grid"
+          class="flex flex-wrap justify-center gap-3 md:justify-start"
+          role="list"
+          aria-label="Stack tecnológico"
+          data-i18n-aria="skills.grid-aria"
+        >
+          {
+            elements.map((el) => (
+              <div
+                class="element-tile group relative cursor-default"
+                role="listitem"
+                data-category={el.category}
+                data-skill-tile
+                data-proficiency={el.proficiency}
+                style={`--tile-color: ${el.categoryToken};`}
+                tabindex="0"
+                aria-label={`${el.name} — ${el.category} — ${el.proficiency}% proficiency`}
               >
-                {el.number}
-              </span>
+                <div
+                  class="relative flex h-20 w-16 flex-col items-center justify-center overflow-hidden border"
+                  data-skill-card
+                  style="border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 8%, var(--ink));"
+                >
+                  <span
+                    class="font-display absolute left-1 top-1 leading-none"
+                    style="font-size: 0.5rem; color: var(--tile-color); opacity: 0.7;"
+                    aria-hidden="true"
+                  >
+                    {el.number}
+                  </span>
 
-              <span
-                class="font-display font-bold leading-none"
-                style="font-size: var(--text-xl); color: var(--paper);"
-              >
-                {el.symbol}
-              </span>
+                  <span
+                    class="font-display font-bold leading-none"
+                    style="font-size: var(--text-xl); color: var(--paper);"
+                  >
+                    {el.symbol}
+                  </span>
 
-              <span
-                class="font-body mt-1 w-full truncate px-1 text-center leading-none"
-                style="font-size: 0.55rem; color: color-mix(in srgb, var(--paper) 70%, transparent);"
-              >
-                {el.name}
-              </span>
+                  <span
+                    class="font-body mt-1 w-full truncate px-1 text-center leading-none"
+                    style="font-size: 0.55rem; color: color-mix(in srgb, var(--paper) 70%, transparent);"
+                  >
+                    {el.name}
+                  </span>
 
-              <span
-                class="font-body absolute bottom-1 right-1 leading-none opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
-                data-category-badge
-                style="font-size: 0.45rem; color: var(--tile-color);"
-                aria-hidden="true"
-              >
-                {el.category}
-              </span>
+                  <span
+                    class="font-body absolute bottom-1 right-1 leading-none opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                    data-category-badge
+                    style="font-size: 0.45rem; color: var(--tile-color);"
+                    aria-hidden="true"
+                  >
+                    {el.category}
+                  </span>
 
-              <span
-                class="absolute bottom-0 left-0 h-0.5 w-full origin-left"
-                data-proficiency-bar
-                style="background-color: var(--scarlet); transform: scaleX(0);"
-                aria-hidden="true"
-              />
-            </div>
-          </div>
-        ))
-      }
+                  <span
+                    class="absolute bottom-0 left-0 h-0.5 w-full origin-left"
+                    data-proficiency-bar
+                    style="background-color: var(--scarlet); transform: scaleX(0);"
+                    aria-hidden="true"
+                  />
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
     </div>
 
     <!-- Category legend -->
-    <div class="mt-10 flex flex-wrap justify-center gap-4" aria-label="Category legend">
+    <div
+      class="mt-10 flex flex-wrap justify-center gap-4 md:justify-start"
+      aria-label="Leyenda de categorías"
+      data-i18n-aria="skills.legend-aria"
+    >
       {
         [
-          { label: 'Languages', token: 'var(--cat-languages)' },
-          { label: 'Frontend', token: 'var(--cat-frontend)' },
-          { label: 'Backend', token: 'var(--cat-backend)' },
-          { label: 'Data/Auth', token: 'var(--cat-data-auth)' },
-          { label: 'DevOps', token: 'var(--cat-devops)' },
-          { label: 'AI', token: 'var(--cat-ai)' },
-          { label: 'Enterprise', token: 'var(--cat-enterprise)' },
-          { label: 'Testing', token: 'var(--cat-testing)' },
-        ].map(({ label, token }) => (
+          { label: 'Lenguajes', i18nKey: 'skills.legend.languages', token: 'var(--cat-languages)' },
+          { label: 'Frontend', i18nKey: 'skills.legend.frontend', token: 'var(--cat-frontend)' },
+          { label: 'Backend', i18nKey: 'skills.legend.backend', token: 'var(--cat-backend)' },
+          {
+            label: 'Datos/Auth',
+            i18nKey: 'skills.legend.data-auth',
+            token: 'var(--cat-data-auth)',
+          },
+          { label: 'DevOps', i18nKey: 'skills.legend.devops', token: 'var(--cat-devops)' },
+          { label: 'IA', i18nKey: 'skills.legend.ai', token: 'var(--cat-ai)' },
+          {
+            label: 'Empresarial',
+            i18nKey: 'skills.legend.enterprise',
+            token: 'var(--cat-enterprise)',
+          },
+          { label: 'Testing', i18nKey: 'skills.legend.testing', token: 'var(--cat-testing)' },
+        ].map(({ label, i18nKey, token }) => (
           <span class="font-body flex items-center gap-2 text-xs" style={`color: var(--paper);`}>
             <span
               class="inline-block h-2.5 w-2.5 rounded-sm"
               style={`background-color: ${token};`}
               aria-hidden="true"
             />
-            {label}
+            <span data-i18n={i18nKey}>{label}</span>
           </span>
         ))
       }
