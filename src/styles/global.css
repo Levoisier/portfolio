@@ -31,7 +31,10 @@
   }
 
   html {
-    scroll-behavior: smooth;
+    /* No CSS scroll-behavior: ScrollSmoother owns scrolling and CSS smooth
+       scroll fights it. Under reduced motion the smoother is skipped and the
+       media query below keeps native scroll explicit. */
+    scroll-behavior: auto;
     font-family: var(--font-body), system-ui, sans-serif;
     background-color: var(--ink);
     color: var(--paper);

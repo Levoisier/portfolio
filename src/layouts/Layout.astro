@@ -54,7 +54,9 @@ const {
     </style>
   </head>
   <body>
-    <!-- Fixed parallax stage — layers driven by global scroll progress -->
+    <!-- Fixed parallax stage — layers driven by global scroll progress.
+         MUST stay a sibling OUTSIDE #smooth-wrapper so ScrollSmoother's
+         transform never moves it; it remains truly fixed behind content. -->
     <div id="scroll-stage" aria-hidden="true" data-scene="backdrop">
       <div class="stage-layer" id="stage-atmosphere">
         <!-- atmosphere.webp loaded by controller when media is ready -->
@@ -67,10 +69,18 @@ const {
       </div>
     </div>
 
-    <!-- Page content scrolls above the fixed stage -->
-    <main id="scroll-content">
-      <slot />
-    </main>
+    <!-- ScrollSmoother DOM contract: #smooth-wrapper > #smooth-content.
+         ScrollSmoother (controller.ts) applies the fixed/overflow styles to
+         the wrapper and transforms the content. Under reduced motion the
+         controller skips create() and these stay plain divs (native scroll). -->
+    <div id="smooth-wrapper">
+      <div id="smooth-content">
+        <!-- Page content scrolls above the fixed stage -->
+        <main id="scroll-content">
+          <slot />
+        </main>
+      </div>
+    </div>
 
     <!-- GSAP ScrollTrigger controller — deferred so static hero content can paint first. -->
     <script>

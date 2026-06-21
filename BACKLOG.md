@@ -44,7 +44,7 @@ These are live facts from the v1 build that every v2 phase must respect.
 
 ## Phase 11 — Smooth-scroll foundation (ScrollSmoother)
 
-### [ ] feat(controller): integrate GSAP ScrollSmoother
+### [x] feat(controller): integrate GSAP ScrollSmoother
 
 **Acceptance criteria:**
 

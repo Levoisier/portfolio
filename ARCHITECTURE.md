@@ -174,6 +174,26 @@ window.addEventListener('scroll:progress', (e) => {
 
 ---
 
+## Smooth scroll (ScrollSmoother) — sanctioned controller exception
+
+The page is scrolled by **GSAP ScrollSmoother**, not the native scrollbar alone. This is the **one sanctioned edit to the controller core** (Golden Rule 3 protects scene-_adding_; smooth-scroll is engine infra, kept minimal and fenced in `controller.ts` under the "Smooth scroll" comment band).
+
+**DOM contract (`Layout.astro`):**
+
+```
+body
+├─ #scroll-stage        ← fixed parallax stage, SIBLING OUTSIDE the wrapper (stays truly fixed)
+└─ #smooth-wrapper      ← ScrollSmoother applies its styles here
+   └─ #smooth-content   ← ScrollSmoother transforms this; all page content lives inside
+      └─ main#scroll-content > <slot/>
+```
+
+`#scroll-stage` **must** stay outside `#smooth-wrapper` — otherwise the smoother's transform would drag the "fixed" backdrop with the content.
+
+**Controller wiring:** `gsap.registerPlugin(ScrollTrigger, ScrollSmoother)`, then `initSmoothScroll()` runs **before** scenes mount, calling `ScrollSmoother.create({ wrapper, content, smooth: 1.2, effects: true, smoothTouch: 0 })`. `effects: true` enables `data-speed` / `data-lag` for later phases. The global `scroll:progress` event and every scene ScrollTrigger work unchanged — they read the smoothed scroll position automatically (no `scrollerProxy` needed; ScrollSmoother is GSAP-native).
+
+**Reduced motion:** `initSmoothScroll()` returns early — `ScrollSmoother.create()` is skipped entirely, leaving native scroll. CSS `scroll-behavior` is `auto` (never `smooth`) so it cannot fight the smoother.
+
 ## How to add a new section
 
 1. Create `src/components/sections/MySection.astro` with `data-scene="my-section"`.

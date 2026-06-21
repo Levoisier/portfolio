@@ -14,6 +14,7 @@
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ScrollSmoother } from 'gsap/ScrollSmoother';
 import type { SceneFactory } from './types';
 
 // ─── Scene imports ────────────────────────────────────────────────────────────
@@ -38,9 +39,27 @@ const SCENE_REGISTRY: Record<string, SceneFactory> = {
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ─── Smooth scroll (SANCTIONED engine infra — Golden Rule 3 covers scene-adding) ──
+// ScrollSmoother owns scrolling for the whole page. It transforms #smooth-content
+// inside the fixed #smooth-wrapper (see Layout.astro). #scroll-stage is a sibling
+// OUTSIDE the wrapper so it stays truly fixed. `effects: true` enables data-speed /
+// data-lag for later phases. Reduced motion: skip entirely → native scroll.
+// This is the ONLY edit permitted to the controller core. Do not add scene logic here.
+function initSmoothScroll(): void {
+  if (prefersReducedMotion) return;
+  ScrollSmoother.create({
+    wrapper: '#smooth-wrapper',
+    content: '#smooth-content',
+    smooth: 1.2,
+    effects: true,
+    smoothTouch: 0,
+  });
+}
+// ─── End smooth scroll infra ──────────────────────────────────────────────────
 
 /** Global progress signal — emitted on every ScrollTrigger refresh tick. */
 function emitGlobalProgress(progress: number): void {
@@ -97,13 +116,19 @@ function mountScenes(): void {
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', mountScenes);
-} else {
+function bootstrap(): void {
+  initSmoothScroll(); // create the smoother before scene ScrollTriggers mount
   mountScenes();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrap);
+} else {
+  bootstrap();
 }
 
 // Cleanup on Astro view transitions (future-proof)
 document.addEventListener('astro:before-swap', () => {
+  ScrollSmoother.get()?.kill();
   ScrollTrigger.getAll().forEach((st) => st.kill());
 });

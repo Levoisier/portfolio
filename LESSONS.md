@@ -120,3 +120,15 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Kept the hero section paintable before controller startup, stopped touching the LCP image in the normal animation path, deferred non-critical decorative media to scene hooks, and served small WebP derivatives via `srcset`.
 
 **Don't repeat:** Treat the LCP element as critical HTML: reserve its dimensions, preload the selected source, and avoid startup opacity/transform writes on that element.
+
+---
+
+### [2026-06-21] ScrollSmoother: modern versions use a relative wrapper, not a fixed one
+
+**Context:** Phase 11 — integrating GSAP ScrollSmoother and verifying it in a headless browser.
+
+**Problem/Dead-end:** Older ScrollSmoother docs/tutorials describe a `position: fixed; overflow: hidden` `#smooth-wrapper`, so I expected to assert that. In gsap 3.15 the active smoother instead leaves the wrapper effectively `position: relative` and writes inline styles like `box-sizing: border-box; width: 100%; overflow: visible` to `#smooth-content`. Asserting the old fixed-wrapper shape would have produced a false "smoother not working" reading. Headless Chrome also does **not** default to `prefers-reduced-motion: reduce` here, but it needed `set media ... reduced-motion` (the CLI verb is `set media`, not `media`) to emulate it.
+
+**Fix/Decision:** Verify ScrollSmoother is live by (a) the presence of its inline styles on `#smooth-content`, and (b) `scroll:progress` advancing as you scroll — not by a hardcoded wrapper `position`. Confirmed the reduced-motion branch by asserting **no** inline styles appear on wrapper/content (create() skipped) while all `[data-scene]` stay opacity 1. Also removed CSS `scroll-behavior: smooth` (set to `auto`) because it fights ScrollSmoother for control of scrolling.
+
+**Don't repeat:** Don't gate ScrollSmoother verification on a specific wrapper `position`; check its content inline-styles + a live progress signal. CSS `scroll-behavior: smooth` must not coexist with ScrollSmoother.
