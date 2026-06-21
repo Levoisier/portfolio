@@ -1,11 +1,9 @@
 /**
  * Projects Scene.
  *
- * Desktop (≥1024px, no reduced-motion): a pinned experiment-log reveal.
- *   Entries lift in sequence. No horizontal gallery, card-track, or standalone
- *   decorative panda remains.
- *
- * Tablet/mobile (<1024px): lean vertical reveal.
+ * All viewports (no reduced-motion): a normal-scroll reveal — each staggered
+ * entry animates in as it scrolls into view (no pin / no held scroll). Entries
+ * are left/right offset cards like the Confidential section.
  *
  * Reduced motion: static, instant, fully readable.
  */
@@ -23,12 +21,11 @@ type ProjectRecord = {
 };
 
 const ENTRY_Y = 36;
-const DESKTOP_QUERY = '(min-width: 1024px)';
 
 /**
  * Add one entry's staggered reveal (rule draw-in → title → description → formula
- * chips) to a timeline at position `at`. Shared by the desktop pinned scrub and
- * the mobile triggered reveal so both feel alive, not a single lift.
+ * chips) to a timeline at position `at`, so each entry feels alive, not a single
+ * lift.
  *
  * Channel discipline (see LESSONS 2026-06-21): the reveal never touches the
  * properties the hover reaction owns — title x/skewX and individual chip
@@ -36,14 +33,9 @@ const DESKTOP_QUERY = '(min-width: 1024px)';
  * chips), rule scaleY, and entry y. No element/property pair is shared with the
  * hover, so the two systems compose cleanly.
  */
-function addEntryReveal(
-  tl: gsap.core.Timeline,
-  record: ProjectRecord,
-  at: number,
-  scrub: boolean
-): void {
-  const ease = scrub ? 'none' : 'expo.out';
-  const d = scrub ? 0.5 : 0.6;
+function addEntryReveal(tl: gsap.core.Timeline, record: ProjectRecord, at: number): void {
+  const ease = 'expo.out';
+  const d = 0.6;
 
   tl.fromTo(record.entry, { y: ENTRY_Y }, { y: 0, duration: d, ease }, at);
   if (record.rule) {
@@ -74,7 +66,7 @@ const projectsScene = (el: Element): Scene => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const records: ProjectRecord[] = [];
   const cleanup: Array<() => void> = [];
-  let mm: gsap.MatchMedia | null = null;
+  const revealTimelines: gsap.core.Timeline[] = [];
 
   function bind<K extends keyof HTMLElementEventMap>(
     target: HTMLElement,
@@ -150,47 +142,18 @@ const projectsScene = (el: Element): Scene => {
       });
       gsap.set(chips, { opacity: 0.86 });
 
-      mm = gsap.matchMedia();
-
-      mm.add(DESKTOP_QUERY, () => {
-        const tl = gsap.timeline({
-          defaults: { ease: 'none' },
-          scrollTrigger: {
-            trigger: el,
-            start: 'top top',
-            end: '+=160%',
-            pin: true,
-            scrub: 1,
-            anticipatePin: 1,
-          },
-        });
-
-        records.forEach((record, i) => addEntryReveal(tl, record, i * 0.85, true));
-        // Tail pad so the LAST entry finishes well before the pin releases
-        // (never clipped at the bottom of the scrub).
-        tl.to({}, { duration: 0.7 });
-
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      mm.add('(max-width: 1023px)', () => {
+      // Normal-scroll reveal: each entry plays its staggered reveal once as it
+      // scrolls into view. No pin, so the page never holds scroll on this section.
+      records.forEach((record) => {
         const tl = gsap.timeline({
           scrollTrigger: {
-            trigger: el,
-            start: 'top 78%',
+            trigger: record.entry,
+            start: 'top 82%',
             toggleActions: 'play none none none',
           },
         });
-
-        records.forEach((record, i) => addEntryReveal(tl, record, i * 0.4, false));
-
-        return () => {
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
+        addEntryReveal(tl, record, 0);
+        revealTimelines.push(tl);
       });
     },
 
@@ -203,12 +166,15 @@ const projectsScene = (el: Element): Scene => {
     },
 
     progress(_progress: number) {
-      // Desktop scroll motion is owned by the pinned timeline. Hover uses x/rotation.
+      // Per-entry ScrollTriggers own the reveal. Hover uses x/rotation.
     },
 
     destroy() {
       cleanup.splice(0).forEach((dispose) => dispose());
-      mm?.revert();
+      revealTimelines.splice(0).forEach((tl) => {
+        tl.scrollTrigger?.kill();
+        tl.kill();
+      });
       const all = records
         .flatMap((record) => [
           record.entry,
