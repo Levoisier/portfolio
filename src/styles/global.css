@@ -258,6 +258,22 @@
   }
 }
 
+/* ─── Hero name ───────────────────────────────────────────────────────────────
+   One word per line (the scene inserts <br> at spaces). nowrap keeps each word
+   intact — without it the inline-block character spans can break mid-word (e.g.
+   the "n" of Cristian dropping to its own row). Mobile keeps the full hero size;
+   desktop shrinks it to fit the narrower right column of the de-centered split. */
+#hero-name {
+  font-size: var(--text-hero);
+  white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  #hero-name {
+    font-size: clamp(3rem, 5vw, 5.5rem);
+  }
+}
+
 /* ─── Section wrappers ────────────────────────────────────────────────────── */
 .portfolio-section {
   position: relative;
