@@ -1,0 +1,22 @@
+# Build output
+dist/
+.astro/
+
+# Dependencies
+node_modules/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Editor
+.DS_Store
+*.code-workspace
+.idea/
+
+# Vercel
+.vercel/
+
+# pnpm
+.pnpm-debug.log
