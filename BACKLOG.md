@@ -85,7 +85,7 @@ These are live facts from the v1 build that every v2 phase must respect.
 
 ## Phase 13 — Molecular atmosphere thread (lab assets)
 
-### [ ] feat(lab): wire the unused lab assets as a continuity thread
+### [x] feat(lab): wire the unused lab assets as a continuity thread
 
 **Acceptance criteria:**
 

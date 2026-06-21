@@ -268,8 +268,46 @@ const elements: Element[] = [
 ];
 ---
 
-<section id="skills" class="portfolio-section section-pad" data-scene="skills">
-  <div class="mx-auto max-w-7xl">
+<section id="skills" class="portfolio-section overflow-hidden section-pad" data-scene="skills">
+  <!-- Lab decor: flasks RISE on the hero→skills handoff (data-speed > 1);
+       molecule-a continues the continuity thread (data-speed < 1 = drifts).
+       ScrollSmoother effects drive data-speed; inert (static) under reduced motion.
+       Desktop-gated, lazy, low-opacity, aria-hidden, behind content. -->
+  <img
+    src="/media/lab/flask-round.webp"
+    alt=""
+    aria-hidden="true"
+    loading="lazy"
+    decoding="async"
+    width="160"
+    height="160"
+    data-speed="1.3"
+    class="pointer-events-none absolute -left-6 top-8 hidden w-40 select-none opacity-[0.1] md:block"
+  />
+  <img
+    src="/media/lab/beaker-reaction.webp"
+    alt=""
+    aria-hidden="true"
+    loading="lazy"
+    decoding="async"
+    width="176"
+    height="176"
+    data-speed="1.22"
+    class="pointer-events-none absolute -right-4 top-20 hidden w-44 select-none opacity-[0.1] md:block"
+  />
+  <img
+    src="/media/lab/molecule-a.webp"
+    alt=""
+    aria-hidden="true"
+    loading="lazy"
+    decoding="async"
+    width="112"
+    height="112"
+    data-speed="0.85"
+    class="pointer-events-none absolute bottom-10 right-1/4 hidden w-28 select-none opacity-[0.14] md:block"
+  />
+
+  <div class="relative mx-auto max-w-7xl">
     <h2
       class="font-display mb-12 text-center uppercase tracking-widest"
       style="font-size: var(--text-2xl); color: var(--paper);"
