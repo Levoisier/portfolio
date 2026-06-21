@@ -125,7 +125,7 @@ These are live facts from the v1 build that every v2 phase must respect.
 
 ## Phase 15 — Projects horizontal pinned gallery
 
-### [ ] feat(projects): pinned horizontal scroll gallery
+### [x] feat(projects): pinned horizontal scroll gallery
 
 **Acceptance criteria:**
 

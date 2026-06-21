@@ -1,3 +1,18 @@
+/**
+ * Projects Scene.
+ *
+ * Desktop (≥1024px, no reduced-motion): the section pins and the card track
+ *   translates horizontally on scrub, traversing every card before unpinning.
+ *   The horizontal layout is applied via an `.is-horizontal` class (CSS) toggled
+ *   only here, so reduced-motion / no-JS keep the safe vertical grid stack.
+ *
+ * Tablet/mobile (<1024px): the v1 vertical stack reveal (stagger on enter).
+ *
+ * Reduced motion: static vertical stack, instant reveal.
+ *
+ * panda-coding accent parallax + border/image hover treatment are preserved.
+ */
+
 import gsap from 'gsap';
 import type { Scene } from '../types';
 
@@ -31,15 +46,15 @@ const projectsScene = (el: Element): Scene => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const projects: ProjectRecord[] = [];
   const cleanup: Array<() => void> = [];
-  let entered = false;
   let accent: HTMLElement | null = null;
+  let mm: gsap.MatchMedia | null = null;
 
   function setHover(record: ProjectRecord, active: boolean): void {
     gsap.to(record.card, {
       borderColor: active ? 'var(--scarlet)' : 'var(--glass-border)',
       duration: 0.2,
       ease: 'expo.out',
-      overwrite: true,
+      overwrite: 'auto',
     });
 
     if (!prefersReducedMotion && record.image) {
@@ -47,7 +62,7 @@ const projectsScene = (el: Element): Scene => {
         opacity: active ? 0.7 : 0.4,
         duration: 0.2,
         ease: 'expo.out',
-        overwrite: true,
+        overwrite: 'auto',
       });
     }
   }
@@ -66,6 +81,8 @@ const projectsScene = (el: Element): Scene => {
       accent = el.querySelector<HTMLElement>('[data-projects-accent]');
       loadAccent(accent);
 
+      const track = el.querySelector<HTMLElement>('[data-projects-track]');
+
       el.querySelectorAll<HTMLElement>('[data-project-card]').forEach((card) => {
         projects.push({
           card,
@@ -73,23 +90,7 @@ const projectsScene = (el: Element): Scene => {
         });
       });
 
-      if (prefersReducedMotion) {
-        projects.forEach((record) => loadProjectImage(record.image));
-      }
-
-      if (prefersReducedMotion) {
-        gsap.set(
-          projects.map((record) => record.card),
-          { opacity: 1, y: 0 }
-        );
-        gsap.set(accent, { y: 0 });
-      } else {
-        gsap.set(
-          projects.map((record) => record.card),
-          { opacity: 0, y: REVEAL_Y }
-        );
-        gsap.set(accent, { y: 0, willChange: 'transform' });
-      }
+      const cardEls = projects.map((record) => record.card);
 
       projects.forEach((record) => {
         bind(record.card, 'mouseenter', () => setHover(record, true));
@@ -97,31 +98,69 @@ const projectsScene = (el: Element): Scene => {
         bind(record.card, 'focusin', () => setHover(record, true));
         bind(record.card, 'focusout', () => setHover(record, false));
       });
-    },
-
-    enter() {
-      if (entered) return;
-      entered = true;
-      projects.forEach((record) => loadProjectImage(record.image));
 
       if (prefersReducedMotion) {
-        gsap.set(
-          projects.map((record) => record.card),
-          { opacity: 1, y: 0 }
-        );
+        projects.forEach((record) => loadProjectImage(record.image));
+        gsap.set(cardEls, { opacity: 1, y: 0 });
+        gsap.set(accent, { y: 0 });
         return;
       }
 
-      gsap.to(
-        projects.map((record) => record.card),
-        {
-          opacity: 1,
-          y: 0,
+      gsap.set(accent, { y: 0, willChange: 'transform' });
+
+      mm = gsap.matchMedia();
+
+      // ── Desktop: pinned horizontal gallery ───────────────────────────────────
+      mm.add('(min-width: 1024px)', () => {
+        if (!track) return;
+        track.classList.add('is-horizontal');
+        gsap.set(cardEls, { opacity: 1, y: 0 });
+
+        const distance = (): number => Math.max(0, track.scrollWidth - track.clientWidth);
+
+        const horizontal = gsap.to(track, {
+          x: () => -distance(),
+          ease: 'none',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top top',
+            end: () => '+=' + distance(),
+            pin: true,
+            scrub: 1,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        return () => {
+          horizontal.scrollTrigger?.kill();
+          horizontal.kill();
+          track.classList.remove('is-horizontal');
+          gsap.set(track, { clearProps: 'transform' });
+        };
+      });
+
+      // ── Tablet/mobile: v1 vertical stack reveal ──────────────────────────────
+      mm.add('(max-width: 1023px)', () => {
+        const reveal = gsap.from(cardEls, {
+          opacity: 0,
+          y: REVEAL_Y,
           duration: 0.6,
           ease: 'expo.out',
           stagger: 0.1,
-        }
-      );
+          scrollTrigger: { trigger: el, start: 'top 80%', toggleActions: 'play none none none' },
+        });
+
+        return () => {
+          reveal.scrollTrigger?.kill();
+          reveal.kill();
+        };
+      });
+    },
+
+    enter() {
+      // Load the (deferred) card images as the section approaches.
+      projects.forEach((record) => loadProjectImage(record.image));
     },
 
     leave() {
@@ -135,6 +174,7 @@ const projectsScene = (el: Element): Scene => {
 
     destroy() {
       cleanup.splice(0).forEach((dispose) => dispose());
+      mm?.revert();
       gsap.killTweensOf([
         ...projects.map((record) => record.card),
         ...projects.map((record) => record.image),

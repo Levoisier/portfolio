@@ -163,8 +163,20 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 
 **Context:** Phase 14 — the skills tiles assemble on a scrubbed reveal, but must keep the v1 hover (active scale 1.08, neighbour dim to 70%, badge, bar).
 
-**Problem/Dead-end:** Both behaviours want to animate the tiles. The hover used `overwrite: true`, which kills *all* other tweens of the target — so the first hover would detach the scrubbed assemble tween from its ScrollTrigger (it then never reverses on scroll-back). Putting both on the same property (tile opacity) also fights.
+**Problem/Dead-end:** Both behaviours want to animate the tiles. The hover used `overwrite: true`, which kills _all_ other tweens of the target — so the first hover would detach the scrubbed assemble tween from its ScrollTrigger (it then never reverses on scroll-back). Putting both on the same property (tile opacity) also fights.
 
 **Fix/Decision:** Gave each behaviour its own channel. Assemble drives the **tile** transform (y/scale/rotate) + the **card** opacity (fade-in). Hover drives the **card** scale + the **tile** opacity (dim) + badge + bar. No element/property pair is touched by both. Then switched the hover tweens from `overwrite: true` to `overwrite: 'auto'` so they only override the exact conflicting property and leave the scrub tween intact. The assemble's scrub range ends (`top 35%`) well before the section settles for interaction, so the two effectively never run at the same instant anyway.
 
-**Don't repeat:** When two animation systems share elements, separate them by element *and* property and prefer `overwrite: 'auto'`. `overwrite: true` is a footgun next to scrubbed/ScrollTrigger-bound tweens.
+**Don't repeat:** When two animation systems share elements, separate them by element _and_ property and prefer `overwrite: 'auto'`. `overwrite: true` is a footgun next to scrubbed/ScrollTrigger-bound tweens.
+
+---
+
+### [2026-06-21] Horizontal pinned gallery: gate the flex layout behind a JS class
+
+**Context:** Phase 15 — the Projects section becomes a desktop horizontal pinned gallery (pin + scrub the card track sideways), but must stay a reachable vertical stack on tablet/mobile and under reduced motion.
+
+**Problem/Dead-end:** If the horizontal layout (`flex-nowrap` with cards wider than the viewport) lives in the markup/CSS, then under reduced motion / no-JS — where the pin+scrub never runs — the off-screen cards are clipped by the section's `overflow-hidden` and become permanently unreachable.
+
+**Fix/Decision:** Kept the default layout the vertical grid stack (`grid md:grid-cols-2 lg:grid-cols-3`). The horizontal track is opt-in via an `.is-horizontal` class the projects scene adds **only** inside its `(min-width: 1024px)` `matchMedia` branch (and removes on cleanup). So reduced-motion/no-JS always get the safe stack. For the pin: animate the track's `x` to `-(scrollWidth - clientWidth)` via a **function** with `invalidateOnRefresh: true` and a function-based `end`, so the travel distance recomputes on resize and the last card is never clipped.
+
+**Don't repeat:** Any layout that only works because JS is driving it (horizontal scroll, pinned tracks) must be applied by that JS, not baked into static CSS — otherwise the no-JS/reduced-motion path traps content.
