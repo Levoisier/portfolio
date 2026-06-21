@@ -35,8 +35,11 @@ function setupLoupe(surface: HTMLElement): void {
   let active = false;
   let rafId = 0;
 
-  // Clone the live panel content (current language/state) into the lens. Strip
-  // ids so we never create duplicate-id elements in the document.
+  // Clone the live panel content (current language/state) into the lens. Ids are
+  // KEPT so id-based CSS (e.g. #hero-name's font-size + white-space) still styles
+  // the clone identically; the duplicate ids are harmless here — the loupe is
+  // inert + aria-hidden, and the scene reads the originals once at init (before
+  // any clone exists), so getElementById always resolves to the real element.
   function buildContent(): void {
     const cs = getComputedStyle(surface);
     inner.style.width = `${surface.offsetWidth}px`;
@@ -45,10 +48,7 @@ function setupLoupe(surface: HTMLElement): void {
     const frag = document.createDocumentFragment();
     for (const child of Array.from(surface.children)) {
       if (child === loupe) continue;
-      const clone = child.cloneNode(true) as HTMLElement;
-      clone.removeAttribute('id');
-      clone.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
-      frag.appendChild(clone);
+      frag.appendChild(child.cloneNode(true));
     }
     inner.replaceChildren(frag);
   }
