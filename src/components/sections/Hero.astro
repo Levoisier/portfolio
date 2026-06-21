@@ -1,0 +1,82 @@
+---
+/* HERO SECTION
+   The panda + name reveal is the reference scene (see src/scripts/scroll/scenes/hero.ts).
+   All elements start opacity:0; the scene drives the entrance animation.
+   Structure:
+     · #hero-panda        — centerpiece image (panda-hero.webp + panda-head.webp layers)
+     · #hero-name         — "Cristian Zapata Cartagena" (chars split for stagger)
+     · #hero-role         — role line
+     · #hero-scroll-hint  — animated chevron
+*/
+---
+
+<section
+  id="hero"
+  class="portfolio-section relative flex min-h-screen flex-col items-center justify-center overflow-hidden section-pad"
+  data-scene="hero"
+>
+  <!-- Panda centerpiece -->
+  <div
+    id="hero-panda"
+    class="relative z-10 mb-8 flex items-center justify-center"
+    aria-hidden="true"
+  >
+    <!-- panda-hero.webp: body layer (1600×2000) -->
+    <img
+      id="panda-body"
+      src="/media/panda/panda-hero.webp"
+      alt=""
+      width="400"
+      height="500"
+      class="select-none"
+      loading="eager"
+      decoding="async"
+    />
+    <!-- panda-head.webp: focal parallax layer (1200×1200), overlaid in JS -->
+    <img
+      id="panda-head"
+      src="/media/panda/panda-head.webp"
+      alt=""
+      width="300"
+      height="300"
+      class="absolute select-none"
+      loading="eager"
+      decoding="async"
+    />
+  </div>
+
+  <!-- Name — characters are split by the hero scene for stagger animation -->
+  <h1
+    id="hero-name"
+    class="font-display text-center leading-none tracking-tight"
+    style="font-size: var(--text-hero); color: var(--paper);"
+    aria-label="Cristian Zapata Cartagena"
+  >
+    <!-- Text injected by hero scene to allow char-split without layout shift
+         Fallback text node below is visible before JS hydrates          -->
+    <noscript>Cristian Zapata Cartagena</noscript>
+    <span class="sr-only">Cristian Zapata Cartagena</span>
+  </h1>
+
+  <!-- Role line -->
+  <p
+    id="hero-role"
+    class="font-body mt-4 text-center uppercase tracking-widest"
+    style="font-size: var(--text-lg); color: var(--scarlet);"
+  >
+    Full Stack Developer &amp; Chemical Engineer
+  </p>
+
+  <!-- Scroll hint -->
+  <div id="hero-scroll-hint" class="absolute bottom-8 left-1/2 -translate-x-1/2" aria-hidden="true">
+    <!-- Inline SVG chevron so no extra asset request -->
+    <svg width="24" height="40" viewBox="0 0 24 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M12 4 L12 28 M4 20 L12 28 L20 20"
+        stroke="var(--scarlet)"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path>
+    </svg>
+  </div>
+</section>

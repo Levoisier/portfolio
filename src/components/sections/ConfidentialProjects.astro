@@ -1,0 +1,187 @@
+---
+/* CONFIDENTIAL PROJECTS SECTION
+   GOLDEN RULE: NO screenshots, NO links, NO client/employer names.
+   "Redacted blueprint" cards — industry, role, abstracted stack, impact.
+   Blueprint aesthetic: dark navy + grid + scarlet redaction bars.
+   Visual treatment: see BACKLOG item confidential-card-treatment.
+*/
+
+interface ConfidentialProject {
+  industry: string;
+  role: string;
+  stack: string[];
+  impact: string;
+  duration: string;
+  teamSize: string;
+}
+
+const confidentialProjects: ConfidentialProject[] = [
+  {
+    industry: 'Chemical / Industrial',
+    role: 'Full Stack Lead',
+    stack: ['Python', 'FastAPI', 'React', 'Postgres', 'Docker'],
+    impact:
+      'Reduced process data pipeline latency by ~60%. Led a 4-person frontend team delivering a real-time process monitoring dashboard.',
+    duration: '18 months',
+    teamSize: '6–8',
+  },
+  {
+    industry: 'E-Commerce / Retail',
+    role: 'Frontend Engineer',
+    stack: ['TypeScript', 'Next.js', 'Shopify', 'SAP'],
+    impact:
+      'Built the storefront integration layer connecting a custom Next.js frontend with Shopify and legacy SAP ERP. Enabled same-day inventory sync across 3 regional warehouses.',
+    duration: '12 months',
+    teamSize: '4–5',
+  },
+  {
+    industry: 'Enterprise SaaS',
+    role: 'Full Stack Developer',
+    stack: ['Vue', 'Laravel', 'Odoo', 'Postgres', 'AWS'],
+    impact:
+      'Developed core billing and workflow modules for a multi-tenant ERP product. Maintained 99.7% uptime across 40+ client tenants.',
+    duration: '24 months',
+    teamSize: '10+',
+  },
+];
+---
+
+<section
+  id="confidential"
+  class="portfolio-section section-pad blueprint-grid"
+  data-scene="confidential"
+  style="background-color: var(--navy);"
+>
+  <div class="mx-auto max-w-6xl">
+    <div class="mb-12 flex flex-col gap-2">
+      <span class="font-display text-xs uppercase tracking-widest" style="color: var(--scarlet);">
+        [CLASSIFIED]
+      </span>
+      <h2
+        class="font-display uppercase tracking-widest"
+        style="font-size: var(--text-2xl); color: var(--paper);"
+      >
+        Confidential Work
+      </h2>
+      <p
+        class="font-body max-w-prose"
+        style="font-size: var(--text-sm); color: color-mix(in srgb, var(--paper) 60%, transparent);"
+      >
+        Client engagements under NDA. Details abstracted to protect confidentiality. No screenshots,
+        repositories, or identifying information are disclosed.
+      </p>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {
+        confidentialProjects.map((project, i) => (
+          <article
+            class="confidential-card relative overflow-hidden border"
+            style="border-color: var(--glass-border); background: rgba(15, 35, 66, 0.6);"
+            data-index={i}
+            aria-label={`Confidential project: ${project.industry}`}
+          >
+            <div
+              class="flex items-center justify-between px-4 py-3"
+              style="background: var(--scarlet); color: var(--on-scarlet);"
+            >
+              <span class="font-display text-xs font-bold uppercase tracking-widest">
+                {project.industry}
+              </span>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <rect x="2" y="4" width="12" height="2" rx="1" />
+                <rect x="2" y="8" width="8" height="2" rx="1" />
+                <rect x="2" y="12" width="10" height="2" rx="1" />
+              </svg>
+            </div>
+
+            <div class="flex flex-col gap-4 p-5">
+              <div>
+                <span
+                  class="font-display text-xs uppercase tracking-widest"
+                  style="color: var(--scarlet-soft);"
+                >
+                  Role
+                </span>
+                <p class="font-body mt-1" style="font-size: var(--text-sm); color: var(--paper);">
+                  {project.role}
+                </p>
+              </div>
+
+              <div>
+                <span
+                  class="font-display text-xs uppercase tracking-widest"
+                  style="color: var(--scarlet-soft);"
+                >
+                  Stack
+                </span>
+                <div class="mt-2 flex flex-wrap gap-1.5">
+                  {project.stack.map((tech) => (
+                    <span
+                      class="font-display rounded-sm px-1.5 py-0.5 text-xs"
+                      style="background: var(--navy-dim); border: 1px solid var(--glass-border); color: var(--paper);"
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <span
+                  class="font-display text-xs uppercase tracking-widest"
+                  style="color: var(--scarlet-soft);"
+                >
+                  Impact
+                </span>
+                <p
+                  class="font-body mt-1 leading-relaxed"
+                  style="font-size: var(--text-sm); color: color-mix(in srgb, var(--paper) 80%, transparent);"
+                >
+                  {project.impact}
+                </p>
+              </div>
+
+              <div class="flex gap-6 border-t pt-4" style="border-color: var(--glass-border);">
+                <div>
+                  <span
+                    class="font-display text-xs uppercase tracking-widest"
+                    style="color: var(--scarlet-soft);"
+                  >
+                    Duration
+                  </span>
+                  <p class="font-body mt-0.5 text-xs" style="color: var(--paper);">
+                    {project.duration}
+                  </p>
+                </div>
+                <div>
+                  <span
+                    class="font-display text-xs uppercase tracking-widest"
+                    style="color: var(--scarlet-soft);"
+                  >
+                    Team
+                  </span>
+                  <p class="font-body mt-0.5 text-xs" style="color: var(--paper);">
+                    {project.teamSize}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="pointer-events-none absolute bottom-0 right-0"
+              aria-hidden="true"
+              style="width: 48px; height: 48px; border-top: 1px solid var(--scarlet); border-left: 1px solid var(--scarlet); opacity: 0.3;"
+            />
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>

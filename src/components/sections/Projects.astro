@@ -1,0 +1,145 @@
+---
+/* FEATURED PROJECTS SECTION
+   Card/panel system: screenshot slot + stack chips + live/repo links.
+   3 placeholder entries — replace content without touching markup.
+   Scroll-reveal animation: see BACKLOG item projects-scroll-reveal.
+*/
+
+interface Project {
+  title: string;
+  description: string;
+  stack: string[];
+  liveUrl?: string;
+  repoUrl?: string;
+  imageAlt: string;
+}
+
+const projects: Project[] = [
+  {
+    title: 'Project Alpha',
+    description:
+      'A full-stack application demonstrating real-time data processing with a modern React frontend and Node.js backend. Replace this with actual project details.',
+    stack: ['TypeScript', 'React', 'Next.js', 'Supabase', 'Vercel'],
+    liveUrl: '#',
+    repoUrl: '#',
+    imageAlt: 'Screenshot of Project Alpha',
+  },
+  {
+    title: 'Project Beta',
+    description:
+      'Python data pipeline with FastAPI REST layer and Postgres storage. Processes chemical engineering simulation outputs. Replace this with actual project details.',
+    stack: ['Python', 'FastAPI', 'Postgres', 'Docker', 'AWS'],
+    liveUrl: '#',
+    repoUrl: '#',
+    imageAlt: 'Screenshot of Project Beta',
+  },
+  {
+    title: 'Project Gamma',
+    description:
+      'E-commerce integration layer bridging Shopify with an Odoo ERP backend. Replace this with actual project details.',
+    stack: ['PHP', 'Laravel', 'Shopify', 'Odoo', 'Vue'],
+    repoUrl: '#',
+    imageAlt: 'Screenshot of Project Gamma',
+  },
+];
+---
+
+<section id="projects" class="portfolio-section section-pad" data-scene="projects">
+  <div class="mx-auto max-w-6xl">
+    <h2
+      class="font-display mb-12 uppercase tracking-widest"
+      style="font-size: var(--text-2xl); color: var(--paper);"
+    >
+      Featured Projects
+    </h2>
+
+    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+      {
+        projects.map((project, i) => (
+          <article
+            class="project-card group relative flex flex-col overflow-hidden border"
+            style="border-color: var(--glass-border); background: var(--glass-bg);"
+            data-index={i}
+          >
+            <div
+              class="relative aspect-video w-full overflow-hidden"
+              style="background: var(--navy-soft);"
+            >
+              <img
+                src="/media/panda/panda-coding.webp"
+                alt={project.imageAlt}
+                width="800"
+                height="450"
+                class="h-full w-full object-cover opacity-40 transition-opacity duration-500 group-hover:opacity-60"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                <span
+                  class="font-display text-xs uppercase tracking-widest"
+                  style="color: var(--paper); opacity: 0.4;"
+                >
+                  {project.title}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex flex-1 flex-col gap-4 p-6">
+              <h3
+                class="font-display leading-tight"
+                style="font-size: var(--text-xl); color: var(--paper);"
+              >
+                {project.title}
+              </h3>
+
+              <p
+                class="font-body flex-1 leading-relaxed"
+                style="font-size: var(--text-sm); color: color-mix(in srgb, var(--paper) 70%, transparent);"
+              >
+                {project.description}
+              </p>
+
+              <div class="flex flex-wrap gap-2" aria-label="Tech stack">
+                {project.stack.map((tech) => (
+                  <span
+                    class="font-display rounded-sm px-2 py-0.5 text-xs"
+                    style="background: var(--scarlet-dim); color: var(--scarlet-soft); border: 1px solid var(--scarlet-dim);"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+
+              <div class="flex gap-4">
+                {project.liveUrl && project.liveUrl !== '#' && (
+                  <a
+                    href={project.liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-display text-xs uppercase tracking-widest transition-colors"
+                    style="color: var(--scarlet);"
+                    aria-label={`Live demo for ${project.title}`}
+                  >
+                    Live →
+                  </a>
+                )}
+                {project.repoUrl && project.repoUrl !== '#' && (
+                  <a
+                    href={project.repoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="font-display text-xs uppercase tracking-widest transition-colors"
+                    style="color: var(--paper); opacity: 0.6;"
+                    aria-label={`Source code for ${project.title}`}
+                  >
+                    Repo →
+                  </a>
+                )}
+              </div>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>

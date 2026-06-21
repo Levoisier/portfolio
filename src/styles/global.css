@@ -1,0 +1,117 @@
+@import './tokens.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Font face declarations ──────────────────────────────────────────────── */
+/* TODO (BACKLOG): download & subset fonts, place woff2 in /public/fonts/
+   Until then, system-ui fallback renders correctly.                          */
+
+/* @font-face {
+  font-family: 'DM Mono';
+  src: url('/fonts/DMMono-VariableFont_wght.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0000-00FF;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-VariableFont_opsz,wght.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0000-00FF;
+} */
+
+/* ─── Base resets ─────────────────────────────────────────────────────────── */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-body), system-ui, sans-serif;
+    background-color: var(--ink);
+    color: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Single scroll container for GSAP ScrollTrigger */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Reduced-motion: disable smooth scroll + all transitions */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ─── Utility layer additions ─────────────────────────────────────────────── */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display), 'Courier New', monospace;
+  }
+
+  .font-body {
+    font-family: var(--font-body), system-ui, sans-serif;
+  }
+
+  .section-pad {
+    padding: var(--section-pad-y) var(--section-pad-x);
+  }
+
+  /* Blueprint grid overlay — used by confidential cards */
+  .blueprint-grid {
+    background-image:
+      linear-gradient(rgba(245, 243, 238, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245, 243, 238, 0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .text-scarlet {
+    color: var(--scarlet);
+  }
+
+  .text-navy {
+    color: var(--navy);
+  }
+}
+
+/* ─── Scroll stage (fixed background layers) ──────────────────────────────── */
+#scroll-stage {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-backdrop);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#scroll-stage .stage-layer {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+}
+
+/* ─── Section wrappers ────────────────────────────────────────────────────── */
+.portfolio-section {
+  position: relative;
+  z-index: var(--z-content);
+}

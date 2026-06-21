@@ -1,0 +1,258 @@
+---
+/* SKILLS SECTION — Periodic Table of Technologies
+   Each technology renders as an element tile: symbol · name · category color.
+   Tiles are CODE-DRAWN (SVG/CSS, no raster).
+   Hover/tap reveals category badge + proficiency bar (see BACKLOG item: skills-interactive).
+
+   Category color tokens: --cat-* in tokens.css
+*/
+
+interface Element {
+  symbol: string;
+  name: string;
+  number: number;
+  category: string;
+  categoryToken: string;
+}
+
+const elements: Element[] = [
+  // Languages
+  {
+    symbol: 'Ts',
+    name: 'TypeScript',
+    number: 1,
+    category: 'Lang',
+    categoryToken: 'var(--cat-languages)',
+  },
+  {
+    symbol: 'Js',
+    name: 'JavaScript',
+    number: 2,
+    category: 'Lang',
+    categoryToken: 'var(--cat-languages)',
+  },
+  {
+    symbol: 'Py',
+    name: 'Python',
+    number: 3,
+    category: 'Lang',
+    categoryToken: 'var(--cat-languages)',
+  },
+  {
+    symbol: 'Php',
+    name: 'PHP',
+    number: 4,
+    category: 'Lang',
+    categoryToken: 'var(--cat-languages)',
+  },
+  // Frontend
+  { symbol: 'Re', name: 'React', number: 5, category: 'FE', categoryToken: 'var(--cat-frontend)' },
+  {
+    symbol: 'Nx',
+    name: 'Next.js',
+    number: 6,
+    category: 'FE',
+    categoryToken: 'var(--cat-frontend)',
+  },
+  { symbol: 'Vu', name: 'Vue', number: 7, category: 'FE', categoryToken: 'var(--cat-frontend)' },
+  { symbol: 'As', name: 'Astro', number: 8, category: 'FE', categoryToken: 'var(--cat-frontend)' },
+  { symbol: 'Gp', name: 'GSAP', number: 9, category: 'FE', categoryToken: 'var(--cat-frontend)' },
+  {
+    symbol: 'Sh',
+    name: 'shadcn/ui',
+    number: 10,
+    category: 'FE',
+    categoryToken: 'var(--cat-frontend)',
+  },
+  // Backend
+  {
+    symbol: 'No',
+    name: 'Node.js',
+    number: 11,
+    category: 'BE',
+    categoryToken: 'var(--cat-backend)',
+  },
+  { symbol: 'Dj', name: 'Django', number: 12, category: 'BE', categoryToken: 'var(--cat-backend)' },
+  {
+    symbol: 'Fa',
+    name: 'FastAPI',
+    number: 13,
+    category: 'BE',
+    categoryToken: 'var(--cat-backend)',
+  },
+  {
+    symbol: 'Lv',
+    name: 'Laravel',
+    number: 14,
+    category: 'BE',
+    categoryToken: 'var(--cat-backend)',
+  },
+  // Data / Auth
+  {
+    symbol: 'Pg',
+    name: 'Postgres',
+    number: 15,
+    category: 'Data',
+    categoryToken: 'var(--cat-data-auth)',
+  },
+  {
+    symbol: 'Sb',
+    name: 'Supabase',
+    number: 16,
+    category: 'Data',
+    categoryToken: 'var(--cat-data-auth)',
+  },
+  {
+    symbol: 'Fb',
+    name: 'Firebase',
+    number: 17,
+    category: 'Data',
+    categoryToken: 'var(--cat-data-auth)',
+  },
+  // DevOps
+  {
+    symbol: 'Dk',
+    name: 'Docker',
+    number: 18,
+    category: 'DevOps',
+    categoryToken: 'var(--cat-devops)',
+  },
+  { symbol: 'Aw', name: 'AWS', number: 19, category: 'DevOps', categoryToken: 'var(--cat-devops)' },
+  {
+    symbol: 'Vc',
+    name: 'Vercel',
+    number: 20,
+    category: 'DevOps',
+    categoryToken: 'var(--cat-devops)',
+  },
+  { symbol: 'Gt', name: 'Git', number: 21, category: 'DevOps', categoryToken: 'var(--cat-devops)' },
+  // AI
+  { symbol: 'Cc', name: 'Claude Code', number: 22, category: 'AI', categoryToken: 'var(--cat-ai)' },
+  { symbol: 'Cx', name: 'Codex', number: 23, category: 'AI', categoryToken: 'var(--cat-ai)' },
+  { symbol: 'Cr', name: 'Cursor', number: 24, category: 'AI', categoryToken: 'var(--cat-ai)' },
+  // Enterprise
+  {
+    symbol: 'Sp',
+    name: 'SAP',
+    number: 25,
+    category: 'ERP',
+    categoryToken: 'var(--cat-enterprise)',
+  },
+  {
+    symbol: 'Od',
+    name: 'Odoo',
+    number: 26,
+    category: 'ERP',
+    categoryToken: 'var(--cat-enterprise)',
+  },
+  {
+    symbol: 'Sf',
+    name: 'Shopify',
+    number: 27,
+    category: 'ERP',
+    categoryToken: 'var(--cat-enterprise)',
+  },
+  // Testing
+  { symbol: 'Je', name: 'Jest', number: 28, category: 'Test', categoryToken: 'var(--cat-testing)' },
+  { symbol: 'Rt', name: 'RTL', number: 29, category: 'Test', categoryToken: 'var(--cat-testing)' },
+  {
+    symbol: 'Pw',
+    name: 'Playwright',
+    number: 30,
+    category: 'Test',
+    categoryToken: 'var(--cat-testing)',
+  },
+];
+---
+
+<section id="skills" class="portfolio-section section-pad" data-scene="skills">
+  <div class="mx-auto max-w-7xl">
+    <h2
+      class="font-display mb-12 text-center uppercase tracking-widest"
+      style="font-size: var(--text-2xl); color: var(--paper);"
+    >
+      Stack
+    </h2>
+
+    <!-- Periodic table grid -->
+    <div
+      id="skills-grid"
+      class="flex flex-wrap justify-center gap-3"
+      role="list"
+      aria-label="Technology stack"
+    >
+      {
+        elements.map((el) => (
+          <div
+            class="element-tile group relative cursor-default"
+            role="listitem"
+            data-category={el.category}
+            style={`--tile-color: ${el.categoryToken};`}
+            tabindex="0"
+            aria-label={`${el.name} — ${el.category}`}
+          >
+            <div
+              class="relative flex h-20 w-16 flex-col items-center justify-center border"
+              style="border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 8%, var(--ink));"
+            >
+              <span
+                class="font-display absolute left-1 top-1 leading-none"
+                style="font-size: 0.5rem; color: var(--tile-color); opacity: 0.7;"
+                aria-hidden="true"
+              >
+                {el.number}
+              </span>
+
+              <span
+                class="font-display font-bold leading-none"
+                style="font-size: var(--text-xl); color: var(--paper);"
+              >
+                {el.symbol}
+              </span>
+
+              <span
+                class="font-body mt-1 w-full truncate px-1 text-center leading-none"
+                style="font-size: 0.55rem; color: color-mix(in srgb, var(--paper) 70%, transparent);"
+              >
+                {el.name}
+              </span>
+
+              <span
+                class="font-body absolute bottom-1 right-1 leading-none opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+                style="font-size: 0.45rem; color: var(--tile-color);"
+                aria-hidden="true"
+              >
+                {el.category}
+              </span>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+
+    <!-- Category legend -->
+    <div class="mt-10 flex flex-wrap justify-center gap-4" aria-label="Category legend">
+      {
+        [
+          { label: 'Languages', token: 'var(--cat-languages)' },
+          { label: 'Frontend', token: 'var(--cat-frontend)' },
+          { label: 'Backend', token: 'var(--cat-backend)' },
+          { label: 'Data/Auth', token: 'var(--cat-data-auth)' },
+          { label: 'DevOps', token: 'var(--cat-devops)' },
+          { label: 'AI', token: 'var(--cat-ai)' },
+          { label: 'Enterprise', token: 'var(--cat-enterprise)' },
+          { label: 'Testing', token: 'var(--cat-testing)' },
+        ].map(({ label, token }) => (
+          <span class="font-body flex items-center gap-2 text-xs" style={`color: var(--paper);`}>
+            <span
+              class="inline-block h-2.5 w-2.5 rounded-sm"
+              style={`background-color: ${token};`}
+              aria-hidden="true"
+            />
+            {label}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+</section>
