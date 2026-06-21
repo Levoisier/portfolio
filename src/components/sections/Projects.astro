@@ -1,7 +1,7 @@
 ---
 /* FEATURED PROJECTS SECTION
    Card/panel system: screenshot slot + stack chips + live/repo links.
-   3 placeholder entries — replace content without touching markup.
+   Public client/project entries only. Confidential work belongs in ConfidentialProjects.
    Scroll-reveal animation: see BACKLOG item projects-scroll-reveal.
 */
 
@@ -16,30 +16,28 @@ interface Project {
 
 const projects: Project[] = [
   {
-    title: 'Project Alpha',
+    title: 'Le Parche',
     description:
-      'A full-stack application demonstrating real-time data processing with a modern React frontend and Node.js backend. Replace this with actual project details.',
-    stack: ['TypeScript', 'React', 'Next.js', 'Supabase', 'Vercel'],
-    liveUrl: '#',
-    repoUrl: '#',
-    imageAlt: 'Screenshot of Project Alpha',
+      'Animation-heavy restaurant brand site built with Astro, GSAP, React, and TypeScript, paired with a Python reservation system for booking flow operations.',
+    stack: ['Astro', 'GSAP', 'React', 'TypeScript', 'Python'],
+    liveUrl: 'https://leparche.com.co/',
+    imageAlt: 'Brand site preview for Le Parche',
   },
   {
-    title: 'Project Beta',
+    title: 'Maison Cielare',
     description:
-      'Python data pipeline with FastAPI REST layer and Postgres storage. Processes chemical engineering simulation outputs. Replace this with actual project details.',
-    stack: ['Python', 'FastAPI', 'Postgres', 'Docker', 'AWS'],
-    liveUrl: '#',
-    repoUrl: '#',
-    imageAlt: 'Screenshot of Project Beta',
+      "Women's pajama ecommerce on Shopify, customized with Liquid, Shopify's theme language, plus HTML and CSS. Connected Mercado Pago payments, a branded SellerChat WhatsApp bot, and created the brand manual.",
+    stack: ['Shopify', 'Liquid', 'HTML', 'CSS', 'Mercado Pago'],
+    liveUrl: 'https://maisoncielare.com/',
+    imageAlt: 'Ecommerce storefront preview for Maison Cielare',
   },
   {
-    title: 'Project Gamma',
+    title: 'Orquestia',
     description:
-      'E-commerce integration layer bridging Shopify with an Odoo ERP backend. Replace this with actual project details.',
-    stack: ['PHP', 'Laravel', 'Shopify', 'Odoo', 'Vue'],
-    repoUrl: '#',
-    imageAlt: 'Screenshot of Project Gamma',
+      'Software agency landing page and portfolio built end-to-end with Next.js, React, and TypeScript, including a blog system and a full brand manual.',
+    stack: ['Next.js', 'React', 'TypeScript', 'Blog', 'Brand System'],
+    liveUrl: 'https://www.orquestia.io/',
+    imageAlt: 'Agency landing page preview for Orquestia',
   },
 ];
 ---

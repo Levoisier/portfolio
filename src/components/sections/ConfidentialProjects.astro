@@ -17,31 +17,40 @@ interface ConfidentialProject {
 
 const confidentialProjects: ConfidentialProject[] = [
   {
-    industry: 'Chemical / Industrial',
-    role: 'Full Stack Lead',
-    stack: ['Python', 'FastAPI', 'React', 'Postgres', 'Docker'],
-    impact:
-      'Reduced process data pipeline latency by ~60%. Led a 4-person frontend team delivering a real-time process monitoring dashboard.',
-    duration: '18 months',
-    teamSize: '6–8',
-  },
-  {
     industry: 'E-Commerce / Retail',
-    role: 'Frontend Engineer',
-    stack: ['TypeScript', 'Next.js', 'Shopify', 'SAP'],
+    role: 'Full Stack Developer',
+    stack: ['Next.js', 'React', 'TypeScript', 'Auth', 'Wompi', 'ERP'],
     impact:
-      'Built the storefront integration layer connecting a custom Next.js frontend with Shopify and legacy SAP ERP. Enabled same-day inventory sync across 3 regional warehouses.',
-    duration: '12 months',
-    teamSize: '4–5',
+      'Built a custom ecommerce platform with authentication, user profile management, order tracking, ERP synchronization, Wompi payments, and a manual bank-transfer approval flow.',
+    duration: '10+ months',
+    teamSize: '4-6',
   },
   {
-    industry: 'Enterprise SaaS',
+    industry: 'Logistics / Warehousing',
     role: 'Full Stack Developer',
-    stack: ['Vue', 'Laravel', 'Odoo', 'Postgres', 'AWS'],
+    stack: ['Next.js', 'React', 'TypeScript', 'Python', 'AWS EKS'],
     impact:
-      'Developed core billing and workflow modules for a multi-tenant ERP product. Maintained 99.7% uptime across 40+ client tenants.',
-    duration: '24 months',
-    teamSize: '10+',
+      'Delivered a WMS wired to ecommerce orders, with smart task assignment, operational automations, issue tickets, KPI reporting, and outbound shipping workflows.',
+    duration: '12+ months',
+    teamSize: '6-8',
+  },
+  {
+    industry: 'Sales Operations',
+    role: 'Full Stack Developer',
+    stack: ['Next.js', 'React', 'TypeScript', 'Python', 'AWS EKS'],
+    impact:
+      'Built a CRM with automated follow-up flows, lead and account pipelines, task queues, activity history, reporting views, and role-based access control.',
+    duration: '8+ months',
+    teamSize: '4-6',
+  },
+  {
+    industry: 'Finance / ERP',
+    role: 'Full Stack Developer',
+    stack: ['Python', 'ERP', 'DIAN', 'Billing', 'Accounting'],
+    impact:
+      'Implemented a financial ERP module covering electronic invoicing through DIAN, billing operations, accounting workflows, document state tracking, and audit-ready records.',
+    duration: '9+ months',
+    teamSize: '4-6',
   },
 ];
 ---
