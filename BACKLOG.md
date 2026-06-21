@@ -157,7 +157,7 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 
 **Files:** All section components, `src/styles/global.css` if needed
 
-### [ ] fix(responsive): tablet/large-desktop polish (768px–2560px)
+### [x] fix(responsive): tablet/large-desktop polish (768px–2560px)
 
 **Acceptance criteria:**
 
