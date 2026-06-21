@@ -26,7 +26,7 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 
 ## Phase 2 — Hero Choreography
 
-### [ ] feat(hero): full entrance choreography polish
+### [x] feat(hero): full entrance choreography polish
 
 **Acceptance criteria:**
 

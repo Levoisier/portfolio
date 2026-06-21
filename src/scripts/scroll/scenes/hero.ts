@@ -4,7 +4,7 @@
  * Sequence (reduced-motion: instant reveal, no motion):
  *   1. panda-body fades + slides up from y:60
  *   2. panda-head parallax layer offset reset
- *   3. hero-name chars stagger in (manual split — no SplitText required)
+ *   3. hero-name chars stagger in from the left (manual split — no SplitText required)
  *   4. hero-role fades up
  *   5. hero-scroll-hint bob loop
  *
@@ -15,7 +15,7 @@ import gsap from 'gsap';
 import type { Scene } from '../types';
 
 function splitChars(el: HTMLElement): HTMLElement[] {
-  const text = el.textContent?.trim() ?? '';
+  const text = el.getAttribute('aria-label') ?? el.textContent?.trim() ?? '';
   el.textContent = '';
   el.setAttribute('aria-label', text);
   return text.split('').map((char) => {
@@ -40,7 +40,10 @@ const heroScene = (_el: Element): Scene => {
       const nameEl = document.getElementById('hero-name');
       if (nameEl) {
         chars = splitChars(nameEl);
-        gsap.set(chars, { opacity: 0, y: prefersReducedMotion ? 0 : 40 });
+        gsap.set(chars, {
+          opacity: prefersReducedMotion ? 1 : 0,
+          x: prefersReducedMotion ? 0 : -24,
+        });
       }
 
       const pandaBody = document.getElementById('panda-body');
@@ -48,7 +51,9 @@ const heroScene = (_el: Element): Scene => {
       const roleEl = document.getElementById('hero-role');
       const scrollHint = document.getElementById('hero-scroll-hint');
 
-      if (!prefersReducedMotion) {
+      if (prefersReducedMotion) {
+        gsap.set([pandaBody, pandaHead, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
+      } else {
         gsap.set([pandaBody, pandaHead], { opacity: 0, y: 60 });
         gsap.set(roleEl, { opacity: 0, y: 20 });
         gsap.set(scrollHint, { opacity: 0 });
@@ -57,6 +62,8 @@ const heroScene = (_el: Element): Scene => {
 
     enter() {
       if (tl) tl.kill();
+      bobTween?.kill();
+      bobTween = null;
 
       const pandaBody = document.getElementById('panda-body');
       const pandaHead = document.getElementById('panda-head');
@@ -64,7 +71,7 @@ const heroScene = (_el: Element): Scene => {
       const scrollHint = document.getElementById('hero-scroll-hint');
 
       if (prefersReducedMotion) {
-        gsap.set([pandaBody, pandaHead, roleEl, scrollHint, ...chars], { opacity: 1, y: 0 });
+        gsap.set([pandaBody, pandaHead, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
         return;
       }
 
@@ -76,14 +83,18 @@ const heroScene = (_el: Element): Scene => {
           chars,
           {
             opacity: 1,
-            y: 0,
+            x: 0,
             duration: 0.6,
-            stagger: { amount: 0.5, from: 'start' },
+            stagger: { each: 0.035, from: 'start' },
           },
           '-=0.4'
         )
-        .to(roleEl, { opacity: 1, y: 0, duration: 0.6 }, '-=0.2')
-        .to(scrollHint, { opacity: 1, duration: 0.4 }, '+=0.2');
+        .to(roleEl, { opacity: 1, y: 0, duration: 0.6 })
+        .to(
+          scrollHint,
+          { opacity: 1, duration: 0.4, onComplete: () => bobTween?.play(0) },
+          '+=0.1'
+        );
 
       // Bob loop for scroll hint
       if (scrollHint) {
@@ -93,7 +104,7 @@ const heroScene = (_el: Element): Scene => {
           ease: 'sine.inOut',
           yoyo: true,
           repeat: -1,
-          delay: 1.5,
+          paused: true,
         });
       }
     },

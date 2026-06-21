@@ -60,3 +60,15 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Added `.agents/` to `.prettierignore` because skill manuals are external agent resources, not project source files.
 
 **Don't repeat:** Keep read-only tool/skill mounts out of repo-wide format checks.
+
+---
+
+### [2026-06-20] Reduced-motion scenes must reveal during init
+
+**Context:** Polishing the hero entrance choreography.
+
+**Problem/Dead-end:** The scroll controller skips ScrollTrigger setup when `prefers-reduced-motion: reduce` is active, so scene `enter()` callbacks do not run. The hero scene had split characters hidden in `init()` and only revealed them in `enter()`.
+
+**Fix/Decision:** Set the reduced-motion visible state directly in `hero.init()`, with opacity at 1 and motion transforms at rest.
+
+**Don't repeat:** Any scene that hides elements in `init()` must also fully reveal them in the reduced-motion branch of `init()`.
