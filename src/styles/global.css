@@ -125,11 +125,11 @@
 /* ─── Fixed panda companion ────────────────────────────────────────────────── */
 #panda-companion {
   position: fixed;
-  right: clamp(1rem, 4vw, 4rem);
-  bottom: clamp(1rem, 5vw, 4rem);
-  z-index: calc(var(--z-content) - 1);
+  left: 0;
+  top: 0;
+  z-index: var(--z-overlay);
   display: none;
-  width: clamp(8rem, 16vw, 15rem);
+  width: clamp(7rem, 13vw, 12.5rem);
   aspect-ratio: 4 / 5;
   pointer-events: none;
 }
@@ -142,7 +142,14 @@
   will-change: transform, opacity;
 }
 
-#panda-companion .panda-companion-stage img {
+#panda-companion .panda-companion-look {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 78%;
+  will-change: transform;
+}
+
+#panda-companion .panda-companion-look img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -153,9 +160,12 @@
   will-change: opacity;
 }
 
-#panda-companion .panda-companion-stage img[data-companion-pose='confidential'] {
-  filter: brightness(0);
-  opacity: 0;
+#panda-companion .panda-companion-look img[data-companion-pose='master'] {
+  aspect-ratio: 1;
+  height: auto;
+  top: 8%;
+  border-radius: 999px;
+  object-fit: cover;
 }
 
 @media (min-width: 1024px) {
