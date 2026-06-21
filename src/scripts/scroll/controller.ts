@@ -21,6 +21,7 @@ import type { SceneFactory } from './types';
 import heroSceneFactory from './scenes/hero';
 import backdropSceneFactory from './scenes/backdrop';
 import skillsSceneFactory from './scenes/skills';
+import projectsSceneFactory from './scenes/projects';
 import revealSceneFactory from './scenes/revealPlaceholder';
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
@@ -29,7 +30,7 @@ const SCENE_REGISTRY: Record<string, SceneFactory> = {
   backdrop: backdropSceneFactory,
   hero: heroSceneFactory,
   skills: skillsSceneFactory,
-  projects: revealSceneFactory,
+  projects: projectsSceneFactory,
   confidential: revealSceneFactory,
   contact: revealSceneFactory,
 };

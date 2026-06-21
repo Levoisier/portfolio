@@ -89,7 +89,7 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 
 ## Phase 5 — Projects: Scroll Reveal + Hover
 
-### [ ] feat(projects): card scroll-reveal and hover treatment
+### [x] feat(projects): card scroll-reveal and hover treatment
 
 **Acceptance criteria:**
 
