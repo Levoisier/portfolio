@@ -237,6 +237,29 @@ wraps it for markup reuse (pass `class` for Tailwind padding/layout).
 Use it for over-backdrop copy (Skills intro; Hero block; Projects text columns). Never
 hardcode the material's colors — extend the tokens instead.
 
+## Companion route engine (v4)
+
+`scenes/companion.ts` is a fixed, desktop-only scene outside `#smooth-wrapper`. It no
+longer reads global page progress; instead it creates its **own per-section /
+per-item `ScrollTrigger.create()`** instances (scene-local — the controller core and
+its single registry line are untouched) so pose and position track the _visible_
+section even while a section is pinned.
+
+- **Route (zig-zag):** hero handoff → fade in LEFT (waving) · Projects → RIGHT margin,
+  builder pose, walking DOWN across the pinned reveal · Confidential → **per-card**: hop
+  to the side opposite each card and read as a redacted `brightness(0)` `panda-head`
+  silhouette · Skills → LEFT · Contact → CENTER waving, then drift to the bottom-right
+  corner while fading so it hands off to the in-section `panda-wave` watermark.
+- **Motion** eases via `gsap.quickTo` channels (x/y/scale/rotation/opacity); the pose
+  cross-fade is a gentle scale/slide turn. Cursor look-toward is on an inner
+  `[data-companion-look]` element (separate channel).
+- **Stays above content** (`--z-overlay`): Confidential (navy) and Contact (paper) have
+  opaque backgrounds, so it is kept non-interactive (`pointer-events:none`,
+  `aria-hidden`) and routed through the side margins rather than lowered in z. See
+  LESSONS 2026-06-21.
+- **Reduced motion:** `init()` returns before the `matchMedia` desktop branch — a single
+  static pose, no route, no triggers, no cursor tracking.
+
 ## How to add a new section
 
 1. Create `src/components/sections/MySection.astro` with `data-scene="my-section"`.

@@ -232,3 +232,15 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Kept the companion at `--z-overlay` (above content) and satisfied "behind content" in spirit: it is `pointer-events:none` + `aria-hidden` (never intercepts) and routed through the **side margins** (x ≈ 0.15 / 0.85) so it never covers copy. Drove the route with **per-section `ScrollTrigger.create()`** (scene-local, not the controller core) instead of `documentProgress()`, so pose/position track the _visible_ section even while a section is pinned. Position eases via `gsap.quickTo`; the pose cross-fade is a gentle scale/slide turn.
 
 **Don't repeat:** "Behind content" for a decorative overlay means non-interactive + out of the reading path, not necessarily a lower z-index — check for opaque section backgrounds before lowering the stacking order.
+
+---
+
+### [2026-06-21] v4 audit: Lighthouse/CLS/LCP remain a human follow-up
+
+**Context:** Phase 30 required a full reduced-motion / a11y / performance audit (incl. Lighthouse desktop ≥90, mobile ≥80, A11y ≥95) after the v4 liquid-glass + companion-journey pass.
+
+**Problem/Dead-end:** Same boundary as the Phase 24 audit — this session prohibits `agent-browser` and starting a dev/preview server, so real Lighthouse scores, CLS, and mobile LCP cannot be measured from a rendered page.
+
+**Fix/Decision:** Completed the static audits instead: confirmed no raw colors outside `tokens.css` (grep), verified each v4 reduced-motion branch (glass sheen disabled by the global `animation-duration: 0.01ms` rule; hero static split; projects instant via the reduced-motion init branch; companion single static pose with no route/triggers/cursor), kept `backdrop-filter` gated behind `@supports` + desktop with a lean solid-tint mobile fallback (no new mobile blur cost), and left the LCP panda untouched. **The Lighthouse/CLS/LCP numbers are a human follow-up** — run them in your `pnpm dev` / `pnpm preview` and record them here.
+
+**Don't repeat:** When browser tools are disallowed, finish the static sweep and explicitly hand the rendered-page metrics back to the human; never fabricate them.

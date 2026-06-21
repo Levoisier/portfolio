@@ -51,6 +51,33 @@ Phases 17–24. One-line orientation ledger only — **do not re-implement.** v4
 
 ---
 
+## Shipped — v4 (liquid glass & the companion's journey)
+
+Phases 25–30. One-line orientation ledger only — **do not re-implement.** Full
+acceptance detail is retained under the `# v4` section below (all boxes checked).
+
+- **Liquid-glass primitive** — reusable `.liquid-glass` surface + `GlassSurface.astro`,
+  tokenized in `tokens.css`; translucent fill + bright rim + specular sheen, blur gated
+  behind `@supports` + desktop with a lean solid-tint mobile fallback; sheen drift
+  disabled under reduced motion. Proven on the Skills intro.
+- **Hero de-center** — desktop panda-left / text-right asymmetric split on the glass
+  surface; mobile keeps the centered stack; LCP panda + pinned depth scrub preserved
+  (pure-CSS layout, no GSAP move).
+- **Projects alive** — 01–03 index numerals, per-entry glass strips for legibility,
+  staggered reveal (numeral/rule draw-in → title → description → chips), `data-project-index`
+  anchors; scrub and hover kept on separate property channels.
+- **Companion route engine** — per-section/per-item `ScrollTrigger`s replace raw page
+  progress; eased `quickTo` zig-zag route (hero LEFT → Projects RIGHT → Confidential
+  per-card → Skills LEFT → Contact CENTER), gentle pose turns, more wave.
+- **Companion per-item + reactions** — walks the Projects entries; per-card hops + a
+  redacted `brightness(0)` `panda-head` silhouette in Confidential; Contact wave hands
+  off to the in-section watermark with no double panda.
+- **v4 audit** — reduced-motion / a11y / static-perf sweep; docs condensed. Real
+  Lighthouse/CLS/LCP remain a human-dev follow-up (browser tools disallowed this session;
+  see LESSONS 2026-06-21).
+
+---
+
 ## Carry-forward constraints (must not regress)
 
 Live facts every v3 and v4 phase must respect.
@@ -180,7 +207,7 @@ Each phase ends with a **Manual test (dev)** block — the exact things to check
 
 ## Phase 30 — v4 audit (motion · a11y · perf · docs)
 
-### [ ] chore(v4): full audit + condense docs
+### [x] chore(v4): full audit + condense docs
 
 **Acceptance criteria:**
 
