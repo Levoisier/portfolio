@@ -3,7 +3,7 @@
    The panda + name reveal is the reference scene (see src/scripts/scroll/scenes/hero.ts).
    All elements start opacity:0; the scene drives the entrance animation.
    Structure:
-     · #hero-panda        — centerpiece image (panda-hero.webp + panda-head.webp layers)
+     · #hero-panda        — centerpiece image (panda-hero.png + panda-head.png layers)
      · #hero-name         — "Cristian Zapata Cartagena" (chars split for stagger)
      · #hero-role         — role line
      · #hero-scroll-hint  — animated chevron
@@ -21,10 +21,9 @@
     class="relative z-10 mb-8 flex items-center justify-center"
     aria-hidden="true"
   >
-    <!-- panda-hero.webp: body layer (1600×2000) -->
     <img
       id="panda-body"
-      src="/media/panda/panda-hero.webp"
+      src="/media/panda/panda-hero.png"
       alt=""
       width="400"
       height="500"
@@ -32,10 +31,9 @@
       loading="eager"
       decoding="async"
     />
-    <!-- panda-head.webp: focal parallax layer (1200×1200), overlaid in JS -->
     <img
       id="panda-head"
-      src="/media/panda/panda-head.webp"
+      src="/media/panda/panda-head.png"
       alt=""
       width="300"
       height="300"
