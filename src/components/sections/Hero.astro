@@ -3,7 +3,9 @@
    The panda + name reveal is the reference scene (see src/scripts/scroll/scenes/hero.ts).
    All elements start opacity:0; the scene drives the entrance animation.
    Structure:
-     · #hero-panda        — centerpiece (panda-hero.png; panda-wave.png crossfades in on scrub)
+     · #hero-panda        — centerpiece (panda-hero.png; LCP image remains untouched)
+     · #hero-reaction-glow — non-LCP flask reaction layer
+     · #hero-premise      — story opener
      · #hero-name         — "Cristian Zapata Cartagena" (chars split for stagger)
      · #hero-role         — role line
      · #hero-scroll-hint  — animated chevron
@@ -36,22 +38,27 @@
         fetchpriority="high"
       />
     </picture>
-    <!-- Wave panda: crossfades IN over the hero panda during the pin scrub
-         (desktop). Same 4:5 box, centered over panda-body. Deferred load. -->
-    <img
-      id="panda-wave"
-      src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
-      data-panda-wave-src="/media/panda/panda-wave.png"
-      alt=""
-      width="400"
-      height="500"
-      class="absolute left-1/2 top-1/2 aspect-[4/5] w-[60vw] max-w-[400px] -translate-x-1/2 -translate-y-1/2 select-none object-contain"
-      loading="lazy"
-      decoding="async"
-      fetchpriority="low"
-      style="opacity: 0;"
-    />
+    <div
+      id="hero-reaction-glow"
+      class="pointer-events-none absolute left-[54%] top-[44%] h-[18%] w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full"
+      style="
+        opacity: 0;
+        background: radial-gradient(circle, var(--scarlet-soft), var(--scarlet-dim) 48%, transparent 72%);
+        filter: blur(18px);
+        mix-blend-mode: screen;
+        will-change: opacity, transform;
+      "
+    >
+    </div>
   </div>
+
+  <p
+    id="hero-premise"
+    class="font-display mb-4 max-w-3xl text-center uppercase tracking-[0.24em]"
+    style="font-size: var(--text-sm); color: var(--paper); opacity: 0;"
+  >
+    Field notes from products engineered like reactions: measured, useful, alive.
+  </p>
 
   <!-- Name — characters are split by the hero scene for stagger animation -->
   <h1

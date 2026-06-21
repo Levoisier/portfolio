@@ -2,12 +2,12 @@
  * Hero Scene — the REFERENCE scene.
  *
  * Desktop (≥768px, no reduced-motion): pinned scrub DEPTH INTRO.
- *   The hero pins for ~140vh of scroll. On scrub 0→1 the hero panda crossfades
- *   into the waving panda, the atmosphere darkens + drifts back (scale-up, no edge
- *   gap), and the particles push toward the viewer.
+ *   The hero pins for ~140vh of scroll. On scrub 0→1 the atmosphere darkens +
+ *   drifts back (scale-up, no edge gap), the particles push toward the viewer,
+ *   and a separate non-LCP reaction glow intensifies over the flask.
  *   Depth runs on the INNER .stage-depth channel so the backdrop's outer parallax
  *   keeps running with no conflict and no jump when the pin releases. The text
- *   entrance (name/role/hint) plays once on enter.
+ *   entrance (premise/name/role/hint) plays once on enter.
  *
  *   NOTE: no lateral (x) drift on the full-bleed stage layers — moving them
  *   sideways exposes the (black) ink behind their edges. Darken + scale-up only.
@@ -16,9 +16,9 @@
  *
  * Reduced motion: instant reveal, no pin/scrub/loops.
  *
- * LCP guard: panda-body is the LCP element. It is only ever written via a
- * fromTo() whose start is opacity:1, so the frame at scrub progress 0 is
- * identical to the static painted hero; it is never hidden at startup.
+ * LCP guard: panda-body is the LCP element. This scene never writes opacity or
+ * transform to it, so the frame at scroll progress 0 is identical to the static
+ * painted hero.
  */
 
 import gsap from 'gsap';
@@ -37,15 +37,6 @@ function splitChars(el: HTMLElement): HTMLElement[] {
     return span;
   });
 }
-
-/** Swap the deferred wave panda's placeholder src for the real asset. */
-function loadPandaWave(el: HTMLImageElement | null): void {
-  const src = el?.dataset.pandaWaveSrc;
-  if (!el || !src || el.src.endsWith(src)) return;
-  el.src = src;
-}
-
-const isDesktop = (): boolean => window.matchMedia('(min-width: 768px)').matches;
 
 const heroScene = (_el: Element): Scene => {
   let tl: gsap.core.Timeline | null = null;
@@ -66,18 +57,21 @@ const heroScene = (_el: Element): Scene => {
         });
       }
 
+      const premiseEl = document.getElementById('hero-premise');
       const roleEl = document.getElementById('hero-role');
       const scrollHint = document.getElementById('hero-scroll-hint');
+      const reactionGlow = document.getElementById('hero-reaction-glow');
 
       if (prefersReducedMotion) {
-        const pandaBody = document.getElementById('panda-body');
-        // Wave panda stays hidden under reduced motion — hero panda only.
-        gsap.set([pandaBody, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
+        gsap.set([premiseEl, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
+        gsap.set(reactionGlow, { opacity: 0.14, scale: 1, x: 0, y: 0 });
         return;
       }
 
+      gsap.set(premiseEl, { opacity: 0, y: 14 });
       gsap.set(roleEl, { opacity: 0, y: 20 });
       gsap.set(scrollHint, { opacity: 0 });
+      gsap.set(reactionGlow, { opacity: 0, scale: 0.85 });
 
       // ── Desktop pinned depth intro ───────────────────────────────────────────
       // matchMedia adds/removes the pin on resize and reverts its inline styles.
@@ -96,11 +90,16 @@ const heroScene = (_el: Element): Scene => {
         });
 
         // All depth tweens run in parallel (position 0) and use fromTo so the
-        // progress-0 frame equals the static hero. No lateral drift on full-bleed
-        // layers (would expose black edges); atmosphere scales UP while darkening.
+        // progress-0 frame equals the static hero. The LCP panda body is not a
+        // target. No lateral drift on full-bleed layers (would expose black
+        // edges); atmosphere scales UP while darkening.
         depthTl
-          .fromTo('#panda-body', { opacity: 1 }, { opacity: 0 }, 0)
-          .fromTo('#panda-wave', { opacity: 0 }, { opacity: 1 }, 0)
+          .fromTo(
+            '#hero-reaction-glow',
+            { opacity: 0, scale: 0.85 },
+            { opacity: 0.44, scale: 1.2 },
+            0
+          )
           .fromTo(
             '#stage-atmosphere .stage-depth',
             { scale: 1, opacity: 1 },
@@ -121,33 +120,30 @@ const heroScene = (_el: Element): Scene => {
       bobTween?.kill();
       bobTween = null;
 
+      const premiseEl = document.getElementById('hero-premise');
       const roleEl = document.getElementById('hero-role');
       const scrollHint = document.getElementById('hero-scroll-hint');
+      const reactionGlow = document.getElementById('hero-reaction-glow');
 
       if (prefersReducedMotion) {
-        const pandaBody = document.getElementById('panda-body');
-        gsap.set([pandaBody, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
+        gsap.set([premiseEl, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
+        gsap.set(reactionGlow, { opacity: 0.14, scale: 1, x: 0, y: 0 });
         return;
-      }
-
-      // Desktop crossfades into the wave panda during the pin, so load it now
-      // (post-idle, post-LCP). Mobile never loads it — protects the mobile budget.
-      if (isDesktop()) {
-        loadPandaWave(document.getElementById('panda-wave') as HTMLImageElement | null);
       }
 
       tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
 
-      tl.to(
-        chars,
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.6,
-          stagger: { each: 0.035, from: 'start' },
-        },
-        '+=0.1'
-      )
+      tl.to(premiseEl, { opacity: 1, y: 0, duration: 0.5 })
+        .to(
+          chars,
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.6,
+            stagger: { each: 0.035, from: 'start' },
+          },
+          '-=0.2'
+        )
         .to(roleEl, { opacity: 1, y: 0, duration: 0.6 })
         .to(
           scrollHint,

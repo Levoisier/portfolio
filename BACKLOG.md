@@ -81,7 +81,7 @@ Each phase below ends with a **Manual test (dev)** block — the exact things to
 
 ## Phase 18 — Hero: open the story
 
-### [ ] feat(hero): premise story-open + drop the wave crossfade
+### [x] feat(hero): premise story-open + drop the wave crossfade
 
 **Acceptance criteria:**
 
