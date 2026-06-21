@@ -142,7 +142,7 @@ Each phase ends with a **Manual test (dev)** block — the exact things to check
 
 ## Phase 28 — Companion: real route engine
 
-### [ ] refactor(companion): per-section driver + zig-zag route + smooth motion
+### [x] refactor(companion): per-section driver + zig-zag route + smooth motion
 
 **Acceptance criteria:**
 

@@ -220,3 +220,15 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Completed static audits instead: removed the remaining raw blueprint-grid color into `--blueprint-grid-line`, verified old project-gallery hooks were gone, confirmed reduced-motion branches guard the v3 scenes, updated architecture docs, and ran `pnpm verify`. Lighthouse numbers remain a manual follow-up in the human's running dev environment.
 
 **Don't repeat:** When browser tools are disallowed, record the audit boundary clearly and do not invent Lighthouse or CLS numbers.
+
+---
+
+### [2026-06-21] Companion "behind content" must stay above opaque sections
+
+**Context:** Phase 28 reworked the companion to a per-section zig-zag route. The spec said the fixed companion stays "behind content".
+
+**Problem/Dead-end:** Taking "behind content" literally (moving `#panda-companion` below `--z-content` in the stacking order) hides it entirely inside the two sections with **opaque** backgrounds — Confidential (`background-color: var(--navy)`) and Contact (`var(--paper)`). The route's "Confidential → right" and "Contact → center wave" beats would be invisible.
+
+**Fix/Decision:** Kept the companion at `--z-overlay` (above content) and satisfied "behind content" in spirit: it is `pointer-events:none` + `aria-hidden` (never intercepts) and routed through the **side margins** (x ≈ 0.15 / 0.85) so it never covers copy. Drove the route with **per-section `ScrollTrigger.create()`** (scene-local, not the controller core) instead of `documentProgress()`, so pose/position track the *visible* section even while a section is pinned. Position eases via `gsap.quickTo`; the pose cross-fade is a gentle scale/slide turn.
+
+**Don't repeat:** "Behind content" for a decorative overlay means non-interactive + out of the reading path, not necessarily a lower z-index — check for opaque section backgrounds before lowering the stacking order.

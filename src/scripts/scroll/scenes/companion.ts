@@ -1,21 +1,36 @@
 /**
- * Panda companion scene.
+ * Panda companion scene (v4 route engine).
  *
- * Desktop-only fixed companion outside ScrollSmoother. It follows a viewport
- * path driven by the controller's global scroll progress and softly cross-fades
- * between full-body poses. The first/last waypoints fade out so it visually
- * merges with the static hero and footer pandas instead of overlapping them.
+ * Desktop-only fixed companion outside ScrollSmoother. It travels a deliberate
+ * zig-zag route across the page, driven by PER-SECTION ScrollTriggers (never raw
+ * page progress — that misaligned the panda while sections were pinned). Each
+ * section authors a waypoint; the companion eases toward it with gsap.quickTo so
+ * motion glides instead of snapping, and the pose cross-fade is a gentle turn
+ * (opacity + a slight scale/slide on the incoming pose).
+ *
+ * Route (section-level): hero handoff → fade in LEFT (waving) · projects → RIGHT
+ * (builder) · confidential → RIGHT (seated guard) · skills → LEFT · contact →
+ * CENTER, waving, then hands off to the section watermark by fading out. Per-item
+ * tracking inside Projects/Confidential is layered on in Phase 29.
+ *
+ * The companion stays ABOVE content (z-overlay): Confidential (navy) and Contact
+ * (paper) have OPAQUE section backgrounds, so a literal "behind content" layer
+ * would hide it there. It is kept non-interactive (pointer-events:none,
+ * aria-hidden) and routed through the side margins so it never covers copy.
+ *
+ * Reduced motion: a single static pose, no route, no cursor tracking, no
+ * cross-fade. Mobile: hidden by CSS (#panda-companion display:none < 1024px).
  */
 
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { Scene } from '../types';
 
 type PoseName = 'hero' | 'master' | 'coding' | 'wave';
 
-type PathPoint = {
-  p: number;
-  x: number;
-  y: number;
+type Waypoint = {
+  x: number; // fraction of viewport width for the panda's center
+  y: number; // fraction of viewport height for the panda's center
   scale: number;
   rotation: number;
   opacity: number;
@@ -24,57 +39,35 @@ type PathPoint = {
 
 const DESKTOP_QUERY = '(min-width: 1024px)';
 
-const PATH: PathPoint[] = [
-  { p: 0, x: 0.5, y: 0.44, scale: 1.15, rotation: 0, opacity: 0, pose: 'hero' },
-  { p: 0.16, x: 0.5, y: 0.44, scale: 1.05, rotation: 0, opacity: 0, pose: 'hero' },
-  { p: 0.26, x: 0.86, y: 0.3, scale: 0.92, rotation: -5, opacity: 0.94, pose: 'master' },
-  { p: 0.4, x: 0.86, y: 0.62, scale: 0.98, rotation: -2, opacity: 0.95, pose: 'coding' },
-  { p: 0.54, x: 0.84, y: 0.48, scale: 0.94, rotation: -4, opacity: 0.92, pose: 'hero' },
-  { p: 0.66, x: 0.86, y: 0.36, scale: 0.92, rotation: -4, opacity: 0.94, pose: 'master' },
-  { p: 0.78, x: 0.86, y: 0.58, scale: 0.96, rotation: -2, opacity: 0.9, pose: 'coding' },
-  { p: 0.9, x: 0.8, y: 0.62, scale: 1, rotation: -2, opacity: 0.92, pose: 'wave' },
-  { p: 0.985, x: 0.82, y: 0.62, scale: 1.05, rotation: 0, opacity: 0.88, pose: 'wave' },
-  { p: 0.998, x: 0.82, y: 0.62, scale: 1.05, rotation: 0, opacity: 0, pose: 'wave' },
-  { p: 1, x: 0.82, y: 0.62, scale: 1.05, rotation: 0, opacity: 0, pose: 'wave' },
-];
+// Hero handoff: position is fixed (left margin, waving) but opacity is SCRUBBED
+// in as the hero scrolls up, so the fixed companion grows out of the hero panda.
+const HERO_STOP: Omit<Waypoint, 'opacity'> = {
+  x: 0.16,
+  y: 0.52,
+  scale: 1.0,
+  rotation: 5,
+  pose: 'wave',
+};
+const HERO_MAX_OPACITY = 0.92;
+
+// Section-level waypoints (the zig-zag). Side-margin x values keep the panda off
+// the copy. Per-item Projects/Confidential motion is added in Phase 29.
+const SECTION_STOPS: Record<string, Waypoint> = {
+  projects: { x: 0.85, y: 0.5, scale: 0.95, rotation: -4, opacity: 0.95, pose: 'coding' },
+  confidential: { x: 0.85, y: 0.46, scale: 0.9, rotation: 5, opacity: 0.95, pose: 'master' },
+  skills: { x: 0.15, y: 0.5, scale: 0.96, rotation: -5, opacity: 0.95, pose: 'hero' },
+};
+const CONTACT_STOP: Waypoint = {
+  x: 0.5,
+  y: 0.66,
+  scale: 1.04,
+  rotation: 0,
+  opacity: 0.95,
+  pose: 'wave',
+};
 
 function clamp01(value: number): number {
   return Math.max(0, Math.min(1, value));
-}
-
-function interpolate(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-function documentProgress(): number {
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  return max <= 0 ? 0 : clamp01(window.scrollY / max);
-}
-
-function pointForProgress(progress: number): PathPoint {
-  const p = clamp01(progress);
-  const fallback = PATH[PATH.length - 1] as PathPoint;
-
-  for (let i = 0; i < PATH.length - 1; i += 1) {
-    const from = PATH[i] as PathPoint;
-    const to = PATH[i + 1] ?? fallback;
-    if (p < from.p || p > to.p) continue;
-
-    const local = to.p === from.p ? 0 : (p - from.p) / (to.p - from.p);
-    const eased = gsap.parseEase('sine.inOut')(clamp01(local));
-
-    return {
-      p,
-      x: interpolate(from.x, to.x, eased),
-      y: interpolate(from.y, to.y, eased),
-      scale: interpolate(from.scale, to.scale, eased),
-      rotation: interpolate(from.rotation, to.rotation, eased),
-      opacity: interpolate(from.opacity, to.opacity, eased),
-      pose: local < 0.5 ? from.pose : to.pose,
-    };
-  }
-
-  return fallback;
 }
 
 const companionScene = (el: Element): Scene => {
@@ -83,78 +76,31 @@ const companionScene = (el: Element): Scene => {
   const stage = container.querySelector<HTMLElement>('[data-companion-stage]');
   const look = container.querySelector<HTMLElement>('[data-companion-look]');
   let mm: gsap.MatchMedia | null = null;
-  let progressHandler: ((event: Event) => void) | null = null;
-  let cleanupMouse: (() => void) | null = null;
   let activePose: PoseName | null = null;
 
   function poseEl(name: PoseName): HTMLElement | null {
     return container.querySelector<HTMLElement>(`[data-companion-pose="${name}"]`);
   }
 
+  // Gentle turn: cross-fade with a slight scale/slide on the incoming pose so a
+  // swap reads as the panda turning rather than popping.
   function setPose(name: PoseName): void {
     if (activePose === name) return;
     activePose = name;
 
-    const allPoses = Array.from(container.querySelectorAll<HTMLElement>('[data-companion-pose]'));
-    gsap.to(allPoses, {
-      opacity: 0,
-      duration: 0.85,
-      ease: 'expo.out',
-      overwrite: 'auto',
-    });
-    gsap.to(poseEl(name), {
-      opacity: 1,
-      duration: 1.05,
-      ease: 'expo.out',
-      overwrite: 'auto',
-    });
-  }
+    const incoming = poseEl(name);
+    const outgoing = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-companion-pose]')
+    ).filter((node) => node !== incoming);
 
-  function render(progress: number): void {
-    if (!stage) return;
-
-    const point = pointForProgress(progress);
-    const width = container.offsetWidth;
-    const height = container.offsetHeight;
-    const bob = point.opacity > 0 ? Math.sin(progress * Math.PI * 8) * 8 : 0;
-    const driftRotation = point.opacity > 0 ? Math.sin(progress * Math.PI * 6) * 2.4 : 0;
-
-    setPose(point.pose);
-    gsap.set(stage, {
-      opacity: point.opacity,
-      x: window.innerWidth * point.x - width / 2,
-      y: window.innerHeight * point.y - height / 2 + bob,
-      scale: point.scale,
-      rotation: point.rotation + driftRotation,
-    });
-  }
-
-  function setupCursorTracking(): void {
-    if (!look) return;
-
-    const xTo = gsap.quickTo(look, 'x', { duration: 0.35, ease: 'expo.out' });
-    const yTo = gsap.quickTo(look, 'y', { duration: 0.35, ease: 'expo.out' });
-    const rotateTo = gsap.quickTo(look, 'rotation', { duration: 0.35, ease: 'expo.out' });
-
-    const onMove = (event: MouseEvent): void => {
-      const rect = container.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const dx = Math.max(-1, Math.min(1, (event.clientX - centerX) / window.innerWidth));
-      const dy = Math.max(-1, Math.min(1, (event.clientY - centerY) / window.innerHeight));
-
-      xTo(dx * 14);
-      yTo(dy * 10);
-      rotateTo(dx * 6);
-    };
-
-    window.addEventListener('mousemove', onMove, { passive: true });
-    cleanupMouse = () => {
-      window.removeEventListener('mousemove', onMove);
-      xTo.tween.kill();
-      yTo.tween.kill();
-      rotateTo.tween.kill();
-    };
+    gsap.to(outgoing, { opacity: 0, duration: 0.7, ease: 'power2.out', overwrite: 'auto' });
+    if (incoming) {
+      gsap.fromTo(
+        incoming,
+        { opacity: 0, scale: 0.92, xPercent: -6 },
+        { opacity: 1, scale: 1, xPercent: 0, duration: 0.95, ease: 'expo.out', overwrite: 'auto' }
+      );
+    }
   }
 
   return {
@@ -165,10 +111,11 @@ const companionScene = (el: Element): Scene => {
       gsap.set(allPoses, { opacity: 0 });
 
       if (prefersReducedMotion) {
+        // Single static pose, parked off the copy. No route, no tracking.
         gsap.set(stage, {
           opacity: 0.78,
-          x: window.innerWidth * 0.78,
-          y: window.innerHeight * 0.28,
+          x: window.innerWidth * 0.82 - container.offsetWidth / 2,
+          y: window.innerHeight * 0.3 - container.offsetHeight / 2,
         });
         gsap.set(poseEl('master'), { opacity: 1 });
         return;
@@ -177,48 +124,135 @@ const companionScene = (el: Element): Scene => {
       mm = gsap.matchMedia();
 
       mm.add(DESKTOP_QUERY, () => {
-        setupCursorTracking();
-        render(documentProgress());
+        if (!stage) return;
 
-        progressHandler = () => {
-          render(documentProgress());
+        // Eased position channels — quickTo lets each waypoint glide in.
+        const xTo = gsap.quickTo(stage, 'x', { duration: 1.1, ease: 'power2.out' });
+        const yTo = gsap.quickTo(stage, 'y', { duration: 1.1, ease: 'power2.out' });
+        const scaleTo = gsap.quickTo(stage, 'scale', { duration: 1.1, ease: 'power2.out' });
+        const rotTo = gsap.quickTo(stage, 'rotation', { duration: 1.1, ease: 'power2.out' });
+        const opacityTo = gsap.quickTo(stage, 'opacity', { duration: 0.7, ease: 'power2.out' });
+
+        const targetX = (fx: number): number => window.innerWidth * fx - container.offsetWidth / 2;
+        const targetY = (fy: number): number =>
+          window.innerHeight * fy - container.offsetHeight / 2;
+
+        function moveTo(stop: Omit<Waypoint, 'opacity'>): void {
+          xTo(targetX(stop.x));
+          yTo(targetY(stop.y));
+          scaleTo(stop.scale);
+          rotTo(stop.rotation);
+          setPose(stop.pose);
+        }
+
+        function applyStop(stop: Waypoint): void {
+          moveTo(stop);
+          opacityTo(stop.opacity);
+        }
+
+        // ── Cursor look-toward (preserved) ───────────────────────────────────
+        const lookX = look ? gsap.quickTo(look, 'x', { duration: 0.35, ease: 'expo.out' }) : null;
+        const lookY = look ? gsap.quickTo(look, 'y', { duration: 0.35, ease: 'expo.out' }) : null;
+        const lookR = look
+          ? gsap.quickTo(look, 'rotation', { duration: 0.35, ease: 'expo.out' })
+          : null;
+
+        const onMove = (event: MouseEvent): void => {
+          const rect = container.getBoundingClientRect();
+          const dx = Math.max(
+            -1,
+            Math.min(1, (event.clientX - (rect.left + rect.width / 2)) / window.innerWidth)
+          );
+          const dy = Math.max(
+            -1,
+            Math.min(1, (event.clientY - (rect.top + rect.height / 2)) / window.innerHeight)
+          );
+          lookX?.(dx * 14);
+          lookY?.(dy * 10);
+          lookR?.(dx * 6);
         };
+        window.addEventListener('mousemove', onMove, { passive: true });
 
-        window.addEventListener('scroll:progress', progressHandler);
+        // ── Per-section route triggers ───────────────────────────────────────
+        const triggers: ScrollTrigger[] = [];
+
+        // Hero handoff: hold the left waving pose, scrub opacity in as hero leaves.
+        triggers.push(
+          ScrollTrigger.create({
+            trigger: '#hero',
+            start: 'center top',
+            end: 'bottom top',
+            onEnter: () => moveTo(HERO_STOP),
+            onEnterBack: () => moveTo(HERO_STOP),
+            onUpdate: (self) => opacityTo(self.progress * HERO_MAX_OPACITY),
+            onLeaveBack: () => opacityTo(0),
+          })
+        );
+
+        for (const [id, stop] of Object.entries(SECTION_STOPS)) {
+          triggers.push(
+            ScrollTrigger.create({
+              trigger: `#${id}`,
+              start: 'top 65%',
+              end: 'bottom 35%',
+              onEnter: () => applyStop(stop),
+              onEnterBack: () => applyStop(stop),
+            })
+          );
+        }
+
+        // Contact: arrive center waving, then fade out near the end so it hands
+        // off cleanly to the in-section panda-wave watermark (no double panda).
+        triggers.push(
+          ScrollTrigger.create({
+            trigger: '#contact',
+            start: 'top 65%',
+            end: 'bottom bottom',
+            onEnter: () => applyStop(CONTACT_STOP),
+            onEnterBack: () => applyStop(CONTACT_STOP),
+            onUpdate: (self) => {
+              if (self.progress > 0.55) {
+                const k = clamp01((self.progress - 0.55) / 0.4);
+                opacityTo(CONTACT_STOP.opacity * (1 - k));
+              }
+            },
+          })
+        );
+
+        ScrollTrigger.refresh();
 
         return () => {
-          if (progressHandler) window.removeEventListener('scroll:progress', progressHandler);
-          progressHandler = null;
-          cleanupMouse?.();
-          cleanupMouse = null;
+          triggers.forEach((t) => t.kill());
+          window.removeEventListener('mousemove', onMove);
+          xTo.tween.kill();
+          yTo.tween.kill();
+          scaleTo.tween.kill();
+          rotTo.tween.kill();
+          opacityTo.tween.kill();
+          lookX?.tween.kill();
+          lookY?.tween.kill();
+          lookR?.tween.kill();
         };
       });
     },
 
     enter() {
-      // Global scroll progress drives this fixed companion path.
+      // Route is driven by the scene's own per-section ScrollTriggers.
     },
 
     leave() {
-      // Persistent fixed companion; merge zones are encoded in the path opacity.
+      // Persistent fixed companion; waypoints are owned by the route triggers.
     },
 
     progress() {
-      // Global `scroll:progress` drives this scene.
+      // No global-progress driving — per-section triggers handle the route.
     },
 
     destroy() {
-      if (progressHandler) window.removeEventListener('scroll:progress', progressHandler);
-      cleanupMouse?.();
       mm?.revert();
-      gsap.killTweensOf([
-        stage,
-        look,
-        ...Array.from(container.querySelectorAll('[data-companion-pose]')),
-      ]);
-      gsap.set([stage, look, ...Array.from(container.querySelectorAll('[data-companion-pose]'))], {
-        clearProps: 'opacity,transform,willChange',
-      });
+      const poses = Array.from(container.querySelectorAll('[data-companion-pose]'));
+      gsap.killTweensOf([stage, look, ...poses]);
+      gsap.set([stage, look, ...poses], { clearProps: 'opacity,transform,willChange' });
     },
   };
 };
