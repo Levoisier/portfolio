@@ -66,7 +66,7 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 
 ## Phase 4 — Skills: Periodic Table Interactive
 
-### [ ] feat(skills): periodic table hover/tap interactions
+### [x] feat(skills): periodic table hover/tap interactions
 
 **Acceptance criteria:**
 

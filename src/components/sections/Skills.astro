@@ -13,6 +13,7 @@ interface Element {
   number: number;
   category: string;
   categoryToken: string;
+  proficiency: number;
 }
 
 const elements: Element[] = [
@@ -23,6 +24,7 @@ const elements: Element[] = [
     number: 1,
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
+    proficiency: 94,
   },
   {
     symbol: 'Js',
@@ -30,6 +32,7 @@ const elements: Element[] = [
     number: 2,
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
+    proficiency: 92,
   },
   {
     symbol: 'Py',
@@ -37,6 +40,7 @@ const elements: Element[] = [
     number: 3,
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
+    proficiency: 86,
   },
   {
     symbol: 'Php',
@@ -44,25 +48,56 @@ const elements: Element[] = [
     number: 4,
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
+    proficiency: 78,
   },
   // Frontend
-  { symbol: 'Re', name: 'React', number: 5, category: 'FE', categoryToken: 'var(--cat-frontend)' },
+  {
+    symbol: 'Re',
+    name: 'React',
+    number: 5,
+    category: 'FE',
+    categoryToken: 'var(--cat-frontend)',
+    proficiency: 94,
+  },
   {
     symbol: 'Nx',
     name: 'Next.js',
     number: 6,
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
+    proficiency: 90,
   },
-  { symbol: 'Vu', name: 'Vue', number: 7, category: 'FE', categoryToken: 'var(--cat-frontend)' },
-  { symbol: 'As', name: 'Astro', number: 8, category: 'FE', categoryToken: 'var(--cat-frontend)' },
-  { symbol: 'Gp', name: 'GSAP', number: 9, category: 'FE', categoryToken: 'var(--cat-frontend)' },
+  {
+    symbol: 'Vu',
+    name: 'Vue',
+    number: 7,
+    category: 'FE',
+    categoryToken: 'var(--cat-frontend)',
+    proficiency: 82,
+  },
+  {
+    symbol: 'As',
+    name: 'Astro',
+    number: 8,
+    category: 'FE',
+    categoryToken: 'var(--cat-frontend)',
+    proficiency: 88,
+  },
+  {
+    symbol: 'Gp',
+    name: 'GSAP',
+    number: 9,
+    category: 'FE',
+    categoryToken: 'var(--cat-frontend)',
+    proficiency: 84,
+  },
   {
     symbol: 'Sh',
     name: 'shadcn/ui',
     number: 10,
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
+    proficiency: 86,
   },
   // Backend
   {
@@ -71,14 +106,23 @@ const elements: Element[] = [
     number: 11,
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
+    proficiency: 90,
   },
-  { symbol: 'Dj', name: 'Django', number: 12, category: 'BE', categoryToken: 'var(--cat-backend)' },
+  {
+    symbol: 'Dj',
+    name: 'Django',
+    number: 12,
+    category: 'BE',
+    categoryToken: 'var(--cat-backend)',
+    proficiency: 82,
+  },
   {
     symbol: 'Fa',
     name: 'FastAPI',
     number: 13,
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
+    proficiency: 84,
   },
   {
     symbol: 'Lv',
@@ -86,6 +130,7 @@ const elements: Element[] = [
     number: 14,
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
+    proficiency: 82,
   },
   // Data / Auth
   {
@@ -94,6 +139,7 @@ const elements: Element[] = [
     number: 15,
     category: 'Data',
     categoryToken: 'var(--cat-data-auth)',
+    proficiency: 88,
   },
   {
     symbol: 'Sb',
@@ -101,6 +147,7 @@ const elements: Element[] = [
     number: 16,
     category: 'Data',
     categoryToken: 'var(--cat-data-auth)',
+    proficiency: 86,
   },
   {
     symbol: 'Fb',
@@ -108,6 +155,7 @@ const elements: Element[] = [
     number: 17,
     category: 'Data',
     categoryToken: 'var(--cat-data-auth)',
+    proficiency: 80,
   },
   // DevOps
   {
@@ -116,20 +164,57 @@ const elements: Element[] = [
     number: 18,
     category: 'DevOps',
     categoryToken: 'var(--cat-devops)',
+    proficiency: 80,
   },
-  { symbol: 'Aw', name: 'AWS', number: 19, category: 'DevOps', categoryToken: 'var(--cat-devops)' },
+  {
+    symbol: 'Aw',
+    name: 'AWS',
+    number: 19,
+    category: 'DevOps',
+    categoryToken: 'var(--cat-devops)',
+    proficiency: 74,
+  },
   {
     symbol: 'Vc',
     name: 'Vercel',
     number: 20,
     category: 'DevOps',
     categoryToken: 'var(--cat-devops)',
+    proficiency: 88,
   },
-  { symbol: 'Gt', name: 'Git', number: 21, category: 'DevOps', categoryToken: 'var(--cat-devops)' },
+  {
+    symbol: 'Gt',
+    name: 'Git',
+    number: 21,
+    category: 'DevOps',
+    categoryToken: 'var(--cat-devops)',
+    proficiency: 92,
+  },
   // AI
-  { symbol: 'Cc', name: 'Claude Code', number: 22, category: 'AI', categoryToken: 'var(--cat-ai)' },
-  { symbol: 'Cx', name: 'Codex', number: 23, category: 'AI', categoryToken: 'var(--cat-ai)' },
-  { symbol: 'Cr', name: 'Cursor', number: 24, category: 'AI', categoryToken: 'var(--cat-ai)' },
+  {
+    symbol: 'Cc',
+    name: 'Claude Code',
+    number: 22,
+    category: 'AI',
+    categoryToken: 'var(--cat-ai)',
+    proficiency: 88,
+  },
+  {
+    symbol: 'Cx',
+    name: 'Codex',
+    number: 23,
+    category: 'AI',
+    categoryToken: 'var(--cat-ai)',
+    proficiency: 90,
+  },
+  {
+    symbol: 'Cr',
+    name: 'Cursor',
+    number: 24,
+    category: 'AI',
+    categoryToken: 'var(--cat-ai)',
+    proficiency: 86,
+  },
   // Enterprise
   {
     symbol: 'Sp',
@@ -137,6 +222,7 @@ const elements: Element[] = [
     number: 25,
     category: 'ERP',
     categoryToken: 'var(--cat-enterprise)',
+    proficiency: 72,
   },
   {
     symbol: 'Od',
@@ -144,6 +230,7 @@ const elements: Element[] = [
     number: 26,
     category: 'ERP',
     categoryToken: 'var(--cat-enterprise)',
+    proficiency: 80,
   },
   {
     symbol: 'Sf',
@@ -151,16 +238,32 @@ const elements: Element[] = [
     number: 27,
     category: 'ERP',
     categoryToken: 'var(--cat-enterprise)',
+    proficiency: 82,
   },
   // Testing
-  { symbol: 'Je', name: 'Jest', number: 28, category: 'Test', categoryToken: 'var(--cat-testing)' },
-  { symbol: 'Rt', name: 'RTL', number: 29, category: 'Test', categoryToken: 'var(--cat-testing)' },
+  {
+    symbol: 'Je',
+    name: 'Jest',
+    number: 28,
+    category: 'Test',
+    categoryToken: 'var(--cat-testing)',
+    proficiency: 82,
+  },
+  {
+    symbol: 'Rt',
+    name: 'RTL',
+    number: 29,
+    category: 'Test',
+    categoryToken: 'var(--cat-testing)',
+    proficiency: 78,
+  },
   {
     symbol: 'Pw',
     name: 'Playwright',
     number: 30,
     category: 'Test',
     categoryToken: 'var(--cat-testing)',
+    proficiency: 86,
   },
 ];
 ---
@@ -187,12 +290,15 @@ const elements: Element[] = [
             class="element-tile group relative cursor-default"
             role="listitem"
             data-category={el.category}
+            data-skill-tile
+            data-proficiency={el.proficiency}
             style={`--tile-color: ${el.categoryToken};`}
             tabindex="0"
-            aria-label={`${el.name} — ${el.category}`}
+            aria-label={`${el.name} — ${el.category} — ${el.proficiency}% proficiency`}
           >
             <div
-              class="relative flex h-20 w-16 flex-col items-center justify-center border"
+              class="relative flex h-20 w-16 flex-col items-center justify-center overflow-hidden border"
+              data-skill-card
               style="border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 8%, var(--ink));"
             >
               <span
@@ -218,12 +324,20 @@ const elements: Element[] = [
               </span>
 
               <span
-                class="font-body absolute bottom-1 right-1 leading-none opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+                class="font-body absolute bottom-1 right-1 leading-none opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                data-category-badge
                 style="font-size: 0.45rem; color: var(--tile-color);"
                 aria-hidden="true"
               >
                 {el.category}
               </span>
+
+              <span
+                class="absolute bottom-0 left-0 h-0.5 w-full origin-left"
+                data-proficiency-bar
+                style="background-color: var(--scarlet); transform: scaleX(0);"
+                aria-hidden="true"
+              />
             </div>
           </div>
         ))

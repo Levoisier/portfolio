@@ -20,6 +20,7 @@ import type { SceneFactory } from './types';
 // ADD NEW SCENES HERE (import + registry entry). Touch nothing else.
 import heroSceneFactory from './scenes/hero';
 import backdropSceneFactory from './scenes/backdrop';
+import skillsSceneFactory from './scenes/skills';
 import revealSceneFactory from './scenes/revealPlaceholder';
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
@@ -27,7 +28,7 @@ import revealSceneFactory from './scenes/revealPlaceholder';
 const SCENE_REGISTRY: Record<string, SceneFactory> = {
   backdrop: backdropSceneFactory,
   hero: heroSceneFactory,
-  skills: revealSceneFactory,
+  skills: skillsSceneFactory,
   projects: revealSceneFactory,
   confidential: revealSceneFactory,
   contact: revealSceneFactory,
