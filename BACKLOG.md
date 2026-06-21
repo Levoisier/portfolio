@@ -9,7 +9,7 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 
 ## Phase 1 — Foundation & Fonts
 
-### [ ] feat: self-hosted variable fonts
+### [x] feat: self-hosted variable fonts
 
 **Acceptance criteria:**
 

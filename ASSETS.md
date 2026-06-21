@@ -61,5 +61,5 @@ The following visual elements are rendered entirely in CSS/SVG and do not need i
 
 | Path                                        | Purpose                                    | Status |
 | ------------------------------------------- | ------------------------------------------ | ------ |
-| `/fonts/DMMono-VariableFont_wght.woff2`     | Display / headings — variable weight       | needed |
-| `/fonts/Inter-VariableFont_opsz,wght.woff2` | Body copy — variable weight + optical size | needed |
+| `/fonts/DMMono-VariableFont_wght.woff2`     | Display / headings — static fallback       | placed |
+| `/fonts/Inter-VariableFont_opsz,wght.woff2` | Body copy — variable weight + optical size | placed |

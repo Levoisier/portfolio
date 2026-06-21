@@ -36,3 +36,27 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Created `package.json`, `astro.config.mjs`, `tsconfig.json`, and all source files manually. This gives full control over file contents and is reproducible.
 
 **Don't repeat:** In agent contexts, never use interactive CLI scaffolders (`create astro`, `create next-app`, etc.). Write configs directly.
+
+---
+
+### [2026-06-20] DM Mono upstream does not provide a variable WOFF2
+
+**Context:** Implementing the self-hosted variable fonts backlog item.
+
+**Problem/Dead-end:** The documented `DMMono-VariableFont_wght.woff2` file is not present in Google Fonts' `ofl/dmmono` upstream directory; the family currently ships static TTF faces. A transient `ttf2woff2` conversion also failed to parse the signed upstream TTF, and `fonteditor-cli` does not exist on npm.
+
+**Fix/Decision:** Kept the documented public path for the site contract, declared the face as its real `truetype` format, and recorded the mismatch in DECISIONS.md so a future true variable WOFF2 can replace it without changing component code.
+
+**Don't repeat:** Check upstream font manifests before assuming a variable font artifact exists just because the local filename says variable.
+
+---
+
+### [2026-06-20] Prettier must ignore read-only agent skill manuals
+
+**Context:** Running `pnpm verify` before committing the self-hosted fonts item.
+
+**Problem/Dead-end:** `pnpm format:check` scanned `.agents/skills/gsap-*` markdown files and failed formatting, but those files are mounted read-only in this workspace and cannot be rewritten even after `chmod u+w`.
+
+**Fix/Decision:** Added `.agents/` to `.prettierignore` because skill manuals are external agent resources, not project source files.
+
+**Don't repeat:** Keep read-only tool/skill mounts out of repo-wide format checks.

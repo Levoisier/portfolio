@@ -82,3 +82,13 @@ ADR-lite: one block per significant choice. Template:
 **Why:** Exponential ease-out (`cubic-bezier(0.16, 1, 0.3, 1)`) reads as fast and snappy — it reaches near-final state quickly, then gently settles. This matches the precision/efficiency identity of the brand. Linear or sine easing feels sluggish; back/elastic easing feels playful in a way that doesn't match the technical aesthetic.
 
 **Trade-off:** `ease-spring` (`cubic-bezier(0.34, 1.56, 0.64, 1)`) is available for specific elastic moments (e.g., skill tile pop). Default to expo.out everywhere else.
+
+---
+
+## Self-host Inter variable and DM Mono fallback source
+
+**Status:** Accepted
+
+**Why:** Inter ships an official variable WOFF2 that can be self-hosted at the documented path. Google Fonts' upstream DM Mono family currently ships static TTF faces rather than a variable WOFF2, but the project contract already documents `/fonts/DMMono-VariableFont_wght.woff2` as the display font path.
+
+**Trade-off:** The DM Mono asset is placed at the documented path to keep the swap contract stable, but it is declared as its real static TrueType format so browsers can load it. Future typography work should replace it with a true DM Mono variable WOFF2 if upstream publishes one or if a licensed build artifact is supplied.
