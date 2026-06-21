@@ -162,7 +162,7 @@ Each phase ends with a **Manual test (dev)** block — the exact things to check
 
 ## Phase 29 — Companion: per-element tracking + arrival reactions
 
-### [ ] feat(companion): item-level motion in Projects/Confidential + reactions
+### [x] feat(companion): item-level motion in Projects/Confidential + reactions
 
 **Acceptance criteria:**
 

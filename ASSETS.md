@@ -11,13 +11,13 @@ Cristian generates final assets with **Nano Banana**.
 
 ## Panda
 
-| Path                            | Dimensions | Purpose / Scene                         | Transparent | Status |
-| ------------------------------- | ---------- | --------------------------------------- | ----------- | ------ |
-| `/media/panda/panda-master.png` | 1254×1254  | Companion seated pose                   | Y           | final  |
-| `/media/panda/panda-hero.png`   | 1600×2000  | Hero centerpiece + Stack companion pose | Y           | final  |
-| `/media/panda/panda-head.png`   | 1200×1200  | Reserved pose (not currently placed)    | Y           | final  |
-| `/media/panda/panda-coding.png` | 1600×2000  | Companion builder pose                  | Y           | final  |
-| `/media/panda/panda-wave.png`   | 1600×2000  | Contact accent + companion goodbye pose | Y           | final  |
+| Path                            | Dimensions | Purpose / Scene                                                | Transparent | Status |
+| ------------------------------- | ---------- | -------------------------------------------------------------- | ----------- | ------ |
+| `/media/panda/panda-master.png` | 1254×1254  | Companion seated pose                                          | Y           | final  |
+| `/media/panda/panda-hero.png`   | 1600×2000  | Hero centerpiece + Stack companion pose                        | Y           | final  |
+| `/media/panda/panda-head.png`   | 1200×1200  | Companion Confidential stealth-guard silhouette (brightness-0) | Y           | final  |
+| `/media/panda/panda-coding.png` | 1600×2000  | Companion builder pose                                         | Y           | final  |
+| `/media/panda/panda-wave.png`   | 1600×2000  | Contact accent + companion goodbye pose                        | Y           | final  |
 
 ### Generated Panda Derivatives
 

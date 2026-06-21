@@ -8,10 +8,11 @@
  * motion glides instead of snapping, and the pose cross-fade is a gentle turn
  * (opacity + a slight scale/slide on the incoming pose).
  *
- * Route (section-level): hero handoff → fade in LEFT (waving) · projects → RIGHT
- * (builder) · confidential → RIGHT (seated guard) · skills → LEFT · contact →
- * CENTER, waving, then hands off to the section watermark by fading out. Per-item
- * tracking inside Projects/Confidential is layered on in Phase 29.
+ * Route: hero handoff → fade in LEFT (waving) · projects → RIGHT margin, builder
+ * pose, walking DOWN per entry · confidential → per-CARD: hop to the side opposite
+ * each card and read as a redacted brightness-0 head silhouette (stealth guard) ·
+ * skills → LEFT · contact → CENTER waving, then drift to the bottom-right corner
+ * while fading so it hands off to the in-section panda-wave watermark (no overlap).
  *
  * The companion stays ABOVE content (z-overlay): Confidential (navy) and Contact
  * (paper) have OPAQUE section backgrounds, so a literal "behind content" layer
@@ -26,7 +27,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { Scene } from '../types';
 
-type PoseName = 'hero' | 'master' | 'coding' | 'wave';
+type PoseName = 'hero' | 'master' | 'coding' | 'wave' | 'head';
 
 type Waypoint = {
   x: number; // fraction of viewport width for the panda's center
@@ -51,12 +52,23 @@ const HERO_STOP: Omit<Waypoint, 'opacity'> = {
 const HERO_MAX_OPACITY = 0.92;
 
 // Section-level waypoints (the zig-zag). Side-margin x values keep the panda off
-// the copy. Per-item Projects/Confidential motion is added in Phase 29.
+// the copy. Projects & Confidential are NOT here — they get per-ITEM tracking
+// (Phase 29) so the panda walks the list where the items are many.
 const SECTION_STOPS: Record<string, Waypoint> = {
-  projects: { x: 0.85, y: 0.5, scale: 0.95, rotation: -4, opacity: 0.95, pose: 'coding' },
-  confidential: { x: 0.85, y: 0.46, scale: 0.9, rotation: 5, opacity: 0.95, pose: 'master' },
   skills: { x: 0.15, y: 0.5, scale: 0.96, rotation: -5, opacity: 0.95, pose: 'hero' },
 };
+
+// Projects (pinned reveal): sit in the RIGHT margin opposite the left-aligned
+// entries; walk DOWN as the pinned reveal scrubs through the three entries.
+const PROJECTS_STOP: Omit<Waypoint, 'opacity' | 'y'> = {
+  x: 0.85,
+  scale: 0.95,
+  rotation: -4,
+  pose: 'coding',
+};
+const PROJECTS_OPACITY = 0.95;
+const PROJECTS_Y_TOP = 0.32;
+const PROJECTS_Y_BOTTOM = 0.72;
 const CONTACT_STOP: Waypoint = {
   x: 0.5,
   y: 0.66,
@@ -189,6 +201,59 @@ const companionScene = (el: Element): Scene => {
           })
         );
 
+        // Projects (per-item walk): hold the right margin, builder pose, and ease
+        // y down across the pinned reveal so the panda walks past each entry.
+        triggers.push(
+          ScrollTrigger.create({
+            trigger: '#projects',
+            start: 'top 70%',
+            end: 'bottom 30%',
+            onEnter: () => {
+              moveTo({ ...PROJECTS_STOP, y: PROJECTS_Y_TOP });
+              opacityTo(PROJECTS_OPACITY);
+            },
+            onEnterBack: () => {
+              moveTo({ ...PROJECTS_STOP, y: PROJECTS_Y_TOP });
+              opacityTo(PROJECTS_OPACITY);
+            },
+            onUpdate: (self) => {
+              yTo(targetY(PROJECTS_Y_TOP + self.progress * (PROJECTS_Y_BOTTOM - PROJECTS_Y_TOP)));
+            },
+          })
+        );
+
+        // Confidential (per-card): as each card becomes active, hop to the side
+        // OPPOSITE its layout offset (even cards sit left → panda right; odd cards
+        // sit right → panda left), track its vertical center, and swap to the
+        // redacted brightness-0 head silhouette — a stealth guard on the files.
+        const cards = Array.from(
+          document.querySelectorAll<HTMLElement>('#confidential [data-confidential-card]')
+        );
+        cards.forEach((card, i) => {
+          const onLeftMargin = i % 2 === 1; // odd card is right-shifted → panda left
+          const arrive = (): void => {
+            xTo(targetX(onLeftMargin ? 0.15 : 0.85));
+            scaleTo(0.88);
+            rotTo(onLeftMargin ? -5 : 5);
+            opacityTo(0.96);
+            setPose('head');
+          };
+          triggers.push(
+            ScrollTrigger.create({
+              trigger: card,
+              start: 'top 78%',
+              end: 'bottom 22%',
+              onEnter: arrive,
+              onEnterBack: arrive,
+              onUpdate: () => {
+                const rect = card.getBoundingClientRect();
+                const cy = (rect.top + rect.height / 2) / window.innerHeight;
+                yTo(targetY(clamp01(cy)));
+              },
+            })
+          );
+        });
+
         for (const [id, stop] of Object.entries(SECTION_STOPS)) {
           triggers.push(
             ScrollTrigger.create({
@@ -201,8 +266,9 @@ const companionScene = (el: Element): Scene => {
           );
         }
 
-        // Contact: arrive center waving, then fade out near the end so it hands
-        // off cleanly to the in-section panda-wave watermark (no double panda).
+        // Contact: arrive center waving, then drift toward the bottom-right corner
+        // while fading — handing off to the in-section panda-wave watermark that
+        // sits there, so there is never a double panda or overlap.
         triggers.push(
           ScrollTrigger.create({
             trigger: '#contact',
@@ -211,8 +277,10 @@ const companionScene = (el: Element): Scene => {
             onEnter: () => applyStop(CONTACT_STOP),
             onEnterBack: () => applyStop(CONTACT_STOP),
             onUpdate: (self) => {
-              if (self.progress > 0.55) {
-                const k = clamp01((self.progress - 0.55) / 0.4);
+              if (self.progress > 0.5) {
+                const k = clamp01((self.progress - 0.5) / 0.45);
+                xTo(targetX(CONTACT_STOP.x + k * 0.3));
+                yTo(targetY(CONTACT_STOP.y + k * 0.16));
                 opacityTo(CONTACT_STOP.opacity * (1 - k));
               }
             },
