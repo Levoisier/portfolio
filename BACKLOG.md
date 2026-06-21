@@ -122,7 +122,7 @@ Each phase ends with a **Manual test (dev)** block — the exact things to check
 
 ## Phase 27 — Projects: alive & readable
 
-### [ ] feat(projects): numbered entries, livelier reveal, glass legibility
+### [x] feat(projects): numbered entries, livelier reveal, glass legibility
 
 **Acceptance criteria:**
 
