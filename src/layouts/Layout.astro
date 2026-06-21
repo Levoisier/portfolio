@@ -152,6 +152,16 @@ const {
       import '../scripts/i18n';
     </script>
 
+    <!-- Liquid-glass magnifier loupe — desktop/fine-pointer only; bails otherwise -->
+    <script>
+      import { initGlassLoupe } from '../scripts/glass-loupe';
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGlassLoupe);
+      } else {
+        initGlassLoupe();
+      }
+    </script>
+
     <!-- GSAP ScrollTrigger controller — deferred so static hero content can paint first. -->
     <script>
       const mountScrollController = () => import('../scripts/scroll/controller.ts');

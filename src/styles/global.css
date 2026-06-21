@@ -162,6 +162,57 @@
   }
 }
 
+/* ── Magnifier loupe (desktop, fine-pointer only; built by glass-loupe.ts) ─────
+   A circular lens that follows the cursor and magnifies the panel content
+   beneath it, framed by scope-style corner brackets. Transform-only, driven by a
+   single rAF lerp so the lens and the magnified clone stay in sync. Never built
+   under reduced motion / coarse pointer / mobile (the script bails). */
+.liquid-glass .glass-loupe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 11rem;
+  height: 11rem;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  will-change: transform, opacity;
+  /* Scope corner brackets (an L at each corner of the bounding square). */
+  background:
+    linear-gradient(var(--scarlet), var(--scarlet)) left top / 15px 2px no-repeat,
+    linear-gradient(var(--scarlet), var(--scarlet)) left top / 2px 15px no-repeat,
+    linear-gradient(var(--scarlet), var(--scarlet)) right top / 15px 2px no-repeat,
+    linear-gradient(var(--scarlet), var(--scarlet)) right top / 2px 15px no-repeat,
+    linear-gradient(var(--scarlet), var(--scarlet)) left bottom / 15px 2px no-repeat,
+    linear-gradient(var(--scarlet), var(--scarlet)) left bottom / 2px 15px no-repeat,
+    linear-gradient(var(--scarlet), var(--scarlet)) right bottom / 15px 2px no-repeat,
+    linear-gradient(var(--scarlet), var(--scarlet)) right bottom / 2px 15px no-repeat;
+}
+
+.liquid-glass .glass-loupe.is-active {
+  opacity: 1;
+}
+
+.glass-lens {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--glass-rim);
+  box-shadow:
+    0 8px 26px var(--glass-lens-shadow),
+    inset 0 1px 12px var(--glass-sheen-soft);
+}
+
+.glass-lens-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
 /* Upgrade to true refractive glass only where it is cheap + supported. */
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   @media (min-width: 1024px) {

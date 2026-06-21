@@ -237,6 +237,14 @@ wraps it for markup reuse (pass `class` for Tailwind padding/layout).
 Use it for over-backdrop copy (Skills intro; Hero block; Projects text columns). Never
 hardcode the material's colors — extend the tokens instead.
 
+**Magnifier loupe.** `src/scripts/glass-loupe.ts` (imported in `Layout.astro`) attaches a
+cursor-following circular lens to every `.liquid-glass` surface that magnifies the panel
+content beneath it, framed by scope-style corner brackets (`.glass-loupe` / `.glass-lens`
+in `global.css`). It clones the live panel content into the lens and drives the lens +
+clone from a single `requestAnimationFrame` lerp (transforms only). It is **desktop +
+fine-pointer only** and bails entirely under reduced motion / coarse pointer / `< 1024px`,
+so mobile and the LCP budget are untouched.
+
 ## Companion route engine (v4)
 
 `scenes/companion.ts` is a fixed, desktop-only scene outside `#smooth-wrapper`. It no

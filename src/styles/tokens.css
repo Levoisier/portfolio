@@ -51,6 +51,7 @@
   --glass-rim: rgba(245, 243, 238, 0.22); /* bright 1px rim */
   --glass-sheen: rgba(245, 243, 238, 0.16); /* specular top highlight */
   --glass-sheen-soft: rgba(245, 243, 238, 0.06); /* drifting sheen sweep */
+  --glass-lens-shadow: rgba(10, 10, 10, 0.45); /* magnifier loupe drop shadow */
   --glass-blur: 14px;
   --glass-saturate: 1.4;
   --glass-radius: 1.1rem;
