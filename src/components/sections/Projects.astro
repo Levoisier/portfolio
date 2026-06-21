@@ -58,25 +58,18 @@ const projects: Project[] = [
       </p>
     </div>
 
-    <div class="grid gap-0 lg:max-w-[78%]" data-projects-log>
+    <div class="grid gap-0" data-projects-log>
       {
         projects.map((project, index) => (
           <article
-            class="group grid gap-x-6 gap-y-4 border-t py-10 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-start md:gap-8 lg:py-14"
+            class:list={[
+              'group grid gap-x-6 gap-y-4 border-t py-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-8 lg:py-14',
+              index % 2 === 0 ? 'lg:mr-[24%]' : 'lg:ml-[24%]',
+            ]}
             style="border-color: var(--glass-border);"
             data-project-entry
             data-project-index={index}
           >
-            {/* Oversized experiment-log index numeral */}
-            <span
-              class="font-display pointer-events-none select-none leading-none md:pt-1"
-              style="font-size: clamp(3rem, 7vw, 5.5rem); color: var(--scarlet); opacity: 0;"
-              aria-hidden="true"
-              data-project-numeral
-            >
-              {String(index + 1).padStart(2, '0')}
-            </span>
-
             <GlassSurface class="min-w-0 px-5 py-5 md:px-7 md:py-7">
               <h3 class="font-display uppercase leading-none" style="font-size: var(--text-3xl);">
                 <a

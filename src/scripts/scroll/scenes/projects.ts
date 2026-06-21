@@ -15,7 +15,6 @@ import type { Scene } from '../types';
 
 type ProjectRecord = {
   entry: HTMLElement;
-  numeral: HTMLElement | null;
   title: HTMLElement | null;
   desc: HTMLElement | null;
   formula: HTMLElement | null;
@@ -24,19 +23,18 @@ type ProjectRecord = {
 };
 
 const ENTRY_Y = 36;
-const NUMERAL_OPACITY = 0.18;
 const DESKTOP_QUERY = '(min-width: 1024px)';
 
 /**
- * Add one entry's staggered reveal (numeral/rule draw-in → title → description →
- * formula chips) to a timeline at position `at`. Shared by the desktop pinned
- * scrub and the mobile triggered reveal so both feel alive, not a single lift.
+ * Add one entry's staggered reveal (rule draw-in → title → description → formula
+ * chips) to a timeline at position `at`. Shared by the desktop pinned scrub and
+ * the mobile triggered reveal so both feel alive, not a single lift.
  *
  * Channel discipline (see LESSONS 2026-06-21): the reveal never touches the
  * properties the hover reaction owns — title x/skewX and individual chip
  * y/opacity. It drives title OPACITY, the formula CONTAINER opacity/y (not the
- * chips), numeral opacity/y, rule scaleY, and entry y. No element/property pair
- * is shared with the hover, so the two systems compose cleanly.
+ * chips), rule scaleY, and entry y. No element/property pair is shared with the
+ * hover, so the two systems compose cleanly.
  */
 function addEntryReveal(
   tl: gsap.core.Timeline,
@@ -48,14 +46,6 @@ function addEntryReveal(
   const d = scrub ? 0.5 : 0.6;
 
   tl.fromTo(record.entry, { y: ENTRY_Y }, { y: 0, duration: d, ease }, at);
-  if (record.numeral) {
-    tl.fromTo(
-      record.numeral,
-      { opacity: 0, y: 22 },
-      { opacity: NUMERAL_OPACITY, y: 0, duration: d, ease },
-      at
-    );
-  }
   if (record.rule) {
     tl.fromTo(record.rule, { scaleY: 0 }, { scaleY: 1, duration: d, ease }, at + 0.06);
   }
@@ -119,7 +109,6 @@ const projectsScene = (el: Element): Scene => {
       el.querySelectorAll<HTMLElement>('[data-project-entry]').forEach((entry) => {
         const record: ProjectRecord = {
           entry,
-          numeral: entry.querySelector<HTMLElement>('[data-project-numeral]'),
           title: entry.querySelector<HTMLElement>('[data-project-title]'),
           desc: entry.querySelector<HTMLElement>('[data-project-desc]'),
           formula: entry.querySelector<HTMLElement>('[data-project-formula]'),
@@ -145,7 +134,6 @@ const projectsScene = (el: Element): Scene => {
             rotation: 0,
             scale: 1,
           });
-          gsap.set(record.numeral, { opacity: NUMERAL_OPACITY, y: 0 });
           gsap.set(record.rule, { scaleY: 1 });
         });
         gsap.set(chips, { opacity: 1, y: 0 });
@@ -157,7 +145,6 @@ const projectsScene = (el: Element): Scene => {
       // baseline; the reveal fades their CONTAINER, never the chips themselves.
       records.forEach((record) => {
         gsap.set(record.entry, { y: ENTRY_Y, willChange: 'transform' });
-        gsap.set(record.numeral, { opacity: 0, y: 22 });
         gsap.set([record.title, record.desc, record.formula], { opacity: 0 });
         gsap.set(record.rule, { scaleY: 0 });
       });
@@ -225,7 +212,6 @@ const projectsScene = (el: Element): Scene => {
       const all = records
         .flatMap((record) => [
           record.entry,
-          record.numeral,
           record.title,
           record.desc,
           record.formula,
