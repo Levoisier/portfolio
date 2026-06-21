@@ -1,151 +1,152 @@
 ---
 /* FEATURED PROJECTS SECTION
-   Card/panel system: screenshot slot + stack chips + live/repo links.
-   Public client/project entries only. Confidential work belongs in ConfidentialProjects.
-   Scroll-reveal animation: see BACKLOG item projects-scroll-reveal.
+   v3 experiment log: large editorial entries, formula-style stack chips,
+   live links only. Confidential work belongs in ConfidentialProjects.
+   Scroll choreography: see src/scripts/scroll/scenes/projects.ts.
 */
 
 interface Project {
+  number: string;
   title: string;
   description: string;
   stack: string[];
-  liveUrl?: string;
-  repoUrl?: string;
-  imageAlt: string;
+  liveUrl: string;
 }
 
 const projects: Project[] = [
   {
+    number: '01',
     title: 'Le Parche',
     description:
-      'Animation-heavy restaurant brand site built with Astro, GSAP, React, and TypeScript, paired with a Python reservation system for booking flow operations.',
+      'Restaurant brand system and booking flow: cinematic Astro/GSAP frontage paired with Python-powered reservation operations.',
     stack: ['Astro', 'GSAP', 'React', 'TypeScript', 'Python'],
     liveUrl: 'https://leparche.com.co/',
-    imageAlt: 'Brand site preview for Le Parche',
   },
   {
+    number: '02',
     title: 'Maison Cielare',
     description:
-      "Women's pajama ecommerce on Shopify, customized with Liquid, Shopify's theme language, plus HTML and CSS. Connected Mercado Pago payments, a branded SellerChat WhatsApp bot, and created the brand manual.",
+      'Shopify storefront and commerce setup for a sleepwear brand, with Liquid theme work, Mercado Pago, SellerChat, and a complete brand manual.',
     stack: ['Shopify', 'Liquid', 'HTML', 'CSS', 'Mercado Pago'],
     liveUrl: 'https://maisoncielare.com/',
-    imageAlt: 'Ecommerce storefront preview for Maison Cielare',
   },
   {
+    number: '03',
     title: 'Orquestia',
     description:
-      'Software agency landing page and portfolio built end-to-end with Next.js, React, and TypeScript, including a blog system and a full brand manual.',
+      'Agency landing page, portfolio, blog system, and brand manual built end-to-end with a focused Next.js and TypeScript stack.',
     stack: ['Next.js', 'React', 'TypeScript', 'Blog', 'Brand System'],
     liveUrl: 'https://www.orquestia.io/',
-    imageAlt: 'Agency landing page preview for Orquestia',
   },
 ];
 ---
 
 <section id="projects" class="portfolio-section overflow-hidden section-pad" data-scene="projects">
-  <div
-    class="pointer-events-none absolute right-0 top-16 hidden aspect-[4/5] w-64 select-none bg-contain bg-center bg-no-repeat opacity-20 lg:block"
-    data-projects-accent
-    data-projects-accent-src="/media/panda/panda-coding.png"
+  <img
+    src="/media/panda/panda-coding.png"
+    alt=""
+    width="320"
+    height="400"
+    class="pointer-events-none absolute right-[max(1rem,6vw)] top-28 hidden w-[min(22vw,19rem)] select-none object-contain opacity-0 lg:block"
+    loading="lazy"
+    decoding="async"
     aria-hidden="true"
-  >
-  </div>
+    data-projects-builder
+  />
 
   <div class="relative mx-auto max-w-6xl">
-    <h2
-      class="font-display mb-12 uppercase tracking-widest"
-      style="font-size: var(--text-2xl); color: var(--paper);"
-    >
-      Featured Projects
-    </h2>
+    <div class="mb-14 max-w-3xl">
+      <p
+        class="font-display mb-4 uppercase tracking-[0.28em]"
+        style="font-size: var(--text-xs); color: var(--scarlet-soft);"
+      >
+        Experiment log
+      </p>
+      <h2
+        class="font-display max-w-4xl uppercase leading-none"
+        style="font-size: var(--text-4xl); color: var(--paper);"
+      >
+        Built work, measured in outcomes.
+      </h2>
+      <p
+        class="font-body mt-6 max-w-2xl leading-relaxed"
+        style="font-size: var(--text-lg); color: color-mix(in srgb, var(--paper) 76%, transparent);"
+      >
+        The panda-engineer starts with public launches: three production builds where interface,
+        systems thinking, and brand craft had to react together.
+      </p>
+    </div>
 
-    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3" data-projects-track>
+    <div class="grid gap-0" data-projects-log>
       {
-        projects.map((project, i) => (
+        projects.map((project) => (
           <article
-            class="project-card group relative flex flex-col overflow-hidden border"
-            style="border-color: var(--glass-border); background: var(--glass-bg);"
-            data-index={i}
-            data-project-card
+            class="group grid gap-6 border-t py-10 md:grid-cols-[7rem_minmax(0,1fr)_auto] md:items-start md:gap-8 lg:py-14"
+            style="border-color: var(--glass-border);"
+            data-project-entry
           >
-            <div
-              class="relative aspect-video w-full overflow-hidden"
-              style="background: var(--navy-soft);"
+            <p
+              class="font-display leading-none"
+              style="font-size: var(--text-3xl); color: var(--scarlet);"
+              aria-hidden="true"
+              data-project-number
             >
-              <img
-                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
-                data-project-image-src="/media/panda/panda-coding.png"
-                alt={project.imageAlt}
-                width="1600"
-                height="2000"
-                class="h-full w-full object-cover opacity-40"
-                data-project-image
-                loading="lazy"
-                decoding="async"
-              />
-              <div class="absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                <span
-                  class="font-display text-xs uppercase tracking-widest"
-                  style="color: var(--paper); opacity: 0.4;"
-                >
-                  {project.title}
-                </span>
-              </div>
-            </div>
+              {project.number}
+            </p>
 
-            <div class="flex flex-1 flex-col gap-4 p-6">
+            <div class="min-w-0">
               <h3
-                class="font-display leading-tight"
-                style="font-size: var(--text-xl); color: var(--paper);"
+                class="font-display uppercase leading-none"
+                style="font-size: var(--text-3xl); color: var(--paper);"
               >
                 {project.title}
               </h3>
 
               <p
-                class="font-body flex-1 leading-relaxed"
-                style="font-size: var(--text-sm); color: color-mix(in srgb, var(--paper) 70%, transparent);"
+                class="font-body mt-5 max-w-3xl leading-relaxed"
+                style="font-size: var(--text-base); color: color-mix(in srgb, var(--paper) 72%, transparent);"
               >
                 {project.description}
               </p>
 
-              <div class="flex flex-wrap gap-2" aria-label="Tech stack">
-                {project.stack.map((tech) => (
-                  <span
-                    class="font-display rounded-sm px-2 py-0.5 text-xs"
-                    style="background: var(--scarlet-dim); color: var(--scarlet-soft); border: 1px solid var(--scarlet-dim);"
-                  >
-                    {tech}
-                  </span>
+              <div
+                class="mt-6 flex flex-wrap items-center gap-2"
+                aria-label={`${project.title} technology formula`}
+              >
+                {project.stack.map((tech, index) => (
+                  <>
+                    <span
+                      class="font-display inline-flex min-h-9 items-center border px-3 text-xs uppercase tracking-widest"
+                      style="border-color: var(--scarlet-dim); background: var(--glass-bg); color: var(--scarlet-soft);"
+                      data-project-chip
+                    >
+                      {tech}
+                    </span>
+                    {index < project.stack.length - 1 && (
+                      <span
+                        class="font-display text-xs"
+                        style="color: color-mix(in srgb, var(--paper) 46%, transparent);"
+                        aria-hidden="true"
+                      >
+                        +
+                      </span>
+                    )}
+                  </>
                 ))}
               </div>
-
-              <div class="flex gap-4">
-                {project.liveUrl && project.liveUrl !== '#' && (
-                  <a
-                    href={project.liveUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="font-display text-xs uppercase tracking-widest transition-colors"
-                    style="color: var(--scarlet);"
-                    aria-label={`Live demo for ${project.title}`}
-                  >
-                    Live →
-                  </a>
-                )}
-                {project.repoUrl && project.repoUrl !== '#' && (
-                  <a
-                    href={project.repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="font-display text-xs uppercase tracking-widest transition-colors"
-                    style="color: var(--paper); opacity: 0.6;"
-                    aria-label={`Source code for ${project.title}`}
-                  >
-                    Repo →
-                  </a>
-                )}
-              </div>
             </div>
+
+            <a
+              href={project.liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="font-display inline-flex min-h-11 items-center justify-self-start border-b text-xs uppercase tracking-[0.24em] transition-colors md:justify-self-end"
+              style="border-color: var(--scarlet); color: var(--scarlet);"
+              aria-label={`Open live site for ${project.title}`}
+              data-project-link
+            >
+              Live →
+            </a>
           </article>
         ))
       }

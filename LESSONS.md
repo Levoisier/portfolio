@@ -190,3 +190,13 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Removed the hero `panda-wave` overlay entirely and added a separate `#hero-reaction-glow` layer positioned over the flask. The scrub intensifies only that overlay plus the existing backdrop depth layers; `#panda-body` is not targeted by GSAP at all.
 
 **Don't repeat:** Hero character reactions can orbit the LCP image, but they must not animate the LCP image itself.
+
+### [2026-06-21] Projects rewrite: keep scrub and hover on separate properties
+
+**Context:** Phase 19 replaced the horizontal project cards with a pinned editorial experiment log and kept the panda-coding accent reactive.
+
+**Problem/Dead-end:** The first scene draft let the pinned timeline and the generic section `progress()` hook both write `y` to the panda accent. That repeats the two-scroll-drivers problem from the backdrop work at a smaller scale.
+
+**Fix/Decision:** Let the pinned timeline own the accent's scroll `y` motion, and let hover/focus reactions touch only `x` and `rotation`. The generic `progress()` hook intentionally does no work for this scene.
+
+**Don't repeat:** Even for decorative accents, one element/property pair should have one driver; use separate properties for hover reactions.

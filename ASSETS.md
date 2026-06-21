@@ -29,11 +29,9 @@ These files are derived from canonical Panda sources for responsive delivery. Re
 | `/media/panda/generated/panda-hero-480.webp` | 480×600    | `/media/panda/panda-hero.png` | Hero LCP tablet source  | Y           | generated |
 | `/media/panda/generated/panda-hero-800.webp` | 800×1000   | `/media/panda/panda-hero.png` | Hero LCP desktop source | Y           | generated |
 
-> **Pending dependency — project screenshots.** The Featured Projects cards
-> (now a desktop horizontal pinned gallery) still use `/media/panda/panda-coding.png`
-> as a placeholder image (`data-project-image-src` in `Projects.astro`). Real
-> per-project screenshots are a future asset drop: add rows here, then swap the
-> `data-project-image-src` values. No layout/scene change required.
+> **Project media note.** The v3 Featured Projects section is a card-less
+> experiment log and does not reference project screenshots. It uses
+> `/media/panda/panda-coding.png` only as a desktop builder accent.
 
 ## Backdrop
 

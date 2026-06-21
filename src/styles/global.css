@@ -127,18 +127,3 @@
   position: relative;
   z-index: var(--z-content);
 }
-
-/* ─── Projects horizontal gallery ─────────────────────────────────────────────
-   Applied by the projects scene ONLY on desktop with motion allowed. The default
-   (and the reduced-motion / no-JS) layout stays the vertical grid stack so every
-   card is reachable without the pin/scrub. */
-[data-projects-track].is-horizontal {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: stretch;
-}
-
-[data-projects-track].is-horizontal > .project-card {
-  width: clamp(20rem, 34vw, 34rem);
-  flex-shrink: 0;
-}

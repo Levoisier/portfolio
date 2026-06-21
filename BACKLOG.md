@@ -101,7 +101,7 @@ Each phase below ends with a **Manual test (dev)** block — the exact things to
 
 ## Phase 19 — Projects: creative “experiment log” (no cards)
 
-### [ ] feat(projects): card-less creative project presentation
+### [x] feat(projects): card-less creative project presentation
 
 **Acceptance criteria:**
 
