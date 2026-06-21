@@ -79,24 +79,25 @@ import GlassSurface from '../ui/GlassSurface.astro';
           Conoce un poco de mi trabajo
         </p>
 
-        <!-- Name — characters are split by the hero scene for stagger animation -->
+        <!-- Name — split into one word per line by the hero scene (avoids any
+             truncation); characters are split for the stagger animation. -->
         <h1
           id="hero-name"
-          class="font-display mx-auto max-w-[12ch] leading-[0.96] tracking-normal sm:max-w-[16ch] lg:ml-auto lg:mr-0 lg:max-w-none"
+          class="font-display leading-[0.96] tracking-normal"
           style="font-size: var(--text-hero); color: var(--paper);"
           aria-label="Cristian Zapata Cartagena"
         >
           Cristian Zapata Cartagena
         </h1>
 
-        <!-- Role line -->
+        <!-- Role line — always two lines, each translated independently. -->
         <p
           id="hero-role"
           class="font-body mt-4 uppercase tracking-widest"
           style="font-size: var(--text-lg); color: var(--scarlet); opacity: 0;"
-          data-i18n="hero.role"
         >
-          Full Stack Developer &amp; Ingeniero Químico
+          <span class="block" data-i18n="hero.role.line1">Full Stack Developer &amp;</span>
+          <span class="block" data-i18n="hero.role.line2">Ingeniero Químico</span>
         </p>
       </GlassSurface>
     </div>

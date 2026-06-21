@@ -28,17 +28,26 @@ function splitChars(el: HTMLElement): HTMLElement[] {
   const text = el.getAttribute('aria-label') ?? el.textContent?.trim() ?? '';
   el.textContent = '';
   el.setAttribute('aria-label', text);
-  return text.split('').map((char) => {
-    const span = document.createElement('span');
-    span.textContent = char === ' ' ? '\u00A0' : char;
-    span.style.display = 'inline-block';
+
+  // Each word goes on its own line (a <br> at spaces) so the full name never
+  // truncates on any viewport: "Cristian" / "Zapata" / "Cartagena". Only the
+  // character spans are returned for the stagger; the breaks are decorative.
+  const chars: HTMLElement[] = [];
+  text.split('').forEach((char) => {
     if (char === ' ') {
-      span.style.width = '0.32em';
+      const br = document.createElement('br');
+      br.setAttribute('aria-hidden', 'true');
+      el.appendChild(br);
+      return;
     }
+    const span = document.createElement('span');
+    span.textContent = char;
+    span.style.display = 'inline-block';
     span.setAttribute('aria-hidden', 'true');
     el.appendChild(span);
-    return span;
+    chars.push(span);
   });
+  return chars;
 }
 
 const heroScene = (_el: Element): Scene => {

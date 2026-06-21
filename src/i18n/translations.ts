@@ -4,7 +4,8 @@ export const translations: Record<Lang, Record<string, string>> = {
   es: {
     // Hero
     'hero.premise': 'Conoce un poco de mi trabajo',
-    'hero.role': 'Full Stack Developer & Ingeniero Químico',
+    'hero.role.line1': 'Full Stack Developer &',
+    'hero.role.line2': 'Ingeniero Químico',
 
     // Projects
     'projects.heading': 'Trabajo construido, medido en resultados.',
@@ -81,7 +82,8 @@ export const translations: Record<Lang, Record<string, string>> = {
   en: {
     // Hero
     'hero.premise': 'A little glance at my work',
-    'hero.role': 'Full Stack Developer & Chemical Engineer',
+    'hero.role.line1': 'Full Stack Developer &',
+    'hero.role.line2': 'Chemical Engineer',
 
     // Projects
     'projects.heading': 'Built work, measured in outcomes.',
