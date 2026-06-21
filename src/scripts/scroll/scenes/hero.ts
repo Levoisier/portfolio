@@ -2,8 +2,8 @@
  * Hero Scene — the REFERENCE scene. Fully working entrance animation.
  *
  * Sequence (reduced-motion: instant reveal, no motion):
- *   1. panda-body fades + slides up from y:60
- *   2. panda-head parallax layer offset reset
+ *   1. panda-body paints immediately for LCP
+ *   2. panda-head parallax layer lazy-loads after the body is visible
  *   3. hero-name chars stagger in from the left (manual split — no SplitText required)
  *   4. hero-role fades up
  *   5. hero-scroll-hint bob loop
@@ -28,6 +28,16 @@ function splitChars(el: HTMLElement): HTMLElement[] {
   });
 }
 
+function loadHeroHead(el: HTMLImageElement | null): void {
+  const src = el?.dataset.heroHeadSrc;
+  if (!el || !src || el.src.endsWith(src)) return;
+
+  el.onload = () => {
+    gsap.to(el, { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out', overwrite: true });
+  };
+  el.src = src;
+}
+
 const heroScene = (_el: Element): Scene => {
   let tl: gsap.core.Timeline | null = null;
   let bobTween: gsap.core.Tween | null = null;
@@ -46,15 +56,16 @@ const heroScene = (_el: Element): Scene => {
         });
       }
 
-      const pandaBody = document.getElementById('panda-body');
       const pandaHead = document.getElementById('panda-head');
       const roleEl = document.getElementById('hero-role');
       const scrollHint = document.getElementById('hero-scroll-hint');
 
       if (prefersReducedMotion) {
+        loadHeroHead(pandaHead instanceof HTMLImageElement ? pandaHead : null);
+        const pandaBody = document.getElementById('panda-body');
         gsap.set([pandaBody, pandaHead, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
       } else {
-        gsap.set([pandaBody, pandaHead], { opacity: 0, y: 60 });
+        gsap.set(pandaHead, { opacity: 0, y: 60 });
         gsap.set(roleEl, { opacity: 0, y: 20 });
         gsap.set(scrollHint, { opacity: 0 });
       }
@@ -65,30 +76,28 @@ const heroScene = (_el: Element): Scene => {
       bobTween?.kill();
       bobTween = null;
 
-      const pandaBody = document.getElementById('panda-body');
-      const pandaHead = document.getElementById('panda-head');
+      const pandaHead = document.getElementById('panda-head') as HTMLImageElement | null;
       const roleEl = document.getElementById('hero-role');
       const scrollHint = document.getElementById('hero-scroll-hint');
 
       if (prefersReducedMotion) {
+        const pandaBody = document.getElementById('panda-body');
         gsap.set([pandaBody, pandaHead, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
         return;
       }
 
       tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
 
-      tl.to(pandaBody, { opacity: 1, y: 0, duration: 1 })
-        .to(pandaHead, { opacity: 1, y: 0, duration: 0.8 }, '-=0.6')
-        .to(
-          chars,
-          {
-            opacity: 1,
-            x: 0,
-            duration: 0.6,
-            stagger: { each: 0.035, from: 'start' },
-          },
-          '-=0.4'
-        )
+      tl.to(
+        chars,
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.6,
+          stagger: { each: 0.035, from: 'start' },
+        },
+        '+=0.1'
+      )
         .to(roleEl, { opacity: 1, y: 0, duration: 0.6 })
         .to(
           scrollHint,
@@ -115,8 +124,9 @@ const heroScene = (_el: Element): Scene => {
 
     progress(p: number) {
       if (prefersReducedMotion) return;
-      const pandaHead = document.getElementById('panda-head');
+      const pandaHead = document.getElementById('panda-head') as HTMLImageElement | null;
       if (pandaHead) {
+        if (window.scrollY > 16) loadHeroHead(pandaHead);
         gsap.set(pandaHead, { y: p * -120 });
       }
     },

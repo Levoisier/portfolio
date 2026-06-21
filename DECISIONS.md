@@ -92,3 +92,27 @@ ADR-lite: one block per significant choice. Template:
 **Why:** Inter ships an official variable WOFF2 that can be self-hosted at the documented path. Google Fonts' upstream DM Mono family currently ships static TTF faces rather than a variable WOFF2, but the project contract already documents `/fonts/DMMono-VariableFont_wght.woff2` as the display font path.
 
 **Trade-off:** The DM Mono asset is placed at the documented path to keep the swap contract stable, but it is declared as its real static TrueType format so browsers can load it. Future typography work should replace it with a true DM Mono variable WOFF2 if upstream publishes one or if a licensed build artifact is supplied.
+
+## Responsive hero derivatives from canonical Panda source
+
+**Status:** Accepted
+
+**Why:** Lighthouse mobile LCP was decode-bound on the canonical transparent PNG even after fetch priority and lazy-loading non-critical media. Generated WebP derivatives keep `/media/panda/panda-hero.png` as the source-of-truth replacement path while giving browsers small responsive sources for the above-the-fold image.
+
+**Trade-off:** When Cristian replaces `/media/panda/panda-hero.png`, the generated `/media/panda/generated/panda-hero-*.webp` files must be regenerated from the new source. Accepted: the file names are documented in `ASSETS.md` and the original PNG remains the fallback.
+
+## Inline built stylesheets for the static portfolio page
+
+**Status:** Accepted
+
+**Why:** The generated CSS is small, but as a separate render-blocking request it pushed mobile FCP/LCP beyond the performance budget under Lighthouse throttling. This is a single-page static portfolio, so inlining the built stylesheet removes a network dependency from the critical path without duplicating CSS across many routes.
+
+**Trade-off:** HTML size increases by the inlined stylesheet size and would be less efficient on a multi-page site. Accepted: the current site has one route, and the LCP improvement is material.
+
+## Defer GSAP controller until after the static hero can paint
+
+**Status:** Accepted
+
+**Why:** The portfolio's above-the-fold hero image is static HTML and does not require GSAP to become visible. Loading and evaluating the animation controller during the critical path delayed mobile LCP even with the selected WebP source already downloaded.
+
+**Trade-off:** Entrance choreography starts shortly after the browser reaches idle, or after the timeout fallback. Accepted: the hero LCP image remains visible immediately, and the scroll scenes still mount before normal interaction.

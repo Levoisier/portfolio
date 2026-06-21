@@ -19,6 +19,21 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link
+      rel="preload"
+      as="image"
+      href="/media/panda/generated/panda-hero-320.webp"
+      media="(max-width: 767px)"
+      fetchpriority="high"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="/media/panda/generated/panda-hero-800.webp"
+      media="(min-width: 768px)"
+      fetchpriority="high"
+    />
 
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
@@ -32,8 +47,8 @@ const {
 
     <!-- Canonical scroll-position hint for ScrollTrigger -->
     <style>
-      /* Prevent FOUC before GSAP initialises */
-      [data-scene] {
+      /* Prevent lower-section FOUC before GSAP initialises; keep hero paintable for LCP. */
+      [data-scene]:not(#hero) {
         opacity: 0;
       }
     </style>
@@ -57,9 +72,16 @@ const {
       <slot />
     </main>
 
-    <!-- GSAP ScrollTrigger controller — loaded as module for tree-shaking -->
+    <!-- GSAP ScrollTrigger controller — deferred so static hero content can paint first. -->
     <script>
-      import '../scripts/scroll/controller.ts';
+      const mountScrollController = () => import('../scripts/scroll/controller.ts');
+      const requestIdle = window.requestIdleCallback;
+
+      if (requestIdle) {
+        requestIdle(mountScrollController, { timeout: 1200 });
+      } else {
+        globalThis.setTimeout(mountScrollController, 800);
+      }
     </script>
   </body>
 </html>

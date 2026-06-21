@@ -222,3 +222,20 @@ Ordered build backlog for the loop agent. Work top-to-bottom — each item build
 - `pnpm verify` passes.
 
 **Files:** All section components
+
+## Handoff
+
+Stopped during `perf: Lighthouse audit pass` with the build green but the item intentionally unchecked because one acceptance criterion is not met yet.
+
+Done in this pass:
+
+- Desktop Lighthouse: Performance 99, Accessibility 100, Best Practices 100, SEO 100.
+- Mobile Lighthouse: Performance 88, Accessibility 100, Best Practices 100, SEO 100.
+- Cleared console/favicon failure, colour contrast, font-display, render-blocking, modern format, responsive image, and total-byte-weight audits.
+- Added responsive generated WebP derivatives for `/media/panda/panda-hero.png` and kept the canonical PNG as the fallback/source path.
+- Deferred non-critical media and the GSAP controller so the static hero can paint first.
+
+Still open:
+
+- Default mobile Lighthouse reports LCP at 3.2s (`panda-hero-320.webp`) against the backlog target of <=2.5s. The image transfer is already small; the remaining delay is Lighthouse mobile render timing/FCP under throttling.
+- When Cristian replaces `/media/panda/panda-hero.png`, regenerate `/media/panda/generated/panda-hero-320.webp`, `panda-hero-480.webp`, and `panda-hero-800.webp` from the new source.

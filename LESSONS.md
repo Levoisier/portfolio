@@ -96,3 +96,27 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Revealed only the card content and corner accents, and explicitly hid scan-line and shimmer elements in the reduced-motion branch.
 
 **Don't repeat:** Reduced-motion fallbacks should reveal meaningful content but hide motion-only decorative layers.
+
+---
+
+### [2026-06-20] Inline Node scripts: avoid template literals in shell strings
+
+**Context:** Generating responsive WebP derivatives for the hero Panda image with `node -e` and `sharp`.
+
+**Problem/Dead-end:** Backticks inside the inline script were interpreted by the shell before Node ran, producing a bogus `/panda-hero-.webp` path and a missing output file error.
+
+**Fix/Decision:** Re-ran the generation with plain string concatenation for output paths.
+
+**Don't repeat:** In `node -e` commands wrapped by the shell, avoid JavaScript template literals or quote them so the shell cannot treat backticks as command substitution.
+
+---
+
+### [2026-06-20] LCP images should not be hidden or animated by scene startup
+
+**Context:** Lighthouse performance pass for the hero section.
+
+**Problem/Dead-end:** The global `[data-scene] { opacity: 0 }` guard and GSAP writes to the hero Panda body delayed mobile LCP even after the image was preloaded.
+
+**Fix/Decision:** Kept the hero section paintable before controller startup, stopped touching the LCP image in the normal animation path, deferred non-critical decorative media to scene hooks, and served small WebP derivatives via `srcset`.
+
+**Don't repeat:** Treat the LCP element as critical HTML: reserve its dimensions, preload the selected source, and avoid startup opacity/transform writes on that element.

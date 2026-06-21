@@ -45,17 +45,13 @@ const projects: Project[] = [
 ---
 
 <section id="projects" class="portfolio-section overflow-hidden section-pad" data-scene="projects">
-  <img
-    src="/media/panda/panda-coding.png"
-    alt=""
-    width="1600"
-    height="2000"
-    class="pointer-events-none absolute right-0 top-16 hidden w-64 select-none opacity-20 lg:block"
+  <div
+    class="pointer-events-none absolute right-0 top-16 hidden aspect-[4/5] w-64 select-none bg-contain bg-center bg-no-repeat opacity-20 lg:block"
     data-projects-accent
-    loading="lazy"
-    decoding="async"
+    data-projects-accent-src="/media/panda/panda-coding.png"
     aria-hidden="true"
-  />
+  >
+  </div>
 
   <div class="relative mx-auto max-w-6xl">
     <h2
@@ -79,10 +75,11 @@ const projects: Project[] = [
               style="background: var(--navy-soft);"
             >
               <img
-                src="/media/panda/panda-coding.png"
+                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E"
+                data-project-image-src="/media/panda/panda-coding.png"
                 alt={project.imageAlt}
-                width="800"
-                height="450"
+                width="1600"
+                height="2000"
                 class="h-full w-full object-cover opacity-40"
                 data-project-image
                 loading="lazy"

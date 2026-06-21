@@ -3,10 +3,29 @@ import type { Scene } from '../types';
 
 type ProjectRecord = {
   card: HTMLElement;
-  image: HTMLElement | null;
+  image: HTMLImageElement | null;
 };
 
 const REVEAL_Y = 30;
+const ACCENT_QUERY = '(min-width: 1024px)';
+
+function loadAccent(el: HTMLElement | null): void {
+  const src = el?.dataset.projectsAccentSrc;
+  if (!el || !src || el.style.backgroundImage) return;
+  if (!window.matchMedia(ACCENT_QUERY).matches) return;
+
+  const image = new Image();
+  image.onload = () => {
+    el.style.backgroundImage = `url("${src}")`;
+  };
+  image.src = src;
+}
+
+function loadProjectImage(image: HTMLImageElement | null): void {
+  const src = image?.dataset.projectImageSrc;
+  if (!image || !src || image.src.endsWith(src)) return;
+  image.src = src;
+}
 
 const projectsScene = (el: Element): Scene => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -45,13 +64,18 @@ const projectsScene = (el: Element): Scene => {
   return {
     init() {
       accent = el.querySelector<HTMLElement>('[data-projects-accent]');
+      loadAccent(accent);
 
       el.querySelectorAll<HTMLElement>('[data-project-card]').forEach((card) => {
         projects.push({
           card,
-          image: card.querySelector<HTMLElement>('[data-project-image]'),
+          image: card.querySelector<HTMLImageElement>('[data-project-image]'),
         });
       });
+
+      if (prefersReducedMotion) {
+        projects.forEach((record) => loadProjectImage(record.image));
+      }
 
       if (prefersReducedMotion) {
         gsap.set(
@@ -78,6 +102,7 @@ const projectsScene = (el: Element): Scene => {
     enter() {
       if (entered) return;
       entered = true;
+      projects.forEach((record) => loadProjectImage(record.image));
 
       if (prefersReducedMotion) {
         gsap.set(

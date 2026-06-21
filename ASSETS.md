@@ -19,6 +19,16 @@ Cristian generates final assets with **Nano Banana**.
 | `/media/panda/panda-coding.png` | 1600×2000  | Projects section accent               | Y           | final  |
 | `/media/panda/panda-wave.png`   | 1600×2000  | Contact section accent                | Y           | final  |
 
+### Generated Panda Derivatives
+
+These files are derived from canonical Panda sources for responsive delivery. Regenerate them after replacing the matching source asset.
+
+| Path                                         | Dimensions | Source                        | Purpose / Scene         | Transparent | Status    |
+| -------------------------------------------- | ---------- | ----------------------------- | ----------------------- | ----------- | --------- |
+| `/media/panda/generated/panda-hero-320.webp` | 320×400    | `/media/panda/panda-hero.png` | Hero LCP mobile source  | Y           | generated |
+| `/media/panda/generated/panda-hero-480.webp` | 480×600    | `/media/panda/panda-hero.png` | Hero LCP tablet source  | Y           | generated |
+| `/media/panda/generated/panda-hero-800.webp` | 800×1000   | `/media/panda/panda-hero.png` | Hero LCP desktop source | Y           | generated |
+
 ## Backdrop
 
 | Path                              | Dimensions | Purpose / Scene                            | Transparent | Status |

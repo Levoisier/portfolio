@@ -16,6 +16,17 @@ function splitWords(el: HTMLElement): HTMLElement[] {
   });
 }
 
+function loadLightleak(el: HTMLElement | null): void {
+  const src = el?.dataset.contactLightleakSrc;
+  if (!el || !src || el.style.backgroundImage) return;
+
+  const image = new Image();
+  image.onload = () => {
+    el.style.backgroundImage = `url("${src}")`;
+  };
+  image.src = src;
+}
+
 const contactScene = (el: Element): Scene => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let entered = false;
@@ -32,6 +43,7 @@ const contactScene = (el: Element): Scene => {
       const closing = el.querySelector<HTMLElement>('[data-contact-closing]');
 
       if (heading) headingWords = splitWords(heading);
+      if (prefersReducedMotion) loadLightleak(lightleak);
 
       if (prefersReducedMotion) {
         gsap.set([kicker, ...headingWords, ...links, panda, lightleak, closing], {
@@ -60,6 +72,7 @@ const contactScene = (el: Element): Scene => {
       const panda = el.querySelector<HTMLElement>('[data-contact-panda]');
       const lightleak = el.querySelector<HTMLElement>('[data-contact-lightleak]');
       const closing = el.querySelector<HTMLElement>('[data-contact-closing]');
+      loadLightleak(lightleak);
 
       if (prefersReducedMotion) {
         gsap.set([kicker, ...headingWords, ...links, panda, lightleak, closing], {
