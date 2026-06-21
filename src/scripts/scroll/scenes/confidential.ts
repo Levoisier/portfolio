@@ -6,27 +6,106 @@ type ConfidentialRecord = {
   content: HTMLElement | null;
   scanLine: HTMLElement | null;
   corners: HTMLElement[];
+  sheens: HTMLElement[];
 };
 
 const confidentialScene = (el: Element): Scene => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const cards: ConfidentialRecord[] = [];
+  const cleanup: Array<() => void> = [];
   let entered = false;
   let gridPulse: gsap.core.Tween | null = null;
   let shimmer: gsap.core.Tween | null = null;
+
+  function bind<K extends keyof HTMLElementEventMap>(
+    target: HTMLElement,
+    type: K,
+    handler: (event: HTMLElementEventMap[K]) => void
+  ): void {
+    target.addEventListener(type, handler);
+    cleanup.push(() => target.removeEventListener(type, handler));
+  }
+
+  function reactToFile(record: ConfidentialRecord, active: boolean): void {
+    const panda = el.querySelector<HTMLElement>('[data-confidential-panda]');
+
+    gsap.to(record.card, {
+      borderColor: active ? 'var(--scarlet)' : 'var(--glass-border)',
+      duration: 0.22,
+      ease: 'expo.out',
+      overwrite: 'auto',
+    });
+
+    if (prefersReducedMotion) return;
+
+    gsap.to(record.corners, {
+      opacity: active ? 1 : 0.75,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 0.2,
+      ease: 'expo.out',
+      overwrite: 'auto',
+    });
+
+    gsap.to(panda, {
+      opacity: active ? 0.24 : 0.14,
+      x: active ? -12 : 0,
+      rotation: active ? -4 : -8,
+      duration: 0.32,
+      ease: 'expo.out',
+      overwrite: 'auto',
+    });
+
+    if (active && record.scanLine) {
+      const cardHeight = record.card.getBoundingClientRect().height;
+      gsap.fromTo(
+        record.scanLine,
+        { opacity: 1, y: 0 },
+        {
+          opacity: 0,
+          y: cardHeight,
+          duration: 0.42,
+          ease: 'none',
+          overwrite: 'auto',
+        }
+      );
+    }
+
+    if (active) {
+      gsap.fromTo(
+        record.sheens,
+        { xPercent: -120, opacity: 0.35 },
+        {
+          xPercent: 260,
+          duration: 0.62,
+          ease: 'none',
+          stagger: 0.06,
+          overwrite: 'auto',
+        }
+      );
+    }
+  }
 
   return {
     init() {
       const grid = el.querySelector<HTMLElement>('[data-blueprint-grid-pulse]');
       const sheens = el.querySelectorAll<HTMLElement>('[data-redaction-sheen]');
+      const panda = el.querySelector<HTMLElement>('[data-confidential-panda]');
 
       el.querySelectorAll<HTMLElement>('[data-confidential-card]').forEach((card) => {
-        cards.push({
+        const record: ConfidentialRecord = {
           card,
           content: card.querySelector<HTMLElement>('[data-confidential-content]'),
           scanLine: card.querySelector<HTMLElement>('[data-scan-line]'),
           corners: Array.from(card.querySelectorAll<HTMLElement>('[data-corner-accent]')),
-        });
+          sheens: Array.from(card.querySelectorAll<HTMLElement>('[data-redaction-sheen]')),
+        };
+        cards.push(record);
+
+        bind(card, 'mouseenter', () => reactToFile(record, true));
+        bind(card, 'mouseleave', () => reactToFile(record, false));
+        bind(card, 'focusin', () => reactToFile(record, true));
+        bind(card, 'focusout', () => reactToFile(record, false));
       });
 
       if (prefersReducedMotion) {
@@ -44,6 +123,7 @@ const confidentialScene = (el: Element): Scene => {
         );
         gsap.set(sheens, { opacity: 0, x: 0, xPercent: 0 });
         gsap.set(grid, { opacity: 0.6 });
+        gsap.set(panda, { opacity: 0.14, x: 0, y: 0, rotation: -8 });
         return;
       }
 
@@ -63,6 +143,7 @@ const confidentialScene = (el: Element): Scene => {
         cards.flatMap((record) => record.corners),
         { opacity: 0, scaleX: 0, scaleY: 0, transformOrigin: '50% 50%' }
       );
+      gsap.set(panda, { opacity: 0, x: 0, y: 24, rotation: -8, willChange: 'transform,opacity' });
 
       gridPulse = gsap.to(grid, {
         opacity: 1,
@@ -113,6 +194,9 @@ const confidentialScene = (el: Element): Scene => {
             '<'
           );
       });
+
+      const panda = el.querySelector<HTMLElement>('[data-confidential-panda]');
+      gsap.to(panda, { opacity: 0.14, y: 0, duration: 0.7, ease: 'expo.out', delay: 0.2 });
     },
 
     leave() {
@@ -124,12 +208,19 @@ const confidentialScene = (el: Element): Scene => {
     },
 
     destroy() {
+      cleanup.splice(0).forEach((dispose) => dispose());
       gridPulse?.kill();
       shimmer?.kill();
       cards.forEach((record) => {
-        gsap.set([record.card, record.content, record.scanLine, ...record.corners], {
-          clearProps: 'opacity,transform,visibility',
-        });
+        gsap.set(
+          [record.card, record.content, record.scanLine, ...record.corners, ...record.sheens],
+          {
+            clearProps: 'opacity,transform,visibility',
+          }
+        );
+      });
+      gsap.set(el.querySelector<HTMLElement>('[data-confidential-panda]'), {
+        clearProps: 'opacity,transform,willChange',
       });
     },
   };

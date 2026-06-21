@@ -140,7 +140,7 @@ Each phase below ends with a **Manual test (dev)** block — the exact things to
 
 ## Phase 21 — Confidential: redacted-lab treatment + peek
 
-### [ ] feat(confidential): classified-lab creative pass
+### [x] feat(confidential): classified-lab creative pass
 
 **Acceptance criteria:**
 

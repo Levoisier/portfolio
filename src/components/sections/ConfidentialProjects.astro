@@ -68,6 +68,19 @@ const confidentialProjects: ConfidentialProject[] = [
   >
   </div>
 
+  <img
+    src="/media/panda/panda-head.png"
+    alt=""
+    width="360"
+    height="360"
+    loading="lazy"
+    decoding="async"
+    class="pointer-events-none absolute -right-10 top-28 hidden w-[min(26vw,20rem)] select-none object-contain md:block"
+    style="filter: brightness(0); opacity: 0; transform: rotate(-8deg);"
+    aria-hidden="true"
+    data-confidential-panda
+  />
+
   <div class="relative mx-auto max-w-6xl">
     <div class="mb-12 flex flex-col gap-2">
       <span class="font-display text-xs uppercase tracking-widest" style="color: var(--scarlet);">
@@ -92,10 +105,11 @@ const confidentialProjects: ConfidentialProject[] = [
       {
         confidentialProjects.map((project, i) => (
           <article
-            class="confidential-card relative overflow-hidden border"
+            class="confidential-card relative overflow-hidden border focus:outline-none"
             style="border-color: var(--glass-border); background: color-mix(in srgb, var(--navy) 60%, transparent);"
             data-index={i}
             data-confidential-card
+            tabindex="0"
             aria-label={`Confidential project: ${project.industry}`}
           >
             <span
