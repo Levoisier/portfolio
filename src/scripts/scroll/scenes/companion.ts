@@ -8,9 +8,9 @@
  * motion glides instead of snapping, and the pose cross-fade is a gentle turn
  * (opacity + a slight scale/slide on the incoming pose).
  *
- * Route: hero handoff → fade in LEFT (waving) · projects → builder pose, walking
- * DOWN while hopping to the side opposite each staggered entry · confidential →
- * per-CARD: hop to the side opposite
+ * Route: hero handoff → emerge from the hero panda's viewport position as the
+ * hero pose · projects → builder pose, walking DOWN while hopping to the side
+ * opposite each staggered entry · confidential → per-CARD: hop to the side opposite
  * each card and use the panda head pose as the classified guard ·
  * skills → LEFT · contact → CENTER waving, then drift to the bottom-right corner
  * while fading so it hands off to the in-section panda-wave watermark (no overlap).
@@ -41,16 +41,19 @@ type Waypoint = {
 
 const DESKTOP_QUERY = '(min-width: 1024px)';
 
-// Hero handoff: position is fixed (left margin, waving) but opacity is SCRUBBED
-// in as the hero scrolls up, so the fixed companion grows out of the hero panda.
+// Hero handoff: the fixed companion starts on the real hero panda rect, remains
+// invisible while the two would overlap, then fades in after it has travelled
+// far enough to read as "the hero panda started moving" instead of a duplicate.
 const HERO_STOP: Omit<Waypoint, 'opacity'> = {
   x: 0.16,
   y: 0.52,
   scale: 1.0,
   rotation: 5,
-  pose: 'wave',
+  pose: 'hero',
 };
 const HERO_MAX_OPACITY = 0.92;
+const HERO_REVEAL_START = 0.42;
+const HERO_REVEAL_END = 0.88;
 
 // Section-level waypoints (the zig-zag). Side-margin x values keep the panda off
 // the copy. Projects & Confidential are NOT here — they get per-ITEM tracking
@@ -149,6 +152,22 @@ const companionScene = (el: Element): Scene => {
         const targetX = (fx: number): number => window.innerWidth * fx - container.offsetWidth / 2;
         const targetY = (fy: number): number =>
           window.innerHeight * fy - container.offsetHeight / 2;
+        const heroPanda = document.getElementById('panda-body');
+        const heroOpacityTo = heroPanda
+          ? gsap.quickTo(heroPanda, 'opacity', { duration: 0.4, ease: 'power2.out' })
+          : null;
+        const getHeroStart = (): Omit<Waypoint, 'opacity'> => {
+          if (!heroPanda) return HERO_STOP;
+
+          const rect = heroPanda.getBoundingClientRect();
+          return {
+            x: (rect.left + rect.width / 2) / window.innerWidth,
+            y: (rect.top + rect.height / 2) / window.innerHeight,
+            scale: rect.width / container.offsetWidth,
+            rotation: 0,
+            pose: 'hero',
+          };
+        };
 
         function moveTo(stop: Omit<Waypoint, 'opacity'>): void {
           xTo(targetX(stop.x));
@@ -189,16 +208,47 @@ const companionScene = (el: Element): Scene => {
         // ── Per-section route triggers ───────────────────────────────────────
         const triggers: ScrollTrigger[] = [];
 
-        // Hero handoff: hold the left waving pose, scrub opacity in as hero leaves.
+        // Hero handoff: begin exactly over the LCP panda and only become visible
+        // after the fixed companion has moved away from that image.
         triggers.push(
           ScrollTrigger.create({
             trigger: '#hero',
-            start: 'center top',
+            start: 'top top',
             end: 'bottom top',
-            onEnter: () => moveTo(HERO_STOP),
-            onEnterBack: () => moveTo(HERO_STOP),
-            onUpdate: (self) => opacityTo(self.progress * HERO_MAX_OPACITY),
-            onLeaveBack: () => opacityTo(0),
+            onEnter: () => {
+              moveTo(getHeroStart());
+              opacityTo(0);
+              heroOpacityTo?.(1);
+            },
+            onEnterBack: () => {
+              moveTo(getHeroStart());
+              opacityTo(0);
+              heroOpacityTo?.(1);
+            },
+            onUpdate: (self) => {
+              const start = getHeroStart();
+              const p = clamp01(self.progress);
+              const reveal = clamp01(
+                (p - HERO_REVEAL_START) / (HERO_REVEAL_END - HERO_REVEAL_START)
+              );
+
+              xTo(targetX(start.x + (HERO_STOP.x - start.x) * p));
+              yTo(targetY(start.y + (HERO_STOP.y - start.y) * p));
+              scaleTo(start.scale + (HERO_STOP.scale - start.scale) * p);
+              rotTo(start.rotation + (HERO_STOP.rotation - start.rotation) * p);
+              opacityTo(reveal * HERO_MAX_OPACITY);
+              heroOpacityTo?.(1 - reveal);
+              setPose(HERO_STOP.pose);
+            },
+            onLeave: () => {
+              moveTo(HERO_STOP);
+              opacityTo(HERO_MAX_OPACITY);
+              heroOpacityTo?.(0);
+            },
+            onLeaveBack: () => {
+              opacityTo(0);
+              heroOpacityTo?.(1);
+            },
           })
         );
 
@@ -306,6 +356,8 @@ const companionScene = (el: Element): Scene => {
           scaleTo.tween.kill();
           rotTo.tween.kill();
           opacityTo.tween.kill();
+          heroOpacityTo?.tween.kill();
+          gsap.set(heroPanda, { clearProps: 'opacity' });
           lookX?.tween.kill();
           lookY?.tween.kill();
           lookR?.tween.kill();
