@@ -300,12 +300,6 @@
   object-fit: cover;
 }
 
-/* Confidential arrival reaction: a redacted brightness-0 silhouette — a stealth
-   panda guarding the classified files (Phase 29). */
-#panda-companion .panda-companion-look img[data-companion-pose='head'] {
-  filter: brightness(0);
-}
-
 @media (min-width: 1024px) {
   #panda-companion {
     display: block;

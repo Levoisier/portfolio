@@ -11,7 +11,7 @@
  * Route: hero handoff → fade in LEFT (waving) · projects → builder pose, walking
  * DOWN while hopping to the side opposite each staggered entry · confidential →
  * per-CARD: hop to the side opposite
- * each card and read as a redacted brightness-0 head silhouette (stealth guard) ·
+ * each card and use the panda head pose as the classified guard ·
  * skills → LEFT · contact → CENTER waving, then drift to the bottom-right corner
  * while fading so it hands off to the in-section panda-wave watermark (no overlap).
  *
@@ -234,7 +234,7 @@ const companionScene = (el: Element): Scene => {
         // Confidential (per-card): as each card becomes active, hop to the side
         // OPPOSITE its layout offset (even cards sit left → panda right; odd cards
         // sit right → panda left), track its vertical center, and swap to the
-        // redacted brightness-0 head silhouette — a stealth guard on the files.
+        // panda head pose — a classified guard on the files.
         const cards = Array.from(
           document.querySelectorAll<HTMLElement>('#confidential [data-confidential-card]')
         );
