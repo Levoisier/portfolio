@@ -14,6 +14,8 @@ interface Element {
   category: string;
   categoryToken: string;
   proficiency: number;
+  group: number;
+  period: number;
 }
 
 import GlassSurface from '../ui/GlassSurface.astro';
@@ -27,6 +29,8 @@ const elements: Element[] = [
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
     proficiency: 94,
+    group: 1,
+    period: 1,
   },
   {
     symbol: 'Js',
@@ -35,6 +39,8 @@ const elements: Element[] = [
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
     proficiency: 92,
+    group: 8,
+    period: 1,
   },
   {
     symbol: 'Py',
@@ -43,6 +49,8 @@ const elements: Element[] = [
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
     proficiency: 86,
+    group: 1,
+    period: 2,
   },
   {
     symbol: 'Php',
@@ -51,6 +59,8 @@ const elements: Element[] = [
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
     proficiency: 78,
+    group: 8,
+    period: 2,
   },
   // Frontend
   {
@@ -60,6 +70,8 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 94,
+    group: 2,
+    period: 1,
   },
   {
     symbol: 'Nx',
@@ -68,6 +80,8 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 90,
+    group: 3,
+    period: 1,
   },
   {
     symbol: 'Vu',
@@ -76,6 +90,8 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 82,
+    group: 4,
+    period: 1,
   },
   {
     symbol: 'As',
@@ -84,6 +100,8 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 88,
+    group: 5,
+    period: 1,
   },
   {
     symbol: 'Gp',
@@ -92,6 +110,8 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 84,
+    group: 6,
+    period: 1,
   },
   {
     symbol: 'Sh',
@@ -100,6 +120,8 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 86,
+    group: 7,
+    period: 1,
   },
   // Backend
   {
@@ -109,6 +131,8 @@ const elements: Element[] = [
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
     proficiency: 90,
+    group: 2,
+    period: 2,
   },
   {
     symbol: 'Dj',
@@ -117,6 +141,8 @@ const elements: Element[] = [
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
     proficiency: 82,
+    group: 3,
+    period: 2,
   },
   {
     symbol: 'Fa',
@@ -125,6 +151,8 @@ const elements: Element[] = [
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
     proficiency: 84,
+    group: 4,
+    period: 2,
   },
   {
     symbol: 'Lv',
@@ -133,6 +161,8 @@ const elements: Element[] = [
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
     proficiency: 82,
+    group: 5,
+    period: 2,
   },
   // Data / Auth
   {
@@ -142,6 +172,8 @@ const elements: Element[] = [
     category: 'Data',
     categoryToken: 'var(--cat-data-auth)',
     proficiency: 88,
+    group: 6,
+    period: 2,
   },
   {
     symbol: 'Sb',
@@ -150,6 +182,8 @@ const elements: Element[] = [
     category: 'Data',
     categoryToken: 'var(--cat-data-auth)',
     proficiency: 86,
+    group: 7,
+    period: 2,
   },
   {
     symbol: 'Fb',
@@ -158,6 +192,8 @@ const elements: Element[] = [
     category: 'Data',
     categoryToken: 'var(--cat-data-auth)',
     proficiency: 80,
+    group: 8,
+    period: 3,
   },
   // DevOps
   {
@@ -167,6 +203,8 @@ const elements: Element[] = [
     category: 'DevOps',
     categoryToken: 'var(--cat-devops)',
     proficiency: 80,
+    group: 1,
+    period: 3,
   },
   {
     symbol: 'Aw',
@@ -175,6 +213,8 @@ const elements: Element[] = [
     category: 'DevOps',
     categoryToken: 'var(--cat-devops)',
     proficiency: 74,
+    group: 2,
+    period: 3,
   },
   {
     symbol: 'Vc',
@@ -183,6 +223,8 @@ const elements: Element[] = [
     category: 'DevOps',
     categoryToken: 'var(--cat-devops)',
     proficiency: 88,
+    group: 3,
+    period: 3,
   },
   {
     symbol: 'Gt',
@@ -191,6 +233,8 @@ const elements: Element[] = [
     category: 'DevOps',
     categoryToken: 'var(--cat-devops)',
     proficiency: 92,
+    group: 4,
+    period: 3,
   },
   // AI
   {
@@ -200,6 +244,8 @@ const elements: Element[] = [
     category: 'AI',
     categoryToken: 'var(--cat-ai)',
     proficiency: 88,
+    group: 5,
+    period: 3,
   },
   {
     symbol: 'Cx',
@@ -208,6 +254,8 @@ const elements: Element[] = [
     category: 'AI',
     categoryToken: 'var(--cat-ai)',
     proficiency: 90,
+    group: 6,
+    period: 3,
   },
   {
     symbol: 'Cr',
@@ -216,6 +264,8 @@ const elements: Element[] = [
     category: 'AI',
     categoryToken: 'var(--cat-ai)',
     proficiency: 86,
+    group: 7,
+    period: 3,
   },
   // Enterprise
   {
@@ -225,6 +275,8 @@ const elements: Element[] = [
     category: 'ERP',
     categoryToken: 'var(--cat-enterprise)',
     proficiency: 72,
+    group: 1,
+    period: 4,
   },
   {
     symbol: 'Od',
@@ -233,6 +285,8 @@ const elements: Element[] = [
     category: 'ERP',
     categoryToken: 'var(--cat-enterprise)',
     proficiency: 80,
+    group: 2,
+    period: 4,
   },
   {
     symbol: 'Sf',
@@ -241,6 +295,8 @@ const elements: Element[] = [
     category: 'ERP',
     categoryToken: 'var(--cat-enterprise)',
     proficiency: 82,
+    group: 3,
+    period: 4,
   },
   // Testing
   {
@@ -250,6 +306,8 @@ const elements: Element[] = [
     category: 'Test',
     categoryToken: 'var(--cat-testing)',
     proficiency: 82,
+    group: 6,
+    period: 4,
   },
   {
     symbol: 'Rt',
@@ -258,6 +316,8 @@ const elements: Element[] = [
     category: 'Test',
     categoryToken: 'var(--cat-testing)',
     proficiency: 78,
+    group: 7,
+    period: 4,
   },
   {
     symbol: 'Pw',
@@ -266,6 +326,8 @@ const elements: Element[] = [
     category: 'Test',
     categoryToken: 'var(--cat-testing)',
     proficiency: 86,
+    group: 8,
+    period: 4,
   },
 ];
 ---
@@ -275,24 +337,17 @@ const elements: Element[] = [
     <div class="flex flex-col gap-8 md:flex-row md:items-stretch md:gap-12">
       <!-- Vertical display label -->
       <div class="flex shrink-0 items-baseline gap-4 md:flex-col md:items-start md:gap-6">
-        <span
-          class="font-display text-xs uppercase tracking-[0.3em]"
-          style="color: var(--scarlet);"
-          data-i18n="skills.eyebrow"
-        >
-          // El toolkit detrás de los builds
-        </span>
         <h2
-          class="font-display uppercase leading-none tracking-[0.2em] md:[writing-mode:vertical-rl] md:rotate-180"
-          style="font-size: var(--text-3xl); color: var(--paper);"
+          class="font-display uppercase leading-none tracking-[0.2em] md:mt-12 md:[writing-mode:vertical-rl] md:rotate-180 lg:mt-16"
+          style="font-size: var(--text-3xl); color: var(--paper); text-shadow: 0 0 18px color-mix(in srgb, var(--scarlet) 42%, transparent);"
           data-i18n="skills.heading"
         >
-          Los Reactivos
+          Mi Stack
         </h2>
       </div>
 
       <!-- Tile grid anchored to the label side. -->
-      <div class="relative flex-1">
+      <div class="relative min-w-0 flex-1 pb-2">
         <GlassSurface class="mb-8 max-w-3xl px-5 py-4">
           <p
             class="font-body leading-relaxed"
@@ -320,12 +375,12 @@ const elements: Element[] = [
                 data-category={el.category}
                 data-skill-tile
                 data-proficiency={el.proficiency}
-                style={`--tile-color: ${el.categoryToken};`}
+                style={`--tile-color: ${el.categoryToken}; --tile-group: ${el.group}; --tile-period: ${el.period};`}
                 tabindex="0"
                 aria-label={`${el.name} — ${el.category} — ${el.proficiency}% proficiency`}
               >
                 <div
-                  class="relative flex h-20 w-16 flex-col items-center justify-center overflow-hidden border"
+                  class="skill-card relative flex h-20 w-16 flex-col items-center justify-center overflow-hidden border"
                   data-skill-card
                   style="border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 8%, var(--ink));"
                 >
@@ -412,3 +467,77 @@ const elements: Element[] = [
     </div>
   </div>
 </section>
+
+<style>
+  @media (min-width: 1024px) {
+    #skills-grid {
+      display: grid;
+      width: 100%;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: clamp(0.38rem, 0.58vw, 0.6rem);
+      align-items: stretch;
+      justify-content: start;
+    }
+
+    .element-tile {
+      grid-column: var(--tile-group);
+      grid-row: var(--tile-period);
+    }
+
+    .skill-card {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1.04;
+      align-items: stretch;
+      padding: clamp(0.48rem, 0.66vw, 0.66rem);
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--tile-color) 34%, transparent),
+        0 0 18px color-mix(in srgb, var(--tile-color) 12%, transparent);
+    }
+
+    .skill-card::before {
+      content: '';
+      position: absolute;
+      inset: clamp(0.24rem, 0.36vw, 0.34rem);
+      border: 1px solid color-mix(in srgb, var(--tile-color) 26%, transparent);
+      opacity: 0.62;
+      pointer-events: none;
+    }
+
+    .skill-card > span:nth-child(1) {
+      left: clamp(0.44rem, 0.56vw, 0.6rem);
+      top: clamp(0.36rem, 0.48vw, 0.52rem);
+      font-size: clamp(0.5rem, 0.62vw, 0.62rem) !important;
+    }
+
+    .skill-card > span:nth-child(2) {
+      margin-top: clamp(0.62rem, 0.78vw, 0.88rem);
+      font-size: clamp(1.22rem, 1.82vw, 1.95rem) !important;
+    }
+
+    .skill-card > span:nth-child(3) {
+      margin-top: clamp(0.22rem, 0.36vw, 0.38rem);
+      padding-inline: 0.12rem;
+      font-size: clamp(0.5rem, 0.64vw, 0.66rem) !important;
+      white-space: normal;
+      line-height: 1.05;
+    }
+
+    .skill-card > span:nth-child(4) {
+      bottom: clamp(0.36rem, 0.5vw, 0.54rem);
+      right: clamp(0.44rem, 0.56vw, 0.6rem);
+      font-size: clamp(0.42rem, 0.5vw, 0.52rem) !important;
+      opacity: 0.72;
+    }
+  }
+
+  @media (min-width: 1320px) {
+    #skills-grid {
+      gap: 0.68rem;
+    }
+
+    .skill-card {
+      aspect-ratio: 1 / 1.08;
+    }
+  }
+</style>

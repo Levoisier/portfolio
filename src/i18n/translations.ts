@@ -52,10 +52,10 @@ export const translations: Record<Lang, Record<string, string>> = {
     'confidential.3.card-aria': 'Proyecto confidencial: Finanzas / ERP',
 
     // Skills
-    'skills.eyebrow': '// El toolkit detrás de los builds',
-    'skills.heading': 'Los Reactivos',
+    'skills.eyebrow': '',
+    'skills.heading': 'Mi Stack',
     'skills.description':
-      'Lenguajes, frameworks, plataformas y herramientas de testing que uso para llevar proyectos a producción.',
+      'Lenguajes, frameworks, plataformas y herramientas que uso para llevar proyectos a producción. Cada semana en expansión.',
     'skills.grid-aria': 'Stack tecnológico',
     'skills.legend-aria': 'Leyenda de categorías',
     'skills.legend.languages': 'Lenguajes',
@@ -129,10 +129,10 @@ export const translations: Record<Lang, Record<string, string>> = {
     'confidential.3.card-aria': 'Confidential project: Finance / ERP',
 
     // Skills
-    'skills.eyebrow': '// Toolkit behind the builds',
-    'skills.heading': 'The Reagents',
+    'skills.eyebrow': '',
+    'skills.heading': 'My Stack',
     'skills.description':
-      'Languages, frameworks, platforms, and testing tools I use to ship production work.',
+      'Languages, frameworks, platforms, and tools I use to ship production work. Growing each week.',
     'skills.grid-aria': 'Technology stack',
     'skills.legend-aria': 'Category legend',
     'skills.legend.languages': 'Languages',
