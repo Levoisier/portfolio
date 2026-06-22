@@ -8,7 +8,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'hero.role.line2': 'Ingeniero Químico',
 
     // Projects
-    'projects.heading': 'Trabajo construido, medido en resultados.',
+    'projects.heading': 'PROYECTOS EN PRODUCCIÓN, RESULTADOS MEDIBLES',
     'projects.subheading':
       'Proyectos en producción: marca, comercio, contenido y flujos operativos.',
     'projects.0.description':
@@ -24,8 +24,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Confidential
     'confidential.classified': '[CLASIFICADO]',
     'confidential.heading': 'Trabajo Confidencial',
-    'confidential.subheading':
-      'Proyectos bajo NDA resumidos para proteger la confidencialidad: sin capturas de pantalla, repositorios ni información identificable.',
+    'confidential.subheading': 'Proyectos bajo NDA resumidos para proteger la confidencialidad.',
     'confidential.field.role': 'Rol',
     'confidential.field.stack': 'Stack',
     'confidential.field.impact': 'Impacto',
@@ -86,7 +85,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'hero.role.line2': 'Chemical Engineer',
 
     // Projects
-    'projects.heading': 'Built work, measured in outcomes.',
+    'projects.heading': 'PROJECTS IN PRODUCTION, MEASURABLE RESULTS',
     'projects.subheading':
       'Live projects across brand, commerce, content, and production workflows.',
     'projects.0.description':
@@ -102,8 +101,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     // Confidential
     'confidential.classified': '[CLASSIFIED]',
     'confidential.heading': 'Confidential Work',
-    'confidential.subheading':
-      'NDA engagements abstracted to protect confidentiality: no screenshots, repositories, or identifying information are disclosed.',
+    'confidential.subheading': 'NDA engagements abstracted to protect confidentiality.',
     'confidential.field.role': 'Role',
     'confidential.field.stack': 'Stack',
     'confidential.field.impact': 'Impact',

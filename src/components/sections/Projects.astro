@@ -44,18 +44,11 @@ const projects: Project[] = [
     <div class="mb-14 max-w-3xl">
       <h2
         class="font-display max-w-4xl uppercase leading-none"
-        style="font-size: var(--text-4xl); color: var(--paper);"
+        style="font-size: var(--text-4xl); color: var(--paper); text-shadow: 0 0 18px color-mix(in srgb, var(--scarlet) 42%, transparent);"
         data-i18n="projects.heading"
       >
-        Trabajo construido, medido en resultados.
+        PROYECTOS EN PRODUCCIÓN, RESULTADOS MEDIBLES
       </h2>
-      <p
-        class="font-body mt-6 max-w-2xl leading-relaxed"
-        style="font-size: var(--text-lg); color: color-mix(in srgb, var(--paper) 76%, transparent);"
-        data-i18n="projects.subheading"
-      >
-        Proyectos en producción: marca, comercio, contenido y flujos operativos.
-      </p>
     </div>
 
     <div class="grid gap-0" data-projects-log>
@@ -76,20 +69,13 @@ const projects: Project[] = [
                   href={project.liveUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-baseline gap-3 transition-colors"
-                  style="color: var(--paper);"
+                  class="project-title-link inline-flex items-center gap-3"
                   aria-label={`Abrir sitio en vivo de ${project.title}`}
                   data-i18n-aria={`projects.${index}.live-aria`}
                   data-project-title
                 >
                   <span>{project.title}</span>
-                  <span
-                    class="font-display text-base"
-                    style="color: var(--scarlet);"
-                    aria-hidden="true"
-                  >
-                    →
-                  </span>
+                  <span class="project-title-link__mark" aria-hidden="true" />
                 </a>
               </h3>
 
@@ -141,3 +127,110 @@ const projects: Project[] = [
     </div>
   </div>
 </section>
+
+<style>
+  .project-title-link {
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    color: var(--paper);
+    text-decoration: none;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      text-shadow var(--duration-fast) var(--ease-out);
+  }
+
+  .project-title-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -0.16em;
+    width: 100%;
+    height: 0.12em;
+    background: var(--scarlet);
+    opacity: 0.32;
+    transform: scaleX(0.34);
+    transform-origin: left;
+    transition:
+      opacity var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+
+  .project-title-link__mark {
+    position: relative;
+    display: inline-block;
+    width: 1.38em;
+    height: 1.38em;
+    border: 1px solid var(--scarlet-dim);
+    transform: translateY(-0.04em);
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      border-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+
+  .project-title-link__mark::before,
+  .project-title-link__mark::after {
+    content: '';
+    position: absolute;
+    background: var(--scarlet);
+    transition:
+      background-color var(--duration-fast) var(--ease-out),
+      transform var(--duration-fast) var(--ease-out);
+  }
+
+  .project-title-link__mark::before {
+    left: 0.36em;
+    top: 0.62em;
+    width: 0.64em;
+    height: 1px;
+    transform-origin: right center;
+  }
+
+  .project-title-link__mark::after {
+    right: 0.34em;
+    top: 0.42em;
+    width: 0.38em;
+    height: 0.38em;
+    background: transparent;
+    border-right: 1px solid var(--scarlet);
+    border-top: 1px solid var(--scarlet);
+    transform: rotate(45deg);
+  }
+
+  .project-title-link:hover,
+  .project-title-link:focus-visible {
+    color: var(--paper);
+    text-shadow: 0 0 16px color-mix(in srgb, var(--scarlet) 48%, transparent);
+  }
+
+  .project-title-link:hover::after,
+  .project-title-link:focus-visible::after {
+    opacity: 0.78;
+    transform: scaleX(1);
+  }
+
+  .project-title-link:hover .project-title-link__mark,
+  .project-title-link:focus-visible .project-title-link__mark {
+    background-color: var(--scarlet);
+    border-color: var(--scarlet);
+    transform: translate(0.14em, -0.04em);
+  }
+
+  .project-title-link:hover .project-title-link__mark::before,
+  .project-title-link:focus-visible .project-title-link__mark::before {
+    background: var(--on-scarlet);
+    transform: scaleX(1.18);
+  }
+
+  .project-title-link:hover .project-title-link__mark::after,
+  .project-title-link:focus-visible .project-title-link__mark::after {
+    border-color: var(--on-scarlet);
+    transform: translateX(0.08em) rotate(45deg);
+  }
+
+  .project-title-link:focus-visible {
+    outline: 2px solid var(--scarlet);
+    outline-offset: 0.18em;
+  }
+</style>
