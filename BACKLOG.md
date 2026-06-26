@@ -78,6 +78,28 @@ acceptance detail is retained under the `# v4` section below (all boxes checked)
 
 ---
 
+## Shipped — v5 (mobile experience parity)
+
+One-line orientation ledger only — **do not re-implement.**
+
+- **Mobile panda companion** — the signature panda now appears on phones (it was
+  `display:none` <1024px). New `companion-mobile` scene (one `SCENE_REGISTRY` line)
+  plus a `#panda-companion-mobile` corner shell (inverse visibility of the desktop
+  one), scoped via `gsap.matchMedia('(max-width:1023px)')`. Swaps pose per section
+  (hero/wave → coding → head silhouette → master → wave), gentle idle bob, hands
+  off to the Contact watermark. Reuses the five existing poses, lazy — no LCP cost.
+- **Touch-native interactions** — `touch-tilt.ts` turns `deviceorientation` into a
+  `tilt:change` event that nudges the panda's gaze (cursor-tracking analog); tap the
+  panda → wave + (first tap) iOS motion-permission grant. Off under reduced motion.
+  The desktop magnifier loupe stays desktop-only (not ported to touch).
+- **Liquid-glass on mobile** — opt-in `.liquid-glass--refractive-mobile` enables a
+  lighter `--glass-blur-mobile` refractive path on the below-the-fold Skills/Projects
+  surfaces; the Hero glass deliberately keeps the lean solid tint to protect mobile LCP.
+- **Verified** end-to-end on `pnpm preview` (Chromium/Playwright): per-section poses,
+  reduced-motion single static pose, no console errors, no horizontal overflow at 390px.
+
+---
+
 ## Carry-forward constraints (must not regress)
 
 Live facts every v3 and v4 phase must respect.

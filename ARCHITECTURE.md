@@ -39,6 +39,7 @@ src/
         hero.ts         ← REFERENCE scene — fully working choreography
         backdrop.ts     ← Fixed parallax stage driven by global scroll progress
         companion.ts    ← Fixed desktop panda companion, outside ScrollSmoother
+        companionMobile.ts ← Mobile (<1024px) corner companion: pose-per-section + tap/tilt
         projects.ts     ← v3 experiment-log reveal
         confidential.ts ← Classified-file treatment
         skills.ts       ← Periodic-table reagent shelf
@@ -192,6 +193,17 @@ window.addEventListener('scroll:progress', (e) => {
 });
 ```
 
+### Device-tilt signal (mobile, touch-native)
+
+Touch devices have no cursor, so `src/scripts/touch-tilt.ts` is the analog of the
+desktop mousemove tracking. It reads `deviceorientation` and emits
+`CustomEvent('tilt:change', { detail: { x, y } })` (each in `[-1, 1]`), mirroring
+the `scroll:progress` contract so consumers stay decoupled from the sensor wiring.
+The mobile companion subscribes to nudge the panda's gaze. iOS 13+ requires
+`DeviceOrientationEvent.requestPermission()` from a user gesture, so `requestTilt()`
+is called from the **first tap on the panda**; unsupported/denied degrades silently
+and it is fully off under reduced motion.
+
 ---
 
 ## Smooth scroll (ScrollSmoother) — sanctioned controller exception
@@ -203,7 +215,8 @@ The page is scrolled by **GSAP ScrollSmoother**, not the native scrollbar alone.
 ```
 body
 ├─ #scroll-stage        ← fixed parallax stage, SIBLING OUTSIDE the wrapper (stays truly fixed)
-├─ #panda-companion     ← fixed desktop companion shell; inner stage owns opacity/transform
+├─ #panda-companion     ← fixed desktop companion shell (≥1024px); inner stage owns opacity/transform
+├─ #panda-companion-mobile ← fixed mobile companion shell (<1024px); same poses, corner-anchored
 └─ #smooth-wrapper      ← ScrollSmoother applies its styles here
    └─ #smooth-content   ← ScrollSmoother transforms this; all page content lives inside
       └─ main#scroll-content > <slot/>

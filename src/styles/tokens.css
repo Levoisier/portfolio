@@ -54,6 +54,7 @@
   --glass-lens-fill: rgba(12, 22, 40, 0.94); /* opaque loupe backing (hides original) */
   --glass-lens-shadow: rgba(10, 10, 10, 0.45); /* magnifier loupe drop shadow */
   --glass-blur: 14px;
+  --glass-blur-mobile: 8px; /* lighter blur on touch — protects mobile LCP budget */
   --glass-saturate: 1.4;
   --glass-radius: 1.1rem;
 

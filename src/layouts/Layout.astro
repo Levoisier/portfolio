@@ -131,6 +131,62 @@ const {
       </div>
     </div>
 
+    <!-- Mobile panda companion — sibling outside #smooth-wrapper, like the desktop
+         one. Shown < 1024px (where the desktop companion is hidden), so the panda
+         is present on phones too. Same pose images (cached, lazy → no LCP cost);
+         companionMobile.ts drives pose-per-section + tap/tilt reactions. -->
+    <div id="panda-companion-mobile" data-scene="companion-mobile" aria-hidden="true">
+      <div class="panda-companion-stage" data-companion-stage data-companion-tap>
+        <div class="panda-companion-look" data-companion-look>
+          <img
+            src="/media/panda/panda-hero.png"
+            alt=""
+            width="160"
+            height="200"
+            loading="lazy"
+            decoding="async"
+            data-companion-pose="hero"
+          />
+          <img
+            src="/media/panda/panda-master.png"
+            alt=""
+            width="160"
+            height="160"
+            loading="lazy"
+            decoding="async"
+            data-companion-pose="master"
+          />
+          <img
+            src="/media/panda/panda-coding.png"
+            alt=""
+            width="160"
+            height="200"
+            loading="lazy"
+            decoding="async"
+            data-companion-pose="coding"
+          />
+          <img
+            src="/media/panda/panda-wave.png"
+            alt=""
+            width="160"
+            height="200"
+            loading="lazy"
+            decoding="async"
+            data-companion-pose="wave"
+          />
+          <img
+            src="/media/panda/panda-head.png"
+            alt=""
+            width="160"
+            height="160"
+            loading="lazy"
+            decoding="async"
+            data-companion-pose="head"
+          />
+        </div>
+      </div>
+    </div>
+
     <!-- ScrollSmoother DOM contract: #smooth-wrapper > #smooth-content.
          ScrollSmoother (controller.ts) applies the fixed/overflow styles to
          the wrapper and transforms the content. Under reduced motion the

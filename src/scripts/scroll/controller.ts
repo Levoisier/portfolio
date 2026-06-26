@@ -22,6 +22,7 @@ import type { SceneFactory } from './types';
 import heroSceneFactory from './scenes/hero';
 import backdropSceneFactory from './scenes/backdrop';
 import companionSceneFactory from './scenes/companion';
+import companionMobileSceneFactory from './scenes/companionMobile';
 import skillsSceneFactory from './scenes/skills';
 import projectsSceneFactory from './scenes/projects';
 import confidentialSceneFactory from './scenes/confidential';
@@ -32,6 +33,7 @@ import contactSceneFactory from './scenes/contact';
 const SCENE_REGISTRY: Record<string, SceneFactory> = {
   backdrop: backdropSceneFactory,
   companion: companionSceneFactory,
+  'companion-mobile': companionMobileSceneFactory,
   hero: heroSceneFactory,
   skills: skillsSceneFactory,
   projects: projectsSceneFactory,
