@@ -19,6 +19,12 @@ Cristian generates final assets with **Nano Banana**.
 | `/media/panda/panda-coding.png` | 1600×2000  | Companion builder pose                            | Y           | final  |
 | `/media/panda/panda-wave.png`   | 1600×2000  | Contact accent + companion goodbye pose           | Y           | final  |
 
+> **Companion reuse.** All five poses are shared between the desktop companion
+> (`#panda-companion`, ≥1024px) and the **mobile companion** (`#panda-companion-mobile`,
+> <1024px, `companionMobile.ts`): hero/wave greeting → coding (Projects) →
+> head silhouette (Confidential) → master (Skills) → wave (Contact). Same paths,
+> lazy-loaded; no new media.
+
 ### Pose expansion — "Classified Investigation" sequence (v5)
 
 5-frame timelapse (approach → inspect → read → stamp → shush). Each frame doubles as a Confidential-section pose (retiring `panda-head`) and as a looping hero GIF/sprite frame. Generation prompts live in `BACKLOG.md` (`# v5`). Keep identical character scale/lighting/anchor across all five so they sequence cleanly.

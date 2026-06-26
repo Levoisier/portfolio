@@ -225,6 +225,19 @@
       backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     }
   }
+
+  /* Mobile refractive path — OPT-IN per surface (.liquid-glass--refractive-mobile)
+     and intentionally limited to BELOW-the-fold copy (Skills / Projects / Contact).
+     The Hero glass deliberately stays the lean solid tint: it sits beside the LCP
+     panda, so a blur there would tax the already-tight mobile LCP budget. Uses the
+     lighter --glass-blur-mobile so the art still shows through cheaply. */
+  @media (max-width: 1023px) {
+    .liquid-glass--refractive-mobile {
+      background-color: var(--glass-fill);
+      -webkit-backdrop-filter: blur(var(--glass-blur-mobile)) saturate(var(--glass-saturate));
+      backdrop-filter: blur(var(--glass-blur-mobile)) saturate(var(--glass-saturate));
+    }
+  }
 }
 
 /* ─── Scroll stage (fixed background layers) ──────────────────────────────── */
@@ -303,6 +316,84 @@
 @media (min-width: 1024px) {
   #panda-companion {
     display: block;
+  }
+}
+
+/* ─── Mobile panda companion ───────────────────────────────────────────────────
+   The desktop #panda-companion is hidden < 1024px, so on phones the signature
+   panda is otherwise absent. This is a compact corner buddy that swaps pose per
+   section and reacts to scroll / tap / device tilt (companionMobile.ts). It is
+   the INVERSE visibility of #panda-companion: shown < 1024px, hidden ≥ 1024px.
+   Fixed, transform/opacity-only, lazy imgs — no LCP cost. The stage is tappable
+   (pointer-events:auto) so a tap triggers a wave + grants iOS motion access. */
+#panda-companion-mobile {
+  position: fixed;
+  /* Bottom-LEFT: the language switch owns the bottom-right corner. */
+  left: clamp(0.5rem, 3vw, 1.25rem);
+  bottom: clamp(0.5rem, 3vw, 1.25rem);
+  z-index: var(--z-overlay);
+  display: block;
+  width: clamp(5.5rem, 26vw, 8rem);
+  aspect-ratio: 4 / 5;
+  pointer-events: none;
+}
+
+#panda-companion-mobile .panda-companion-stage {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform-origin: 50% 90%;
+  pointer-events: auto; /* the panda itself is tappable; surrounding box is not */
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  will-change: transform, opacity;
+}
+
+#panda-companion-mobile .panda-companion-look {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 82%;
+  will-change: transform;
+}
+
+#panda-companion-mobile .panda-companion-look img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transform-origin: 50% 90%;
+  will-change: opacity;
+}
+
+/* Confidential guard: the head pose reads as a redacted silhouette. */
+#panda-companion-mobile .panda-companion-look img[data-companion-pose='head'] {
+  filter: brightness(0);
+}
+
+/* One-time tilt hint bubble (shown until the first tap, then removed by JS). */
+#panda-companion-mobile .panda-tilt-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translate(-50%, -0.35rem);
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--glass-rim);
+  background-color: var(--glass-fill-solid);
+  color: var(--on-navy);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+@media (min-width: 1024px) {
+  #panda-companion-mobile {
+    display: none;
   }
 }
 

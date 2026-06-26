@@ -244,3 +244,33 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Completed the static audits instead: confirmed no raw colors outside `tokens.css` (grep), verified each v4 reduced-motion branch (glass sheen disabled by the global `animation-duration: 0.01ms` rule; hero static split; projects instant via the reduced-motion init branch; companion single static pose with no route/triggers/cursor), kept `backdrop-filter` gated behind `@supports` + desktop with a lean solid-tint mobile fallback (no new mobile blur cost), and left the LCP panda untouched. **The Lighthouse/CLS/LCP numbers are a human follow-up** — run them in your `pnpm dev` / `pnpm preview` and record them here.
 
 **Don't repeat:** When browser tools are disallowed, finish the static sweep and explicitly hand the rendered-page metrics back to the human; never fabricate them.
+
+---
+
+### [2026-06-26] Mobile lost the pandas to breakpoint gating, not reduced-motion
+
+**Context:** Bringing the desktop experience to mobile. The brief assumed mobile was flat because of "reduced movement rules."
+
+**Problem/Dead-end:** Easy to conflate two separate gates. `prefers-reduced-motion` (a per-user OS setting) is one thing; the real reason mobile read as a flat SPA was **breakpoint gating** — `#panda-companion` is `display:none` below 1024px, the hero pin/Skills scatter/glass loupe/`backdrop-filter` are all `min-width` desktop-only. Mobile users without the OS setting still get section reveals + backdrop parallax; they just lose everything fenced behind `min-width`.
+
+**Fix/Decision:** Added a first-class mobile layer via the normal engine seams — a new `companion-mobile` scene + one `SCENE_REGISTRY` line, scoped with `gsap.matchMedia('(max-width: 1023px)')`, plus a `#panda-companion-mobile` shell (inverse visibility of the desktop one). Reused the existing five panda poses; no new media, no controller-core edits.
+
+**Don't repeat:** Distinguish reduced-motion gating from breakpoint gating before "fixing mobile" — they live in different places and want different solutions.
+
+### [2026-06-26] iOS device-tilt needs a user gesture; wire it to a tap
+
+**Context:** Replacing the desktop cursor look-toward with a touch-native device-tilt gaze on the mobile companion.
+
+**Problem/Dead-end:** On iOS 13+ `deviceorientation` emits nothing until `DeviceOrientationEvent.requestPermission()` is called, and that call only resolves `granted` from inside a user gesture. Attaching the listener eagerly (or calling requestPermission on load) silently fails. Android and most browsers have no such gate.
+
+**Fix/Decision:** `touch-tilt.ts` exposes `requestTilt()` and only attaches the `deviceorientation` listener after permission resolves; the mobile companion calls it from the **first tap on the panda** (the same tap that triggers the wave reaction), with a one-time "tap me · tilt to play" hint. Unsupported / denied → silently no tilt (graceful degrade, no idle listener). Tilt emits a `tilt:change` CustomEvent mirroring the `scroll:progress` contract so consumers stay decoupled. Fully off under reduced motion.
+
+**Don't repeat:** Any motion/orientation sensor on iOS must be requested from a real user gesture; don't attach sensor listeners at load.
+
+### [2026-06-26] Browser verification WAS available this session
+
+**Context:** Prior v3/v4 audits (see entries above) hand-waved Lighthouse/CLS/LCP because browser tools were disallowed.
+
+**Fix/Decision:** This remote environment ships Chromium at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` with Playwright globally installed (`/opt/node22/lib/node_modules`). Verified the mobile companion end-to-end against `pnpm preview`: per-section poses (hero→wave, projects→coding, confidential→head silhouette, skills→master, contact→wave), reduced-motion single static `master` pose, zero console errors, zero horizontal overflow at 390px, and the desktop companion correctly `display:none` on mobile / mobile companion `display:none` on desktop. (ESM import needs the absolute path + `const { chromium } = pkg` default-import shape.) Real Lighthouse LCP timing on a throttled device is still worth a human pass.
+
+**Don't repeat:** Check for a usable Chromium/Playwright before deferring rendered-page checks to a human.
