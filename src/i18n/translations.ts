@@ -12,7 +12,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'projects.subheading':
       'Proyectos en producción: marca, comercio, contenido y flujos operativos.',
     'projects.0.description':
-      'Catálogo instantáneo de repuestos para motos deportivas japonesas, sincronizado en tiempo real con el ERP, con seguimiento de estado de pedidos para clientes y autenticación con Firebase. Imágenes servidas vía CloudFront sobre AWS S3 y EC2.',
+      'Catálogo de repuestos de motocicletas con imágenes de alto rendimiento y muy optimizadas, sincronizado en tiempo real con el ERP, con seguimiento de estado de pedidos para clientes y autenticación con Firebase. Imágenes servidas vía CloudFront sobre AWS S3 y EC2.',
     'projects.1.description':
       'Sistema de marca y flujo de reservas para restaurante: fachada cinematográfica con Astro/GSAP combinada con operaciones de reservas impulsadas por Python.',
     'projects.2.description':
@@ -92,7 +92,7 @@ export const translations: Record<Lang, Record<string, string>> = {
     'projects.subheading':
       'Live projects across brand, commerce, content, and production workflows.',
     'projects.0.description':
-      'Instant parts catalog for Japanese sport bikes, synced in real time with the ERP, with client order-status tracking and Firebase authentication. Images served through CloudFront on AWS S3 and EC2.',
+      'High-performance, heavily optimized motorcycle parts catalog images, synced in real time with the ERP, with client order-status tracking and Firebase authentication. Images served through CloudFront on AWS S3 and EC2.',
     'projects.1.description':
       'Restaurant brand system and booking flow: cinematic Astro/GSAP frontage paired with Python-powered reservation operations.',
     'projects.2.description':
