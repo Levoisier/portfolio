@@ -12,14 +12,17 @@ export const translations: Record<Lang, Record<string, string>> = {
     'projects.subheading':
       'Proyectos en producción: marca, comercio, contenido y flujos operativos.',
     'projects.0.description':
-      'Sistema de marca y flujo de reservas para restaurante: fachada cinematográfica con Astro/GSAP combinada con operaciones de reservas impulsadas por Python.',
+      'Catálogo instantáneo de repuestos para motos deportivas japonesas, sincronizado en tiempo real con el ERP, con seguimiento de estado de pedidos para clientes y autenticación con Firebase. Imágenes servidas vía CloudFront sobre AWS S3 y EC2.',
     'projects.1.description':
-      'Tienda en Shopify y configuración de comercio para una marca de ropa de dormir, con trabajo en tema Liquid, Mercado Pago, SellerChat, y manual de marca completo.',
+      'Sistema de marca y flujo de reservas para restaurante: fachada cinematográfica con Astro/GSAP combinada con operaciones de reservas impulsadas por Python.',
     'projects.2.description':
+      'Tienda en Shopify y configuración de comercio para una marca de ropa de dormir, con trabajo en tema Liquid, Mercado Pago, SellerChat, y manual de marca completo.',
+    'projects.3.description':
       'Landing de agencia, portafolio, sistema de blog y manual de marca construidos de punta a punta con Next.js y TypeScript.',
-    'projects.0.live-aria': 'Abrir sitio en vivo de Le Parché',
-    'projects.1.live-aria': 'Abrir sitio en vivo de Maison Cielare',
-    'projects.2.live-aria': 'Abrir sitio en vivo de Orquestia',
+    'projects.0.live-aria': 'Abrir sitio en vivo de JapaniRacer',
+    'projects.1.live-aria': 'Abrir sitio en vivo de Le Parché',
+    'projects.2.live-aria': 'Abrir sitio en vivo de Maison Cielare',
+    'projects.3.live-aria': 'Abrir sitio en vivo de Orquestia',
 
     // Confidential
     'confidential.classified': '[CLASIFICADO]',
@@ -89,14 +92,17 @@ export const translations: Record<Lang, Record<string, string>> = {
     'projects.subheading':
       'Live projects across brand, commerce, content, and production workflows.',
     'projects.0.description':
-      'Restaurant brand system and booking flow: cinematic Astro/GSAP frontage paired with Python-powered reservation operations.',
+      'Instant parts catalog for Japanese sport bikes, synced in real time with the ERP, with client order-status tracking and Firebase authentication. Images served through CloudFront on AWS S3 and EC2.',
     'projects.1.description':
-      'Shopify storefront and commerce setup for a sleepwear brand, with Liquid theme work, Mercado Pago, SellerChat, and a complete brand manual.',
+      'Restaurant brand system and booking flow: cinematic Astro/GSAP frontage paired with Python-powered reservation operations.',
     'projects.2.description':
+      'Shopify storefront and commerce setup for a sleepwear brand, with Liquid theme work, Mercado Pago, SellerChat, and a complete brand manual.',
+    'projects.3.description':
       'Agency landing page, portfolio, blog system, and brand manual built end-to-end with a focused Next.js and TypeScript stack.',
-    'projects.0.live-aria': 'Open live site for Le Parché',
-    'projects.1.live-aria': 'Open live site for Maison Cielare',
-    'projects.2.live-aria': 'Open live site for Orquestia',
+    'projects.0.live-aria': 'Open live site for JapaniRacer',
+    'projects.1.live-aria': 'Open live site for Le Parché',
+    'projects.2.live-aria': 'Open live site for Maison Cielare',
+    'projects.3.live-aria': 'Open live site for Orquestia',
 
     // Confidential
     'confidential.classified': '[CLASSIFIED]',
