@@ -81,7 +81,6 @@ export const translations: Record<Lang, Record<string, string>> = {
     'skills.legend.testing': 'Testing',
 
     // Contact
-    'contact.kicker': 'Construyamos algo',
     'contact.heading': 'Hablemos',
     'contact.body':
       'Trae un problema y te ayudo a convertirlo en la próxima oportunidad de crecimiento.',
@@ -171,7 +170,6 @@ export const translations: Record<Lang, Record<string, string>> = {
     'skills.legend.testing': 'Testing',
 
     // Contact
-    'contact.kicker': "Let's build something",
     'contact.heading': 'Get in touch',
     'contact.body': 'Bring a clear problem, and I can help turn it into a production-ready build.',
     'contact.email-aria': 'Send email to Cristian',

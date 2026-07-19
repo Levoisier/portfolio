@@ -36,64 +36,71 @@ const contactScene = (el: Element): Scene => {
   let headingWords: HTMLElement[] = [];
   let tl: gsap.core.Timeline | null = null;
 
+  function collect() {
+    return {
+      links: Array.from(el.querySelectorAll<HTMLElement>('[data-contact-link]')),
+      texture: el.querySelector<HTMLElement>('[data-contact-texture]'),
+      partyItems: Array.from(el.querySelectorAll<HTMLElement>('[data-panda-party-item]')),
+    };
+  }
+
   return {
     init() {
       const heading = el.querySelector<HTMLElement>('[data-contact-heading]');
-      const kicker = el.querySelector<HTMLElement>('[data-contact-kicker]');
-      const links = Array.from(el.querySelectorAll<HTMLElement>('[data-contact-link]'));
-      const panda = el.querySelector<HTMLElement>('[data-contact-panda]');
-      const texture = el.querySelector<HTMLElement>('[data-contact-texture]');
-      const closing = el.querySelector<HTMLElement>('[data-contact-closing]');
+      const { links, texture, partyItems } = collect();
 
       if (heading) headingWords = splitWords(heading);
-      if (prefersReducedMotion) loadTexture(texture);
 
       if (prefersReducedMotion) {
-        gsap.set([kicker, ...headingWords, ...links, panda, texture, closing], {
+        loadTexture(texture);
+        gsap.set([...headingWords, ...links, texture, ...partyItems], {
           opacity: 1,
           x: 0,
           y: 0,
         });
-        gsap.set(texture, { opacity: 1 });
         return;
       }
 
-      gsap.set(kicker, { opacity: 0, y: 12 });
       gsap.set(headingWords, { opacity: 0, y: 24 });
-      gsap.set(links, { opacity: 0, y: 24 });
-      gsap.set(panda, { opacity: 0, scale: 1.04, willChange: 'transform,opacity' });
+      gsap.set(links, { opacity: 0, y: 20 });
       gsap.set(texture, { opacity: 0 });
-      gsap.set(closing, { opacity: 0, y: 16 });
+      // The idle bob/wiggle/fade loop lives on the <img> (CSS @keyframes); this
+      // entrance only owns the wrapper's opacity/y/scale — no shared channel.
+      gsap.set(partyItems, { opacity: 0, y: 26, scale: 0.7, willChange: 'transform,opacity' });
     },
 
     enter() {
       if (entered) return;
       entered = true;
 
-      const kicker = el.querySelector<HTMLElement>('[data-contact-kicker]');
-      const links = Array.from(el.querySelectorAll<HTMLElement>('[data-contact-link]'));
-      const panda = el.querySelector<HTMLElement>('[data-contact-panda]');
-      const texture = el.querySelector<HTMLElement>('[data-contact-texture]');
-      const closing = el.querySelector<HTMLElement>('[data-contact-closing]');
+      const { links, texture, partyItems } = collect();
       loadTexture(texture);
 
       if (prefersReducedMotion) {
-        gsap.set([kicker, ...headingWords, ...links, panda, texture, closing], {
+        gsap.set([...headingWords, ...links, texture, ...partyItems], {
           opacity: 1,
           x: 0,
           y: 0,
         });
-        gsap.set(texture, { opacity: 1 });
         return;
       }
 
       tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
-      tl.to(kicker, { opacity: 1, y: 0, duration: 0.35 })
-        .to(headingWords, { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 }, '-=0.1')
-        .to(links, { opacity: 1, y: 0, duration: 0.45, stagger: 0.12 })
-        .to(panda, { opacity: 1, scale: 1, duration: 0.9 }, '<')
+      tl.to(headingWords, { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 })
+        .to(links, { opacity: 1, y: 0, duration: 0.45, stagger: 0.1 }, '-=0.1')
         .to(texture, { opacity: 1, duration: 0.7 }, '<0.1')
-        .to(closing, { opacity: 1, y: 0, duration: 0.4 }, '-=0.1');
+        .to(
+          partyItems,
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.7,
+            stagger: 0.09,
+            ease: 'back.out(1.7)', // matches --ease-spring's overshoot feel
+          },
+          '-=0.1'
+        );
     },
 
     leave() {
@@ -101,22 +108,15 @@ const contactScene = (el: Element): Scene => {
     },
 
     progress(_progress: number) {
-      // Watermark stays static inside the panel.
+      // Idle panda motion is a pure-CSS loop; nothing to drive on scroll.
     },
 
     destroy() {
       tl?.kill();
-      gsap.set(
-        [
-          el.querySelector<HTMLElement>('[data-contact-kicker]'),
-          ...headingWords,
-          ...Array.from(el.querySelectorAll<HTMLElement>('[data-contact-link]')),
-          el.querySelector<HTMLElement>('[data-contact-panda]'),
-          el.querySelector<HTMLElement>('[data-contact-texture]'),
-          el.querySelector<HTMLElement>('[data-contact-closing]'),
-        ],
-        { clearProps: 'opacity,transform,willChange' }
-      );
+      const { links, texture, partyItems } = collect();
+      gsap.set([...headingWords, ...links, texture, ...partyItems], {
+        clearProps: 'opacity,transform,willChange',
+      });
     },
   };
 };

@@ -24,6 +24,11 @@ Cristian generates final assets with **Nano Banana**.
 > <1024px, `companionMobile.ts`): hero/wave greeting → coding (Projects) →
 > head silhouette (Confidential) → master (Skills) → wave (Contact). Same paths,
 > lazy-loaded; no new media.
+>
+> **Footer panda party.** `Contact.astro` also renders all five poses together
+> in a `.panda-party` row at the very bottom of the page — the site's closing
+> flourish — each bobbing/wiggling/fading on its own staggered CSS loop. Same
+> five source files as above; no new media.
 
 ### Pose expansion — "Classified Investigation" sequence (v5)
 
