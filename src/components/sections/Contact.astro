@@ -2,13 +2,16 @@
 /* CONTACT SECTION / FOOTER
    Minimal close: title + the line below it, then links — no kicker above the
    title, no trademark/copyright line below the links. Background is a
-   lava-lamp glow: several blurred color blobs rising from the bottom of the
-   footer, diffused behind a frosted "crystal glass" pane so text stays
-   readable. Closes with a panda party: all five companion poses
-   jumping/wiggling/fading together as the site's sign-off.
+   lava-lamp glow: several blurred color blobs that actually rise from the
+   bottom of the footer up past the top, looping, diffused behind one
+   full-bleed frosted "crystal glass" pane (no boxed card around the text —
+   the pane itself carries both the glass read and the contrast guarantee).
+   Closes with a panda party: all five companion poses jumping/wiggling/fading
+   together as the site's sign-off.
    Animation: src/scripts/scroll/scenes/contact.ts (entrance) + the CSS
-   @keyframes below (idle loops — auto-disabled under reduced motion by the
-   sitewide kill-switch in global.css, same as the liquid-glass sheen drift).
+   @keyframes below. Reduced motion: the sitewide kill-switch in global.css
+   collapses each blob's animation to one 0.01ms pass with fill-mode "none",
+   so it simply reverts to its plain resting circle — no jump, no motion.
 */
 
 const pandaParty = [
@@ -41,9 +44,7 @@ const pandaParty = [
   </div>
   <div class="contact-glass" aria-hidden="true"></div>
 
-  <div
-    class="contact-panel relative z-10 mx-auto flex max-w-3xl flex-col items-center px-6 py-10 text-center md:px-12 md:py-14"
-  >
+  <div class="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-6 text-center md:px-12">
     <h2
       class="font-display mb-8 leading-tight tracking-normal"
       data-contact-heading
@@ -209,10 +210,13 @@ const pandaParty = [
 </section>
 
 <style>
-  /* Lava-lamp glow — blurred radial blobs, each pulsing up from its resting
-     spot near the bottom and sinking back (0%/100% share a state, so the
-     loop is seamless and the reduced-motion single-frame lands on a calm,
-     static glow instead of a jump cut). */
+  /* Lava-lamp glow — blurred radial blobs that actually travel upward (vh
+     units, so the rise is consistent regardless of each blob's own size)
+     from a resting spot near the bottom, fading in low and out up top, then
+     looping. Reduced motion doesn't need special-cased keyframe endpoints:
+     the sitewide kill-switch collapses the animation to a near-instant single
+     pass, and since these have no fill-mode, they simply revert to their
+     plain (un-animated) resting circle — already a clean static look. */
   .lava-blobs {
     position: absolute;
     inset: 0;
@@ -328,14 +332,20 @@ const pandaParty = [
   }
 
   @keyframes lava-rise {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0) scale(1);
-      opacity: 0.62;
+    0% {
+      transform: translate3d(0, 0, 0) scale(0.85);
+      opacity: 0;
     }
-    50% {
-      transform: translate3d(var(--drift, 4%), -68%, 0) scale(1.08);
-      opacity: 1;
+    18% {
+      opacity: 0.95;
+    }
+    62% {
+      transform: translate3d(var(--drift, 4%), -62vh, 0) scale(1.05);
+      opacity: 0.85;
+    }
+    100% {
+      transform: translate3d(calc(var(--drift, 4%) * 1.5), -92vh, 0) scale(0.9);
+      opacity: 0;
     }
   }
 
@@ -352,23 +362,22 @@ const pandaParty = [
     }
   }
 
-  /* Crystal-glass pane — diffuses the blobs into a soft glow without erasing
-     their color. Opaque-ish paper fallback first; browsers with
-     backdrop-filter support get the true frosted-glass read (that blur pass
-     is what keeps the ambient blobs soft, not this layer's own opacity —
-     see .contact-panel below for where actual text-contrast guarantees
-     live). */
+  /* Crystal-glass pane — one full-bleed frosted sheet (no boxed card around
+     the text): diffuses the blobs into a soft glow, and its own opacity is
+     tuned high enough that navy text stays readable no matter which blob
+     color happens to drift behind it. Opaque-ish paper fallback first;
+     browsers with backdrop-filter support get the true frosted read. */
   .contact-glass {
     position: absolute;
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background: color-mix(in srgb, var(--paper) 55%, transparent);
+    background: color-mix(in srgb, var(--paper) 78%, transparent);
   }
 
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
     .contact-glass {
-      background: color-mix(in srgb, var(--paper) 34%, transparent);
+      background: color-mix(in srgb, var(--paper) 58%, transparent);
       backdrop-filter: blur(var(--glass-blur));
       -webkit-backdrop-filter: blur(var(--glass-blur));
     }
@@ -381,23 +390,27 @@ const pandaParty = [
     }
   }
 
-  /* Text card — sits above the ambient glow and guarantees contrast for the
-     title/body/links regardless of which blob color happens to drift behind
-     it. This is the "crystal glass" read up close: near-opaque paper with a
-     soft rim, like a frosted pane laid over the lamp. */
-  .contact-panel {
-    border-radius: var(--glass-radius);
-    background: color-mix(in srgb, var(--paper) 90%, transparent);
-    border: 1px solid color-mix(in srgb, var(--navy) 10%, transparent);
-    box-shadow: 0 1.5rem 3rem color-mix(in srgb, var(--navy) 12%, transparent);
+  /* Sheen + rim — sells the "pane of glass" material the way .liquid-glass
+     does elsewhere in the site, tuned for this light/paper surface instead
+     of the dark navy one. */
+  .contact-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--paper) 50%, transparent) 0%,
+      transparent 40%
+    );
   }
 
-  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    .contact-panel {
-      background: color-mix(in srgb, var(--paper) 82%, transparent);
-      backdrop-filter: blur(calc(var(--glass-blur) * 0.55));
-      -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.55));
-    }
+  .contact-glass::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--paper) 70%, transparent),
+      inset 0 -1px 0 color-mix(in srgb, var(--navy) 8%, transparent);
   }
 
   .contact-link {
