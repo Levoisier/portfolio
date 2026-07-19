@@ -1,11 +1,13 @@
 ---
 /* CONTACT SECTION / FOOTER
    Minimal close: title + the line below it, then links — no kicker above the
-   title, no trademark/copyright line below the links. Closes with a panda
-   party: all five companion poses jumping/wiggling/fading together as the
-   site's sign-off.
+   title, no trademark/copyright line below the links. Background is a
+   lava-lamp glow: several blurred color blobs rising from the bottom of the
+   footer, diffused behind a frosted "crystal glass" pane so text stays
+   readable. Closes with a panda party: all five companion poses
+   jumping/wiggling/fading together as the site's sign-off.
    Animation: src/scripts/scroll/scenes/contact.ts (entrance) + the CSS
-   @keyframes below (idle loop — auto-disabled under reduced motion by the
+   @keyframes below (idle loops — auto-disabled under reduced motion by the
    sitewide kill-switch in global.css, same as the liquid-glass sheen drift).
 */
 
@@ -24,25 +26,24 @@ const pandaParty = [
   data-scene="contact"
   style="background-color: var(--paper);"
 >
-  <!-- Blueprint paper texture -->
-  <div
-    class="pointer-events-none absolute inset-0"
-    data-contact-texture
-    data-contact-texture-src="/media/texture/blueprint-paper.webp"
-    aria-hidden="true"
-    style="background-size: cover; background-position: center;"
-  >
+  <!-- Lava-lamp glow — several blurred blobs rising from the bottom of the
+       footer, diffused behind a frosted crystal-glass pane. Pure CSS/code-drawn
+       (no image asset); auto-settles to a static resting glow under reduced
+       motion via the sitewide kill-switch. -->
+  <div class="lava-blobs" data-contact-glow aria-hidden="true">
+    <span class="lava-blob lava-blob--a"></span>
+    <span class="lava-blob lava-blob--b"></span>
+    <span class="lava-blob lava-blob--c"></span>
+    <span class="lava-blob lava-blob--d"></span>
+    <span class="lava-blob lava-blob--e"></span>
+    <span class="lava-blob lava-blob--f"></span>
+    <span class="lava-blob lava-blob--g"></span>
   </div>
+  <div class="contact-glass" aria-hidden="true"></div>
 
-  <!-- Paper wash — lifts contrast over the blueprint texture -->
   <div
-    class="pointer-events-none absolute inset-0"
-    aria-hidden="true"
-    style="background: color-mix(in srgb, var(--paper) 68%, transparent);"
+    class="contact-panel relative z-10 mx-auto flex max-w-3xl flex-col items-center px-6 py-10 text-center md:px-12 md:py-14"
   >
-  </div>
-
-  <div class="relative z-10 mx-auto flex max-w-3xl flex-col items-center px-6 text-center md:px-12">
     <h2
       class="font-display mb-8 leading-tight tracking-normal"
       data-contact-heading
@@ -208,6 +209,197 @@ const pandaParty = [
 </section>
 
 <style>
+  /* Lava-lamp glow — blurred radial blobs, each pulsing up from its resting
+     spot near the bottom and sinking back (0%/100% share a state, so the
+     loop is seamless and the reduced-motion single-frame lands on a calm,
+     static glow instead of a jump cut). */
+  .lava-blobs {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .lava-blob {
+    position: absolute;
+    bottom: -12%;
+    border-radius: 50%;
+    filter: blur(1.6rem);
+    animation: lava-rise 18s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+
+  .lava-blob--a {
+    left: 4%;
+    width: clamp(6rem, 18vw, 11rem);
+    height: clamp(6rem, 18vw, 11rem);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--scarlet) 92%, transparent) 0%,
+      transparent 70%
+    );
+    animation-duration: 16s;
+    animation-delay: -2s;
+    --drift: 5%;
+  }
+
+  .lava-blob--b {
+    left: 18%;
+    width: clamp(4rem, 12vw, 7rem);
+    height: clamp(4rem, 12vw, 7rem);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--navy) 92%, transparent) 0%,
+      transparent 70%
+    );
+    animation-duration: 21s;
+    animation-delay: -9s;
+    --drift: -6%;
+  }
+
+  .lava-blob--c {
+    left: 34%;
+    width: clamp(7rem, 20vw, 13rem);
+    height: clamp(7rem, 20vw, 13rem);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--scarlet-soft) 88%, transparent) 0%,
+      transparent 70%
+    );
+    animation-duration: 24s;
+    animation-delay: -14s;
+    --drift: 4%;
+  }
+
+  .lava-blob--d {
+    left: 50%;
+    width: clamp(5rem, 15vw, 9rem);
+    height: clamp(5rem, 15vw, 9rem);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--navy-soft) 90%, transparent) 0%,
+      transparent 70%
+    );
+    animation-duration: 17s;
+    animation-delay: -5s;
+    --drift: -5%;
+  }
+
+  .lava-blob--e {
+    left: 64%;
+    width: clamp(6rem, 17vw, 10rem);
+    height: clamp(6rem, 17vw, 10rem);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--scarlet) 85%, transparent) 0%,
+      transparent 70%
+    );
+    animation-duration: 22s;
+    animation-delay: -11s;
+    --drift: 6%;
+  }
+
+  .lava-blob--f {
+    left: 80%;
+    width: clamp(4.5rem, 13vw, 8rem);
+    height: clamp(4.5rem, 13vw, 8rem);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--navy) 88%, transparent) 0%,
+      transparent 70%
+    );
+    animation-duration: 19s;
+    animation-delay: -7s;
+    --drift: -4%;
+  }
+
+  .lava-blob--g {
+    left: 92%;
+    width: clamp(5rem, 14vw, 9rem);
+    height: clamp(5rem, 14vw, 9rem);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--scarlet-soft) 85%, transparent) 0%,
+      transparent 70%
+    );
+    animation-duration: 25s;
+    animation-delay: -18s;
+    --drift: 5%;
+  }
+
+  @keyframes lava-rise {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+      opacity: 0.62;
+    }
+    50% {
+      transform: translate3d(var(--drift, 4%), -68%, 0) scale(1.08);
+      opacity: 1;
+    }
+  }
+
+  /* Fewer, lighter-blurred blobs on touch — protects mobile paint budget,
+     same reasoning as --glass-blur-mobile elsewhere in the design system. */
+  @media (max-width: 767px) {
+    .lava-blob {
+      filter: blur(1.4rem);
+    }
+
+    .lava-blob--f,
+    .lava-blob--g {
+      display: none;
+    }
+  }
+
+  /* Crystal-glass pane — diffuses the blobs into a soft glow without erasing
+     their color. Opaque-ish paper fallback first; browsers with
+     backdrop-filter support get the true frosted-glass read (that blur pass
+     is what keeps the ambient blobs soft, not this layer's own opacity —
+     see .contact-panel below for where actual text-contrast guarantees
+     live). */
+  .contact-glass {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--paper) 55%, transparent);
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .contact-glass {
+      background: color-mix(in srgb, var(--paper) 34%, transparent);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+    }
+
+    @media (max-width: 767px) {
+      .contact-glass {
+        backdrop-filter: blur(var(--glass-blur-mobile));
+        -webkit-backdrop-filter: blur(var(--glass-blur-mobile));
+      }
+    }
+  }
+
+  /* Text card — sits above the ambient glow and guarantees contrast for the
+     title/body/links regardless of which blob color happens to drift behind
+     it. This is the "crystal glass" read up close: near-opaque paper with a
+     soft rim, like a frosted pane laid over the lamp. */
+  .contact-panel {
+    border-radius: var(--glass-radius);
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
+    border: 1px solid color-mix(in srgb, var(--navy) 10%, transparent);
+    box-shadow: 0 1.5rem 3rem color-mix(in srgb, var(--navy) 12%, transparent);
+  }
+
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    .contact-panel {
+      background: color-mix(in srgb, var(--paper) 82%, transparent);
+      backdrop-filter: blur(calc(var(--glass-blur) * 0.55));
+      -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.55));
+    }
+  }
+
   .contact-link {
     color: var(--navy);
     text-decoration: none;

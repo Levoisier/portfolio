@@ -19,17 +19,6 @@ function splitWords(el: HTMLElement): HTMLElement[] {
   });
 }
 
-function loadTexture(el: HTMLElement | null): void {
-  const src = el?.dataset.contactTextureSrc;
-  if (!el || !src || el.style.backgroundImage) return;
-
-  const image = new Image();
-  image.onload = () => {
-    el.style.backgroundImage = `url("${src}")`;
-  };
-  image.src = src;
-}
-
 const contactScene = (el: Element): Scene => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let entered = false;
@@ -39,7 +28,7 @@ const contactScene = (el: Element): Scene => {
   function collect() {
     return {
       links: Array.from(el.querySelectorAll<HTMLElement>('[data-contact-link]')),
-      texture: el.querySelector<HTMLElement>('[data-contact-texture]'),
+      glow: el.querySelector<HTMLElement>('[data-contact-glow]'),
       partyItems: Array.from(el.querySelectorAll<HTMLElement>('[data-panda-party-item]')),
     };
   }
@@ -47,13 +36,12 @@ const contactScene = (el: Element): Scene => {
   return {
     init() {
       const heading = el.querySelector<HTMLElement>('[data-contact-heading]');
-      const { links, texture, partyItems } = collect();
+      const { links, glow, partyItems } = collect();
 
       if (heading) headingWords = splitWords(heading);
 
       if (prefersReducedMotion) {
-        loadTexture(texture);
-        gsap.set([...headingWords, ...links, texture, ...partyItems], {
+        gsap.set([...headingWords, ...links, glow, ...partyItems], {
           opacity: 1,
           x: 0,
           y: 0,
@@ -63,7 +51,7 @@ const contactScene = (el: Element): Scene => {
 
       gsap.set(headingWords, { opacity: 0, y: 24 });
       gsap.set(links, { opacity: 0, y: 20 });
-      gsap.set(texture, { opacity: 0 });
+      gsap.set(glow, { opacity: 0 });
       // The idle bob/wiggle/fade loop lives on the <img> (CSS @keyframes); this
       // entrance only owns the wrapper's opacity/y/scale — no shared channel.
       gsap.set(partyItems, { opacity: 0, y: 26, scale: 0.7, willChange: 'transform,opacity' });
@@ -73,11 +61,10 @@ const contactScene = (el: Element): Scene => {
       if (entered) return;
       entered = true;
 
-      const { links, texture, partyItems } = collect();
-      loadTexture(texture);
+      const { links, glow, partyItems } = collect();
 
       if (prefersReducedMotion) {
-        gsap.set([...headingWords, ...links, texture, ...partyItems], {
+        gsap.set([...headingWords, ...links, glow, ...partyItems], {
           opacity: 1,
           x: 0,
           y: 0,
@@ -88,7 +75,7 @@ const contactScene = (el: Element): Scene => {
       tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
       tl.to(headingWords, { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 })
         .to(links, { opacity: 1, y: 0, duration: 0.45, stagger: 0.1 }, '-=0.1')
-        .to(texture, { opacity: 1, duration: 0.7 }, '<0.1')
+        .to(glow, { opacity: 1, duration: 0.9 }, '<0.1')
         .to(
           partyItems,
           {
@@ -108,13 +95,13 @@ const contactScene = (el: Element): Scene => {
     },
 
     progress(_progress: number) {
-      // Idle panda motion is a pure-CSS loop; nothing to drive on scroll.
+      // Lava-blob motion is a pure-CSS loop; nothing to drive on scroll.
     },
 
     destroy() {
       tl?.kill();
-      const { links, texture, partyItems } = collect();
-      gsap.set([...headingWords, ...links, texture, ...partyItems], {
+      const { links, glow, partyItems } = collect();
+      gsap.set([...headingWords, ...links, glow, ...partyItems], {
         clearProps: 'opacity,transform,willChange',
       });
     },

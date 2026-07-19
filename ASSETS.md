@@ -105,10 +105,10 @@ review.
 
 ## Textures
 
-| Path                                  | Dimensions | Purpose / Scene                      | Transparent | Status |
-| ------------------------------------- | ---------- | ------------------------------------ | ----------- | ------ |
-| `/media/texture/blueprint-paper.webp` | 2560×1440  | Section background texture (contact) | N           | final  |
-| `/media/texture/lightleak.webp`       | 2560×1440  | Scarlet light-leak overlay (unused)  | Y           | final  |
+| Path                                  | Dimensions | Purpose / Scene                                                 | Transparent | Status |
+| ------------------------------------- | ---------- | --------------------------------------------------------------- | ----------- | ------ |
+| `/media/texture/blueprint-paper.webp` | 2560×1440  | Unused — Contact now uses the code-drawn lava-blob glow instead | N           | final  |
+| `/media/texture/lightleak.webp`       | 2560×1440  | Scarlet light-leak overlay (unused)                             | Y           | final  |
 
 ---
 
@@ -120,6 +120,7 @@ The following visual elements are rendered entirely in CSS/SVG and do not need i
 - **Reaction arrows** — inline SVG in components
 - **Film grain** — CSS `noise` filter or SVG feTurbulence (when added)
 - **Periodic table tiles** — CSS boxes in `Skills.astro`
+- **Lava-blob glow** — `.lava-blobs` / `.contact-glass` in `Contact.astro`: blurred radial-gradient blobs behind a frosted `backdrop-filter` pane
 
 ---
 
