@@ -1,0 +1,490 @@
+---
+/* SCREENSHOT LIGHTBOX — shared modal gallery for Featured Projects entries
+   that have no public live link (e.g. mobile apps not yet listed publicly).
+   Any trigger with [data-gallery-trigger] + data-gallery-images (JSON array
+   of { src, thumb, alt }) + data-gallery-title opens this single instance.
+   Reduced motion: no entrance transition (media query below), same markup.
+*/
+---
+
+<div id="screenshot-lightbox" class="screenshot-lightbox" hidden>
+  <div class="screenshot-lightbox__backdrop" data-lightbox-backdrop></div>
+
+  <div
+    class="screenshot-lightbox__panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="screenshot-lightbox-title"
+  >
+    <header class="screenshot-lightbox__header">
+      <div class="min-w-0">
+        <p class="screenshot-lightbox__eyebrow" data-i18n="lightbox.eyebrow">
+          Capturas de pantalla
+        </p>
+        <h3 id="screenshot-lightbox-title" class="screenshot-lightbox__title" data-lightbox-title>
+        </h3>
+      </div>
+      <button
+        type="button"
+        class="screenshot-lightbox__icon-btn screenshot-lightbox__close"
+        data-lightbox-close
+        aria-label="Cerrar galería"
+        data-i18n-aria="lightbox.close"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+          <path
+            d="M6 6L18 18M18 6L6 18"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"></path>
+        </svg>
+      </button>
+    </header>
+
+    <div class="screenshot-lightbox__stage">
+      <button
+        type="button"
+        class="screenshot-lightbox__icon-btn screenshot-lightbox__nav screenshot-lightbox__nav--prev"
+        data-lightbox-prev
+        aria-label="Captura anterior"
+        data-i18n-aria="lightbox.prev"
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+          <path
+            d="M15 5L8 12L15 19"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            fill="none"></path>
+        </svg>
+      </button>
+
+      <div class="screenshot-lightbox__frame" data-lightbox-frame>
+        <img data-lightbox-image alt="" />
+      </div>
+
+      <button
+        type="button"
+        class="screenshot-lightbox__icon-btn screenshot-lightbox__nav screenshot-lightbox__nav--next"
+        data-lightbox-next
+        aria-label="Siguiente captura"
+        data-i18n-aria="lightbox.next"
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+          <path
+            d="M9 5L16 12L9 19"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            fill="none"></path>
+        </svg>
+      </button>
+    </div>
+
+    <footer class="screenshot-lightbox__footer">
+      <p class="screenshot-lightbox__counter" data-lightbox-counter aria-live="polite"></p>
+      <div class="screenshot-lightbox__dots" data-lightbox-dots></div>
+    </footer>
+  </div>
+</div>
+
+<style>
+  .screenshot-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-lightbox);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+      max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  }
+
+  .screenshot-lightbox[hidden] {
+    display: none;
+  }
+
+  .screenshot-lightbox__backdrop {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--ink) 86%, transparent);
+    opacity: 0;
+    transition: opacity 0.22s var(--ease-out-expo);
+  }
+
+  .screenshot-lightbox__panel {
+    position: relative;
+    display: flex;
+    width: min(92vw, 26rem);
+    max-height: 100%;
+    flex-direction: column;
+    gap: 0.85rem;
+    border: 1px solid var(--glass-rim);
+    border-radius: var(--glass-radius);
+    background: var(--glass-fill-solid);
+    padding: 1rem;
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+    transition:
+      opacity 0.24s var(--ease-out-expo),
+      transform 0.24s var(--ease-out-expo);
+  }
+
+  .screenshot-lightbox.is-open .screenshot-lightbox__backdrop {
+    opacity: 1;
+  }
+
+  .screenshot-lightbox.is-open .screenshot-lightbox__panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  .screenshot-lightbox__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .screenshot-lightbox__eyebrow {
+    font-family: var(--font-display), 'Courier New', monospace;
+    font-size: var(--text-xs);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--scarlet-soft);
+  }
+
+  .screenshot-lightbox__title {
+    font-family: var(--font-display), 'Courier New', monospace;
+    font-size: var(--text-lg);
+    color: var(--paper);
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .screenshot-lightbox__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    background: var(--glass-bg);
+    color: var(--paper);
+    cursor: pointer;
+    transition:
+      border-color 0.16s var(--ease-out-expo),
+      color 0.16s var(--ease-out-expo);
+  }
+
+  .screenshot-lightbox__icon-btn:hover,
+  .screenshot-lightbox__icon-btn:focus-visible {
+    border-color: var(--scarlet-soft);
+    color: var(--scarlet-soft);
+  }
+
+  .screenshot-lightbox__icon-btn:focus-visible {
+    outline: 2px solid var(--scarlet);
+    outline-offset: 2px;
+  }
+
+  .screenshot-lightbox__icon-btn:disabled {
+    opacity: 0.32;
+    cursor: default;
+  }
+
+  .screenshot-lightbox__stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 0;
+  }
+
+  .screenshot-lightbox__nav {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .screenshot-lightbox__frame {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    max-height: min(72vh, 34rem);
+    overflow: hidden;
+    border-radius: calc(var(--glass-radius) - 0.4rem);
+    background: color-mix(in srgb, var(--ink) 60%, transparent);
+    touch-action: pan-y;
+  }
+
+  .screenshot-lightbox__frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: min(72vh, 34rem);
+    object-fit: contain;
+  }
+
+  .screenshot-lightbox__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .screenshot-lightbox__counter {
+    font-family: var(--font-display), 'Courier New', monospace;
+    font-size: var(--text-xs);
+    letter-spacing: 0.1em;
+    color: color-mix(in srgb, var(--paper) 62%, transparent);
+    white-space: nowrap;
+  }
+
+  .screenshot-lightbox__dots {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+  }
+
+  .screenshot-lightbox__dots :global(.screenshot-lightbox__dot) {
+    width: 0.5rem;
+    height: 0.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: var(--glass-border);
+    cursor: pointer;
+    transition: background-color 0.16s var(--ease-out-expo);
+  }
+
+  .screenshot-lightbox__dots :global(.screenshot-lightbox__dot[aria-current='true']) {
+    background: var(--scarlet-soft);
+  }
+
+  .screenshot-lightbox__dots :global(.screenshot-lightbox__dot:focus-visible) {
+    outline: 2px solid var(--scarlet);
+    outline-offset: 2px;
+  }
+
+  @media (min-width: 640px) {
+    .screenshot-lightbox__panel {
+      width: min(80vw, 24rem);
+      padding: 1.25rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .screenshot-lightbox__backdrop,
+    .screenshot-lightbox__panel,
+    .screenshot-lightbox__icon-btn,
+    .screenshot-lightbox__dots :global(.screenshot-lightbox__dot) {
+      transition: none !important;
+    }
+  }
+</style>
+
+<script>
+  interface Screenshot {
+    src: string;
+    thumb: string;
+    alt: string;
+  }
+
+  const lightbox = document.getElementById('screenshot-lightbox');
+  const backdrop = lightbox?.querySelector<HTMLElement>('[data-lightbox-backdrop]') ?? null;
+  const titleEl = lightbox?.querySelector<HTMLElement>('[data-lightbox-title]') ?? null;
+  const imageEl = lightbox?.querySelector<HTMLImageElement>('[data-lightbox-image]') ?? null;
+  const counterEl = lightbox?.querySelector<HTMLElement>('[data-lightbox-counter]') ?? null;
+  const dotsEl = lightbox?.querySelector<HTMLElement>('[data-lightbox-dots]') ?? null;
+  const frameEl = lightbox?.querySelector<HTMLElement>('[data-lightbox-frame]') ?? null;
+  const closeBtn = lightbox?.querySelector<HTMLButtonElement>('[data-lightbox-close]') ?? null;
+  const prevBtn = lightbox?.querySelector<HTMLButtonElement>('[data-lightbox-prev]') ?? null;
+  const nextBtn = lightbox?.querySelector<HTMLButtonElement>('[data-lightbox-next]') ?? null;
+
+  let images: Screenshot[] = [];
+  let activeIndex = 0;
+  let lastFocused: HTMLElement | null = null;
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // ScrollSmoother owns page scroll; pause it while the modal is open so
+  // background wheel/touch input can't advance scroll behind the backdrop.
+  // Dynamically imported (never loaded eagerly) — the controller mounts the
+  // same module on idle, so this typically resolves from cache, not a fetch.
+  async function setSmoothScrollPaused(paused: boolean): Promise<void> {
+    try {
+      const { ScrollSmoother } = await import('gsap/ScrollSmoother');
+      ScrollSmoother.get()?.paused(paused);
+    } catch {
+      // Reduced motion or not yet mounted — nothing to pause.
+    }
+  }
+
+  function getFocusable(): HTMLElement[] {
+    if (!lightbox) return [];
+    return Array.from(
+      lightbox.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    );
+  }
+
+  function render(): void {
+    const shot = images[activeIndex];
+    if (!shot || !imageEl) return;
+    imageEl.src = shot.src;
+    imageEl.alt = shot.alt;
+    if (counterEl) counterEl.textContent = `${activeIndex + 1} / ${images.length}`;
+    if (dotsEl) {
+      Array.from(dotsEl.children).forEach((dot, i) => {
+        dot.setAttribute('aria-current', String(i === activeIndex));
+      });
+    }
+    const multiple = images.length > 1;
+    if (prevBtn) prevBtn.disabled = !multiple;
+    if (nextBtn) nextBtn.disabled = !multiple;
+  }
+
+  function buildDots(): void {
+    if (!dotsEl) return;
+    dotsEl.textContent = '';
+    images.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'screenshot-lightbox__dot';
+      dot.setAttribute('aria-label', `Ir a la captura ${i + 1}`);
+      dot.addEventListener('click', () => goTo(i));
+      dotsEl.appendChild(dot);
+    });
+  }
+
+  function goTo(next: number): void {
+    if (images.length === 0) return;
+    activeIndex = (next + images.length) % images.length;
+    render();
+  }
+
+  function onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close();
+      return;
+    }
+    if (event.key === 'ArrowLeft') {
+      goTo(activeIndex - 1);
+      return;
+    }
+    if (event.key === 'ArrowRight') {
+      goTo(activeIndex + 1);
+      return;
+    }
+    if (event.key === 'Tab') {
+      const focusable = getFocusable();
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
+  function open(
+    shots: Screenshot[],
+    title: string,
+    startIndex: number,
+    trigger: HTMLElement
+  ): void {
+    if (!lightbox || shots.length === 0) return;
+    window.clearTimeout(closeTimer);
+    images = shots;
+    activeIndex = Math.min(Math.max(startIndex, 0), shots.length - 1);
+    lastFocused = trigger;
+    if (titleEl) titleEl.textContent = title;
+    buildDots();
+    render();
+    lightbox.hidden = false;
+    document.documentElement.classList.add('lightbox-open');
+    void setSmoothScrollPaused(true);
+    document.addEventListener('keydown', onKeydown);
+    requestAnimationFrame(() => {
+      lightbox.classList.add('is-open');
+      closeBtn?.focus();
+    });
+  }
+
+  function close(): void {
+    if (!lightbox) return;
+    lightbox.classList.remove('is-open');
+    document.documentElement.classList.remove('lightbox-open');
+    void setSmoothScrollPaused(false);
+    document.removeEventListener('keydown', onKeydown);
+    closeTimer = window.setTimeout(() => {
+      lightbox.hidden = true;
+      if (imageEl) imageEl.src = '';
+    }, 220);
+    lastFocused?.focus();
+  }
+
+  closeBtn?.addEventListener('click', close);
+  backdrop?.addEventListener('click', close);
+  prevBtn?.addEventListener('click', () => goTo(activeIndex - 1));
+  nextBtn?.addEventListener('click', () => goTo(activeIndex + 1));
+
+  let touchStartX = 0;
+  let touchDeltaX = 0;
+
+  frameEl?.addEventListener(
+    'touchstart',
+    (event: TouchEvent) => {
+      touchStartX = event.touches[0]?.clientX ?? 0;
+      touchDeltaX = 0;
+    },
+    { passive: true }
+  );
+
+  frameEl?.addEventListener(
+    'touchmove',
+    (event: TouchEvent) => {
+      touchDeltaX = (event.touches[0]?.clientX ?? touchStartX) - touchStartX;
+    },
+    { passive: true }
+  );
+
+  frameEl?.addEventListener('touchend', () => {
+    if (Math.abs(touchDeltaX) > 48) {
+      goTo(touchDeltaX < 0 ? activeIndex + 1 : activeIndex - 1);
+    }
+    touchDeltaX = 0;
+  });
+
+  document.querySelectorAll<HTMLElement>('[data-gallery-trigger]').forEach((trigger) => {
+    trigger.addEventListener('click', (event) => {
+      event.preventDefault();
+      const raw = trigger.dataset.galleryImages;
+      if (!raw) return;
+      let shots: Screenshot[];
+      try {
+        shots = JSON.parse(raw) as Screenshot[];
+      } catch {
+        return;
+      }
+      const title = trigger.dataset.galleryTitle ?? '';
+      const parsedIndex = Number(trigger.dataset.galleryIndex ?? '0');
+      open(shots, title, Number.isFinite(parsedIndex) ? parsedIndex : 0, trigger);
+    });
+  });
+</script>

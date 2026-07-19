@@ -23,6 +23,16 @@ export const translations: Record<Lang, Record<string, string>> = {
     'projects.1.live-aria': 'Abrir sitio en vivo de Le Parché',
     'projects.2.live-aria': 'Abrir sitio en vivo de Maison Cielare',
     'projects.3.live-aria': 'Abrir sitio en vivo de Orquestia',
+    'projects.4.description':
+      'App móvil de finanzas personales para Android: gestión de tarjetas de crédito, presupuestos por categoría, calendario de gastos y balance multi-cuenta, con recomendaciones de ahorro. En producción, sin listado público todavía — la galería muestra la app real.',
+    'projects.4.gallery-aria': 'Ver capturas de pantalla de Fiora',
+    'projects.4.platform-note': 'Android · Expo — app en producción, sin enlace público',
+
+    // Lightbox
+    'lightbox.eyebrow': 'Capturas de pantalla',
+    'lightbox.close': 'Cerrar galería',
+    'lightbox.prev': 'Captura anterior',
+    'lightbox.next': 'Siguiente captura',
 
     // Confidential
     'confidential.classified': '[CLASIFICADO]',
@@ -103,6 +113,16 @@ export const translations: Record<Lang, Record<string, string>> = {
     'projects.1.live-aria': 'Open live site for Le Parché',
     'projects.2.live-aria': 'Open live site for Maison Cielare',
     'projects.3.live-aria': 'Open live site for Orquestia',
+    'projects.4.description':
+      'Personal finance app for Android: credit card management, category budgets, a spending calendar, and multi-account balance tracking, with savings recommendations. Live in production, no public listing yet — the gallery shows the real app.',
+    'projects.4.gallery-aria': 'View screenshots of Fiora',
+    'projects.4.platform-note': 'Android · Expo — live app, no public link',
+
+    // Lightbox
+    'lightbox.eyebrow': 'Screenshots',
+    'lightbox.close': 'Close gallery',
+    'lightbox.prev': 'Previous screenshot',
+    'lightbox.next': 'Next screenshot',
 
     // Confidential
     'confidential.classified': '[CLASSIFIED]',

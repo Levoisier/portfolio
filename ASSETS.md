@@ -48,8 +48,33 @@ These files are derived from canonical Panda sources for responsive delivery. Re
 | `/media/panda/generated/panda-hero-800.webp` | 800×1000   | `/media/panda/panda-hero.png` | Hero LCP desktop source | Y           | generated |
 
 > **Project media note.** The v3 Featured Projects section is a card-less
-> experiment log and does not reference project screenshots. It uses
-> `/media/panda/panda-coding.png` only as a desktop builder accent.
+> experiment log and mostly does not reference project screenshots — it uses
+> `/media/panda/panda-coding.png` as a desktop builder accent. The one
+> exception is Fiora (see **Project Screenshots** below): a live app with no
+> public URL to link to, so its entry opens an in-page screenshot gallery
+> instead of `liveUrl`.
+
+## Project Screenshots
+
+Real in-app screenshots for Featured Projects entries that have no public
+`liveUrl` (e.g. an app live in production but not yet publicly listed). Shown
+as a tappable thumbnail strip on the project card and in the full-size
+`ScreenshotLightbox` gallery. `-thumb` variants are 480px-wide previews for
+the card strip; the base files are the 1080px-wide full-size lightbox images.
+Source: real device screenshots (Android), optimized to WebP.
+
+| Path                                                    | Dimensions | Purpose / Scene                      | Transparent | Status |
+| ------------------------------------------------------- | ---------- | ------------------------------------ | ----------- | ------ |
+| `/media/projects/fiora/fiora-overview-light.webp`       | 1080×2340  | Fiora — Overview screen, light theme | N           | final  |
+| `/media/projects/fiora/fiora-overview-light-thumb.webp` | 480×1040   | Card strip thumbnail                 | N           | final  |
+| `/media/projects/fiora/fiora-overview-dark.webp`        | 1080×2340  | Fiora — Overview screen, dark theme  | N           | final  |
+| `/media/projects/fiora/fiora-overview-dark-thumb.webp`  | 480×1040   | Card strip thumbnail                 | N           | final  |
+| `/media/projects/fiora/fiora-budget-dark.webp`          | 1080×2340  | Fiora — Budget screen, categories    | N           | final  |
+| `/media/projects/fiora/fiora-budget-dark-thumb.webp`    | 480×1040   | Card strip thumbnail                 | N           | final  |
+| `/media/projects/fiora/fiora-calendar-dark.webp`        | 1080×2340  | Fiora — Calendar, daily spend        | N           | final  |
+| `/media/projects/fiora/fiora-calendar-dark-thumb.webp`  | 480×1040   | Card strip thumbnail                 | N           | final  |
+| `/media/projects/fiora/fiora-balance-dark.webp`         | 1080×2340  | Fiora — Balance, accounts + credit   | N           | final  |
+| `/media/projects/fiora/fiora-balance-dark-thumb.webp`   | 480×1040   | Card strip thumbnail                 | N           | final  |
 
 ## Backdrop
 

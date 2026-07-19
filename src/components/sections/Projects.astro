@@ -1,17 +1,29 @@
 ---
 /* FEATURED PROJECTS SECTION
    v3 experiment log: large editorial entries, formula-style stack chips,
-   live links only. Confidential work belongs in ConfidentialProjects.
+   live links where public, in-page screenshot galleries otherwise (e.g. a
+   live mobile app with no public listing to link to). Confidential work
+   belongs in ConfidentialProjects — never screenshots there.
    Scroll choreography: see src/scripts/scroll/scenes/projects.ts.
+   Gallery interaction: see ScreenshotLightbox.astro.
 */
 
 import GlassSurface from '../ui/GlassSurface.astro';
+import ScreenshotLightbox from '../ui/ScreenshotLightbox.astro';
+
+interface Screenshot {
+  src: string;
+  thumb: string;
+  alt: string;
+}
 
 interface Project {
   title: string;
   description: string;
   stack: string[];
-  liveUrl: string;
+  liveUrl?: string;
+  screenshots?: Screenshot[];
+  platformNote?: string;
 }
 
 const projects: Project[] = [
@@ -43,6 +55,40 @@ const projects: Project[] = [
     stack: ['Next.js', 'React', 'TypeScript', 'Blog', 'Brand System'],
     liveUrl: 'https://www.orquestia.io/',
   },
+  {
+    title: 'Fiora',
+    description:
+      'App móvil de finanzas personales para Android: gestión de tarjetas de crédito, presupuestos por categoría, calendario de gastos y balance multi-cuenta, con recomendaciones de ahorro. En producción, sin listado público todavía — la galería muestra la app real.',
+    stack: ['React Native', 'Expo', 'TypeScript'],
+    platformNote: 'Android · Expo — app en producción, sin enlace público',
+    screenshots: [
+      {
+        src: '/media/projects/fiora/fiora-overview-light.webp',
+        thumb: '/media/projects/fiora/fiora-overview-light-thumb.webp',
+        alt: 'Fiora — pantalla Overview en tema claro, con gasto seguro del día y presupuesto mensual',
+      },
+      {
+        src: '/media/projects/fiora/fiora-overview-dark.webp',
+        thumb: '/media/projects/fiora/fiora-overview-dark-thumb.webp',
+        alt: 'Fiora — pantalla Overview en tema oscuro, con balance total y crédito disponible',
+      },
+      {
+        src: '/media/projects/fiora/fiora-budget-dark.webp',
+        thumb: '/media/projects/fiora/fiora-budget-dark-thumb.webp',
+        alt: 'Fiora — pantalla Budget con progreso por categoría de gasto',
+      },
+      {
+        src: '/media/projects/fiora/fiora-calendar-dark.webp',
+        thumb: '/media/projects/fiora/fiora-calendar-dark-thumb.webp',
+        alt: 'Fiora — Calendario mensual con gasto diario proyectado',
+      },
+      {
+        src: '/media/projects/fiora/fiora-balance-dark.webp',
+        thumb: '/media/projects/fiora/fiora-balance-dark-thumb.webp',
+        alt: 'Fiora — Balance con cuentas de efectivo, débito y crédito disponible',
+      },
+    ],
+  },
 ];
 ---
 
@@ -60,79 +106,166 @@ const projects: Project[] = [
 
     <div class="grid gap-0" data-projects-log>
       {
-        projects.map((project, index) => (
-          <article
-            class:list={[
-              'group grid gap-x-6 gap-y-4 border-t py-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-8 lg:py-14',
-              index % 2 === 0 ? 'lg:mr-[24%]' : 'lg:ml-[24%]',
-            ]}
-            style="border-color: var(--glass-border);"
-            data-project-entry
-            data-project-index={index}
-          >
-            <GlassSurface class="liquid-glass--refractive-mobile min-w-0 px-5 py-5 md:px-7 md:py-7">
-              <h3 class="font-display uppercase leading-none" style="font-size: var(--text-3xl);">
-                <a
-                  href={project.liveUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="project-title-link inline-flex items-center gap-3"
-                  aria-label={`Abrir sitio en vivo de ${project.title}`}
-                  data-i18n-aria={`projects.${index}.live-aria`}
-                  data-project-title
-                >
-                  <span>{project.title}</span>
-                  <span class="project-title-link__mark" aria-hidden="true" />
-                </a>
-              </h3>
-
-              <p
-                class="font-body mt-5 max-w-3xl leading-relaxed"
-                style="font-size: var(--text-base); color: var(--paper);"
-                data-i18n={`projects.${index}.description`}
-                data-project-desc
-              >
-                {project.description}
-              </p>
-
-              <div
-                class="mt-6 flex flex-wrap items-center gap-2"
-                aria-label={`${project.title} technology formula`}
-                data-project-formula
-              >
-                {project.stack.map((tech, index) => (
-                  <>
-                    <span
-                      class="font-display inline-flex min-h-9 items-center border px-3 text-xs uppercase tracking-widest"
-                      style="border-color: var(--scarlet-dim); background: var(--glass-bg); color: var(--scarlet-soft);"
-                      data-project-chip
+        projects.map((project, index) => {
+          const screenshots = project.screenshots ?? [];
+          return (
+            <article
+              class:list={[
+                'group grid gap-x-6 gap-y-4 border-t py-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-8 lg:py-14',
+                index % 2 === 0 ? 'lg:mr-[24%]' : 'lg:ml-[24%]',
+              ]}
+              style="border-color: var(--glass-border);"
+              data-project-entry
+              data-project-index={index}
+            >
+              <GlassSurface class="liquid-glass--refractive-mobile min-w-0 px-5 py-5 md:px-7 md:py-7">
+                <h3 class="font-display uppercase leading-none" style="font-size: var(--text-3xl);">
+                  {project.liveUrl ? (
+                    <a
+                      href={project.liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="project-title-link inline-flex items-center gap-3"
+                      aria-label={`Abrir sitio en vivo de ${project.title}`}
+                      data-i18n-aria={`projects.${index}.live-aria`}
+                      data-project-title
                     >
-                      {tech}
-                    </span>
-                    {index < project.stack.length - 1 && (
+                      <span>{project.title}</span>
+                      <span class="project-title-link__mark" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      class="project-title-link project-title-link--gallery inline-flex items-center gap-3"
+                      aria-label={`Ver capturas de pantalla de ${project.title}`}
+                      data-i18n-aria={`projects.${index}.gallery-aria`}
+                      data-project-title
+                      data-gallery-trigger
+                      data-gallery-title={project.title}
+                      data-gallery-images={JSON.stringify(screenshots)}
+                    >
+                      <span>{project.title}</span>
                       <span
-                        class="font-display text-xs"
-                        style="color: color-mix(in srgb, var(--paper) 46%, transparent);"
+                        class="project-title-link__mark project-title-link__mark--gallery"
                         aria-hidden="true"
                       >
-                        +
+                        <svg viewBox="0 0 24 24" width="14" height="14" focusable="false">
+                          <rect
+                            x="3.5"
+                            y="5.5"
+                            width="17"
+                            height="13"
+                            rx="1.6"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.6"
+                          />
+                          <circle cx="8.4" cy="10" r="1.3" fill="currentColor" stroke="none" />
+                          <path
+                            d="M4.5 16.5l4.2-4.2 3 3 4-4.6 5.3 5.3"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.6"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
                       </span>
-                    )}
-                  </>
-                ))}
-              </div>
-            </GlassSurface>
+                    </button>
+                  )}
+                </h3>
 
-            <div
-              class="hidden h-full w-px justify-self-end md:block"
-              style="background: var(--scarlet-dim); transform-origin: top;"
-              data-project-rule
-            />
-          </article>
-        ))
+                <p
+                  class="font-body mt-5 max-w-3xl leading-relaxed"
+                  style="font-size: var(--text-base); color: var(--paper);"
+                  data-i18n={`projects.${index}.description`}
+                  data-project-desc
+                >
+                  {project.description}
+                </p>
+
+                <div
+                  class="mt-6 flex flex-wrap items-center gap-2"
+                  aria-label={`${project.title} technology formula`}
+                  data-project-formula
+                >
+                  {project.stack.map((tech, index) => (
+                    <>
+                      <span
+                        class="font-display inline-flex min-h-9 items-center border px-3 text-xs uppercase tracking-widest"
+                        style="border-color: var(--scarlet-dim); background: var(--glass-bg); color: var(--scarlet-soft);"
+                        data-project-chip
+                      >
+                        {tech}
+                      </span>
+                      {index < project.stack.length - 1 && (
+                        <span
+                          class="font-display text-xs"
+                          style="color: color-mix(in srgb, var(--paper) 46%, transparent);"
+                          aria-hidden="true"
+                        >
+                          +
+                        </span>
+                      )}
+                    </>
+                  ))}
+                </div>
+
+                {project.platformNote && (
+                  <p
+                    class="font-display mt-4 text-xs uppercase tracking-widest"
+                    style="color: color-mix(in srgb, var(--paper) 58%, transparent);"
+                    data-i18n={`projects.${index}.platform-note`}
+                    data-project-platform-note
+                  >
+                    {project.platformNote}
+                  </p>
+                )}
+
+                {screenshots.length > 0 && (
+                  <div
+                    class="project-gallery-strip mt-6 flex gap-3 overflow-x-auto pb-1"
+                    data-project-gallery
+                    aria-label={`Galería de capturas de ${project.title}`}
+                  >
+                    {screenshots.map((shot, shotIndex) => (
+                      <button
+                        type="button"
+                        class="project-gallery-thumb shrink-0 overflow-hidden border"
+                        style="border-color: var(--glass-border);"
+                        data-gallery-trigger
+                        data-gallery-title={project.title}
+                        data-gallery-index={shotIndex}
+                        data-gallery-images={JSON.stringify(screenshots)}
+                        aria-label={`Ver captura ${shotIndex + 1} de ${screenshots.length} de ${project.title}`}
+                      >
+                        <img
+                          src={shot.thumb}
+                          alt={shot.alt}
+                          width="120"
+                          height="260"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </GlassSurface>
+
+              <div
+                class="hidden h-full w-px justify-self-end md:block"
+                style="background: var(--scarlet-dim); transform-origin: top;"
+                data-project-rule
+              />
+            </article>
+          );
+        })
       }
     </div>
   </div>
+
+  <ScreenshotLightbox />
 </section>
 
 <style>
@@ -140,8 +273,13 @@ const projects: Project[] = [
     position: relative;
     width: fit-content;
     max-width: 100%;
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
     color: var(--paper);
     text-decoration: none;
+    cursor: pointer;
     transition:
       color var(--duration-fast) var(--ease-out),
       text-shadow var(--duration-fast) var(--ease-out);
@@ -239,5 +377,80 @@ const projects: Project[] = [
   .project-title-link:focus-visible {
     outline: 2px solid var(--scarlet);
     outline-offset: 0.18em;
+  }
+
+  /* Gallery trigger mark — same badge footprint as the live-link arrow, but
+     hosts an inline "images" glyph since there is nothing to open externally. */
+  .project-title-link__mark--gallery {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--scarlet);
+    transition: color 0.18s var(--ease-out-expo);
+  }
+
+  .project-title-link__mark--gallery::before,
+  .project-title-link__mark--gallery::after {
+    content: none;
+  }
+
+  .project-title-link:hover .project-title-link__mark--gallery,
+  .project-title-link:focus-visible .project-title-link__mark--gallery {
+    color: var(--on-scarlet);
+    transform: translateY(-0.04em) scale(1.04);
+  }
+
+  /* Screenshot preview strip — horizontally scrollable on all viewports so it
+     reads well on mobile (snap-scroll, thumb-sized targets) without needing a
+     grid reflow at any breakpoint. */
+  .project-gallery-strip {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--glass-border) transparent;
+  }
+
+  .project-gallery-thumb {
+    scroll-snap-align: start;
+    width: 4.5rem;
+    aspect-ratio: 9 / 19.5;
+    border-radius: 0.6rem;
+    padding: 0;
+    cursor: pointer;
+    background: var(--glass-bg);
+    transition:
+      border-color 0.18s var(--ease-out-expo),
+      transform 0.18s var(--ease-out-expo);
+  }
+
+  .project-gallery-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .project-gallery-thumb:hover,
+  .project-gallery-thumb:focus-visible {
+    border-color: var(--scarlet-soft);
+    transform: translateY(-0.15rem);
+  }
+
+  .project-gallery-thumb:focus-visible {
+    outline: 2px solid var(--scarlet);
+    outline-offset: 2px;
+  }
+
+  @media (min-width: 640px) {
+    .project-gallery-thumb {
+      width: 5.5rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-title-link__mark--gallery,
+    .project-gallery-thumb {
+      transition: none !important;
+    }
   }
 </style>
