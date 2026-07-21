@@ -67,6 +67,61 @@ const projectsScene = (el: Element): Scene => {
   const records: ProjectRecord[] = [];
   const cleanup: Array<() => void> = [];
   const revealTimelines: gsap.core.Timeline[] = [];
+  let mm: gsap.MatchMedia | null = null;
+
+  /**
+   * Mobile only: gently auto-advance the horizontal project carousel. The first
+   * real user gesture (touch / drag / wheel / arrow key) stops the auto-scroll
+   * for good and hands full control to the reader — it does not fight them or
+   * snap back. Returns a disposer that stops the loop and unbinds.
+   */
+  function setupMobileCarousel(): () => void {
+    const track = el.querySelector<HTMLElement>('[data-projects-log]');
+    if (!track) return () => {};
+
+    const SPEED = 0.35; // px per frame (~21px/s at 60fps) — slow, ambient drift
+    let rafId = 0;
+    let stopped = false;
+
+    const tick = (): void => {
+      if (stopped) return;
+      const maxScroll = track.scrollWidth - track.clientWidth;
+      if (maxScroll <= 0) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+      // Loop back to the start once the end is reached.
+      track.scrollLeft = track.scrollLeft >= maxScroll - 0.5 ? 0 : track.scrollLeft + SPEED;
+      rafId = requestAnimationFrame(tick);
+    };
+
+    const stop = (): void => {
+      if (stopped) return;
+      stopped = true;
+      cancelAnimationFrame(rafId);
+      track.removeEventListener('pointerdown', stop);
+      track.removeEventListener('wheel', stop);
+      track.removeEventListener('touchstart', stop);
+      track.removeEventListener('keydown', stop);
+    };
+
+    // User-intent signals only (programmatic scrollLeft never fires these).
+    track.addEventListener('pointerdown', stop, { passive: true });
+    track.addEventListener('wheel', stop, { passive: true });
+    track.addEventListener('touchstart', stop, { passive: true });
+    track.addEventListener('keydown', stop);
+
+    rafId = requestAnimationFrame(tick);
+
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(rafId);
+      track.removeEventListener('pointerdown', stop);
+      track.removeEventListener('wheel', stop);
+      track.removeEventListener('touchstart', stop);
+      track.removeEventListener('keydown', stop);
+    };
+  }
 
   function bind<K extends keyof HTMLElementEventMap>(
     target: HTMLElement,
@@ -132,28 +187,60 @@ const projectsScene = (el: Element): Scene => {
         return;
       }
 
-      // Hidden starting state (desktop + mobile non-reduced). Sub-elements own
-      // opacity; the entry container only lifts on y. Chips keep the 0.86 hover
-      // baseline; the reveal fades their CONTAINER, never the chips themselves.
-      records.forEach((record) => {
-        gsap.set(record.entry, { y: ENTRY_Y, willChange: 'transform' });
-        gsap.set([record.title, record.desc, record.formula], { opacity: 0 });
-        gsap.set(record.rule, { scaleY: 0 });
-      });
-      gsap.set(chips, { opacity: 0.86 });
+      mm = gsap.matchMedia();
 
-      // Normal-scroll reveal: each entry plays its staggered reveal once as it
-      // scrolls into view. No pin, so the page never holds scroll on this section.
-      records.forEach((record) => {
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: record.entry,
-            start: 'top 82%',
-            toggleActions: 'play none none none',
-          },
+      // ── Desktop / tablet: vertical editorial reveal ─────────────────────────
+      // Hidden starting state; sub-elements own opacity; the entry container only
+      // lifts on y. Chips keep the 0.86 hover baseline; the reveal fades their
+      // CONTAINER, never the chips themselves. Each entry plays its staggered
+      // reveal once as it scrolls into view (no pin).
+      mm.add('(min-width: 768px)', () => {
+        records.forEach((record) => {
+          gsap.set(record.entry, { y: ENTRY_Y, willChange: 'transform' });
+          gsap.set([record.title, record.desc, record.formula], { opacity: 0 });
+          gsap.set(record.rule, { scaleY: 0 });
         });
-        addEntryReveal(tl, record, 0);
-        revealTimelines.push(tl);
+        gsap.set(chips, { opacity: 0.86 });
+
+        const timelines: gsap.core.Timeline[] = [];
+        records.forEach((record) => {
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: record.entry,
+              start: 'top 82%',
+              toggleActions: 'play none none none',
+            },
+          });
+          addEntryReveal(tl, record, 0);
+          timelines.push(tl);
+          revealTimelines.push(tl);
+        });
+
+        return () => {
+          timelines.forEach((tl) => {
+            tl.scrollTrigger?.kill();
+            tl.kill();
+          });
+        };
+      });
+
+      // ── Mobile: auto-scrolling carousel ─────────────────────────────────────
+      // The horizontal-carousel layout (see Projects.astro) puts every entry at
+      // the same vertical position, so the per-entry scroll reveal makes no sense
+      // here. Entries render immediately and the row auto-drifts until touched.
+      mm.add('(max-width: 767px)', () => {
+        records.forEach((record) => {
+          gsap.set([record.entry, record.title, record.desc, record.formula], {
+            opacity: 1,
+            x: 0,
+            y: 0,
+          });
+          gsap.set(record.rule, { scaleY: 1 });
+        });
+        gsap.set(chips, { opacity: 1 });
+
+        const disposeCarousel = setupMobileCarousel();
+        return () => disposeCarousel();
       });
     },
 
@@ -171,6 +258,7 @@ const projectsScene = (el: Element): Scene => {
 
     destroy() {
       cleanup.splice(0).forEach((dispose) => dispose());
+      mm?.revert();
       revealTimelines.splice(0).forEach((tl) => {
         tl.scrollTrigger?.kill();
         tl.kill();

@@ -1,8 +1,16 @@
 ---
-/* SKILLS SECTION — Periodic Table of Technologies
+/* SKILLS SECTION — Infinite Stack Marquee
    Each technology renders as an element tile: symbol · name · category color.
    Tiles are CODE-DRAWN (SVG/CSS, no raster).
-   Hover/tap reveals category badge + proficiency bar (see BACKLOG item: skills-interactive).
+
+   Layout (mobile + desktop): three infinite-scrolling rows. Row 1 drifts right,
+   row 2 left, row 3 right — each an endless loop (content duplicated so the seam
+   never shows). Hover/tap still reveals the category badge + proficiency bar
+   (see BACKLOG item: skills-interactive) and pauses the row it sits in.
+
+   The looping is pure CSS (@keyframes translateX 0 ↔ -50% over a doubled track).
+   Under prefers-reduced-motion the global rule in global.css pins
+   animation-duration to ~0, so the rows render static — no auto-scroll.
 
    Category color tokens: --cat-* in tokens.css
 */
@@ -14,8 +22,6 @@ interface Element {
   category: string;
   categoryToken: string;
   proficiency: number;
-  group: number;
-  period: number;
 }
 
 import GlassSurface from '../ui/GlassSurface.astro';
@@ -29,8 +35,6 @@ const elements: Element[] = [
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
     proficiency: 94,
-    group: 1,
-    period: 1,
   },
   {
     symbol: 'Js',
@@ -39,8 +43,6 @@ const elements: Element[] = [
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
     proficiency: 92,
-    group: 8,
-    period: 1,
   },
   {
     symbol: 'Py',
@@ -49,8 +51,6 @@ const elements: Element[] = [
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
     proficiency: 86,
-    group: 1,
-    period: 2,
   },
   {
     symbol: 'Php',
@@ -59,8 +59,6 @@ const elements: Element[] = [
     category: 'Lang',
     categoryToken: 'var(--cat-languages)',
     proficiency: 78,
-    group: 8,
-    period: 2,
   },
   // Frontend
   {
@@ -70,8 +68,6 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 94,
-    group: 2,
-    period: 1,
   },
   {
     symbol: 'Nx',
@@ -80,8 +76,6 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 90,
-    group: 3,
-    period: 1,
   },
   {
     symbol: 'Vu',
@@ -90,8 +84,6 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 82,
-    group: 4,
-    period: 1,
   },
   {
     symbol: 'As',
@@ -100,8 +92,6 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 88,
-    group: 5,
-    period: 1,
   },
   {
     symbol: 'Gp',
@@ -110,8 +100,6 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 84,
-    group: 6,
-    period: 1,
   },
   {
     symbol: 'Sh',
@@ -120,8 +108,6 @@ const elements: Element[] = [
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 86,
-    group: 7,
-    period: 1,
   },
   // Backend
   {
@@ -131,8 +117,6 @@ const elements: Element[] = [
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
     proficiency: 90,
-    group: 2,
-    period: 2,
   },
   {
     symbol: 'Dj',
@@ -141,8 +125,6 @@ const elements: Element[] = [
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
     proficiency: 82,
-    group: 3,
-    period: 2,
   },
   {
     symbol: 'Fa',
@@ -151,8 +133,6 @@ const elements: Element[] = [
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
     proficiency: 84,
-    group: 4,
-    period: 2,
   },
   {
     symbol: 'Lv',
@@ -161,8 +141,6 @@ const elements: Element[] = [
     category: 'BE',
     categoryToken: 'var(--cat-backend)',
     proficiency: 82,
-    group: 5,
-    period: 2,
   },
   // Data / Auth
   {
@@ -172,8 +150,6 @@ const elements: Element[] = [
     category: 'Data',
     categoryToken: 'var(--cat-data-auth)',
     proficiency: 88,
-    group: 6,
-    period: 2,
   },
   {
     symbol: 'Sb',
@@ -182,8 +158,6 @@ const elements: Element[] = [
     category: 'Data',
     categoryToken: 'var(--cat-data-auth)',
     proficiency: 86,
-    group: 7,
-    period: 2,
   },
   {
     symbol: 'Fb',
@@ -192,164 +166,166 @@ const elements: Element[] = [
     category: 'Data',
     categoryToken: 'var(--cat-data-auth)',
     proficiency: 80,
-    group: 8,
-    period: 3,
+  },
+  {
+    symbol: 'Ne',
+    name: 'Neon',
+    number: 18,
+    category: 'Data',
+    categoryToken: 'var(--cat-data-auth)',
+    proficiency: 82,
   },
   // DevOps
   {
     symbol: 'Dk',
     name: 'Docker',
-    number: 18,
+    number: 19,
     category: 'DevOps',
     categoryToken: 'var(--cat-devops)',
     proficiency: 80,
-    group: 1,
-    period: 3,
   },
   {
     symbol: 'Aw',
     name: 'AWS',
-    number: 19,
+    number: 20,
     category: 'DevOps',
     categoryToken: 'var(--cat-devops)',
     proficiency: 74,
-    group: 2,
-    period: 3,
   },
   {
     symbol: 'Vc',
     name: 'Vercel',
-    number: 20,
+    number: 21,
     category: 'DevOps',
     categoryToken: 'var(--cat-devops)',
     proficiency: 88,
-    group: 3,
-    period: 3,
+  },
+  {
+    symbol: 'Cf',
+    name: 'Cloudflare',
+    number: 22,
+    category: 'DevOps',
+    categoryToken: 'var(--cat-devops)',
+    proficiency: 84,
   },
   {
     symbol: 'Gt',
     name: 'Git',
-    number: 21,
+    number: 23,
     category: 'DevOps',
     categoryToken: 'var(--cat-devops)',
     proficiency: 92,
-    group: 4,
-    period: 3,
   },
   // AI
   {
     symbol: 'Cc',
     name: 'Claude Code',
-    number: 22,
+    number: 24,
     category: 'AI',
     categoryToken: 'var(--cat-ai)',
     proficiency: 88,
-    group: 5,
-    period: 3,
   },
   {
     symbol: 'Cx',
     name: 'Codex',
-    number: 23,
+    number: 25,
     category: 'AI',
     categoryToken: 'var(--cat-ai)',
     proficiency: 90,
-    group: 6,
-    period: 3,
   },
   {
     symbol: 'Cr',
     name: 'Cursor',
-    number: 24,
+    number: 26,
     category: 'AI',
     categoryToken: 'var(--cat-ai)',
     proficiency: 86,
-    group: 7,
-    period: 3,
   },
   // Enterprise
   {
     symbol: 'Sp',
     name: 'SAP',
-    number: 25,
+    number: 27,
     category: 'ERP',
     categoryToken: 'var(--cat-enterprise)',
     proficiency: 72,
-    group: 1,
-    period: 4,
   },
   {
     symbol: 'Od',
     name: 'Odoo',
-    number: 26,
+    number: 28,
     category: 'ERP',
     categoryToken: 'var(--cat-enterprise)',
     proficiency: 80,
-    group: 2,
-    period: 4,
   },
   {
     symbol: 'Sf',
     name: 'Shopify',
-    number: 27,
+    number: 29,
     category: 'ERP',
     categoryToken: 'var(--cat-enterprise)',
     proficiency: 82,
-    group: 3,
-    period: 4,
   },
   // Testing
   {
     symbol: 'Je',
     name: 'Jest',
-    number: 28,
+    number: 30,
     category: 'Test',
     categoryToken: 'var(--cat-testing)',
     proficiency: 82,
-    group: 6,
-    period: 4,
   },
   {
     symbol: 'Rt',
     name: 'RTL',
-    number: 29,
+    number: 31,
     category: 'Test',
     categoryToken: 'var(--cat-testing)',
     proficiency: 78,
-    group: 7,
-    period: 4,
   },
   {
     symbol: 'Pw',
     name: 'Playwright',
-    number: 30,
+    number: 32,
     category: 'Test',
     categoryToken: 'var(--cat-testing)',
     proficiency: 86,
-    group: 8,
-    period: 4,
   },
+  // Mobile
   {
     symbol: 'Rn',
     name: 'React Native',
-    number: 31,
+    number: 33,
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 84,
-    group: 4,
-    period: 4,
   },
   {
     symbol: 'Ex',
     name: 'Expo',
-    number: 32,
+    number: 34,
     category: 'FE',
     categoryToken: 'var(--cat-frontend)',
     proficiency: 82,
-    group: 5,
-    period: 4,
   },
 ];
+
+// Split into three marquee rows (round-robin keeps each row category-mixed and
+// visually balanced). Row directions: right / left / right.
+const rows: Element[][] = [[], [], []];
+elements.forEach((el, i) => {
+  const target = rows[i % 3];
+  if (target) target.push(el);
+});
+
+const rowDirections = ['right', 'left', 'right'] as const;
+
+// Duplicate each row once so the CSS -50% translate loops seamlessly. The second
+// copy is aria-hidden / untabbable — it's a visual clone, not a second listing.
+const marqueeRows = rows.map((row, rowIndex) => ({
+  direction: rowDirections[rowIndex] ?? 'left',
+  items: [...row.map((el) => ({ el, dup: false })), ...row.map((el) => ({ el, dup: true }))],
+}));
 ---
 
 <section id="skills" class="portfolio-section overflow-hidden section-pad" data-scene="skills">
@@ -366,7 +342,7 @@ const elements: Element[] = [
         </h2>
       </div>
 
-      <!-- Tile grid anchored to the label side. -->
+      <!-- Marquee column -->
       <div class="relative min-w-0 flex-1 pb-2">
         <GlassSurface class="liquid-glass--refractive-mobile mb-8 max-w-3xl px-5 py-4">
           <p
@@ -379,68 +355,81 @@ const elements: Element[] = [
           </p>
         </GlassSurface>
 
-        <!-- Periodic table grid -->
+        <!-- Three infinite marquee rows -->
         <div
           id="skills-grid"
-          class="flex flex-wrap justify-center gap-3 md:justify-start"
+          class="skills-marquee"
           role="list"
           aria-label="Stack tecnológico"
           data-i18n-aria="skills.grid-aria"
+          data-skills-marquee
         >
           {
-            elements.map((el) => (
-              <div
-                class="element-tile group relative cursor-default"
-                role="listitem"
-                data-category={el.category}
-                data-skill-tile
-                data-proficiency={el.proficiency}
-                style={`--tile-color: ${el.categoryToken}; --tile-group: ${el.group}; --tile-period: ${el.period};`}
-                tabindex="0"
-                aria-label={`${el.name} — ${el.category} — ${el.proficiency}% proficiency`}
-              >
-                <div
-                  class="skill-card relative flex h-20 w-16 flex-col items-center justify-center overflow-hidden border"
-                  data-skill-card
-                  style="border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 8%, var(--ink));"
-                >
-                  <span
-                    class="font-display absolute left-1 top-1 leading-none"
-                    style="font-size: 0.5rem; color: var(--tile-color); opacity: 0.7;"
-                    aria-hidden="true"
-                  >
-                    {el.number}
-                  </span>
+            marqueeRows.map((row) => (
+              <div class="skill-row" data-skill-row>
+                <div class="skill-track" data-marquee-dir={row.direction}>
+                  {row.items.map(({ el, dup }) => (
+                    <div
+                      class="element-tile group relative cursor-default"
+                      role={dup ? undefined : 'listitem'}
+                      aria-hidden={dup ? 'true' : undefined}
+                      data-category={el.category}
+                      data-skill-tile
+                      data-skill-dup={dup ? 'true' : undefined}
+                      data-proficiency={el.proficiency}
+                      style={`--tile-color: ${el.categoryToken};`}
+                      tabindex={dup ? -1 : 0}
+                      aria-label={
+                        dup
+                          ? undefined
+                          : `${el.name} — ${el.category} — ${el.proficiency}% proficiency`
+                      }
+                    >
+                      <div
+                        class="skill-card relative flex h-20 w-16 flex-col items-center justify-center overflow-hidden border"
+                        data-skill-card
+                        style="border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 8%, var(--ink));"
+                      >
+                        <span
+                          class="font-display absolute left-1 top-1 leading-none"
+                          style="font-size: 0.5rem; color: var(--tile-color); opacity: 0.7;"
+                          aria-hidden="true"
+                        >
+                          {el.number}
+                        </span>
 
-                  <span
-                    class="font-display font-bold leading-none"
-                    style="font-size: var(--text-xl); color: var(--paper);"
-                  >
-                    {el.symbol}
-                  </span>
+                        <span
+                          class="font-display font-bold leading-none"
+                          style="font-size: var(--text-xl); color: var(--paper);"
+                        >
+                          {el.symbol}
+                        </span>
 
-                  <span
-                    class="font-body mt-1 w-full truncate px-1 text-center leading-none"
-                    style="font-size: 0.55rem; color: color-mix(in srgb, var(--paper) 70%, transparent);"
-                  >
-                    {el.name}
-                  </span>
+                        <span
+                          class="font-body mt-1 w-full truncate px-1 text-center leading-none"
+                          style="font-size: 0.55rem; color: color-mix(in srgb, var(--paper) 70%, transparent);"
+                        >
+                          {el.name}
+                        </span>
 
-                  <span
-                    class="font-body absolute bottom-1 right-1 leading-none opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
-                    data-category-badge
-                    style="font-size: 0.45rem; color: var(--tile-color);"
-                    aria-hidden="true"
-                  >
-                    {el.category}
-                  </span>
+                        <span
+                          class="font-body absolute bottom-1 right-1 leading-none opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                          data-category-badge
+                          style="font-size: 0.45rem; color: var(--tile-color);"
+                          aria-hidden="true"
+                        >
+                          {el.category}
+                        </span>
 
-                  <span
-                    class="absolute bottom-0 left-0 h-0.5 w-full origin-left"
-                    data-proficiency-bar
-                    style="background-color: var(--scarlet); transform: scaleX(0);"
-                    aria-hidden="true"
-                  />
+                        <span
+                          class="absolute bottom-0 left-0 h-0.5 w-full origin-left"
+                          data-proficiency-bar
+                          style="background-color: var(--scarlet); transform: scaleX(0);"
+                          aria-hidden="true"
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))
@@ -489,75 +478,76 @@ const elements: Element[] = [
 </section>
 
 <style>
-  @media (min-width: 1024px) {
-    #skills-grid {
-      display: grid;
-      width: 100%;
-      grid-template-columns: repeat(8, minmax(0, 1fr));
-      gap: clamp(0.38rem, 0.58vw, 0.6rem);
-      align-items: stretch;
-      justify-content: start;
-    }
+  /* ── Infinite marquee ────────────────────────────────────────────────────────
+     Three stacked rows. Each row clips its overflow; inside, a flex track holds
+     the tiles twice over and slides by exactly one copy (-50%) on a linear loop,
+     so the seam is invisible. Tiles carry a uniform right margin (not flex gap)
+     so half the track width lands precisely on a tile boundary. */
+  .skills-marquee {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+  }
 
-    .element-tile {
-      grid-column: var(--tile-group);
-      grid-row: var(--tile-period);
-    }
+  .skill-row {
+    overflow: hidden;
+    /* Fade the horizontal edges so tiles slide in/out instead of hard-clipping. */
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  }
 
-    .skill-card {
-      width: 100%;
-      height: auto;
-      aspect-ratio: 1 / 1.04;
-      align-items: stretch;
-      padding: clamp(0.48rem, 0.66vw, 0.66rem);
-      box-shadow:
-        inset 0 0 0 1px color-mix(in srgb, var(--tile-color) 34%, transparent),
-        0 0 18px color-mix(in srgb, var(--tile-color) 12%, transparent);
-    }
+  .skill-track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
 
-    .skill-card::before {
-      content: '';
-      position: absolute;
-      inset: clamp(0.24rem, 0.36vw, 0.34rem);
-      border: 1px solid color-mix(in srgb, var(--tile-color) 26%, transparent);
-      opacity: 0.62;
-      pointer-events: none;
-    }
+  .skill-track > .element-tile {
+    margin-right: 0.75rem;
+    flex: 0 0 auto;
+  }
 
-    .skill-card > span:nth-child(1) {
-      left: clamp(0.44rem, 0.56vw, 0.6rem);
-      top: clamp(0.36rem, 0.48vw, 0.52rem);
-      font-size: clamp(0.5rem, 0.62vw, 0.62rem) !important;
-    }
+  .skill-track[data-marquee-dir='left'] {
+    animation: skill-marquee-left 46s linear infinite;
+  }
 
-    .skill-card > span:nth-child(2) {
-      margin-top: clamp(0.62rem, 0.78vw, 0.88rem);
-      font-size: clamp(1.22rem, 1.82vw, 1.95rem) !important;
-    }
+  .skill-track[data-marquee-dir='right'] {
+    animation: skill-marquee-right 46s linear infinite;
+  }
 
-    .skill-card > span:nth-child(3) {
-      margin-top: clamp(0.22rem, 0.36vw, 0.38rem);
-      padding-inline: 0.12rem;
-      font-size: clamp(0.5rem, 0.64vw, 0.66rem) !important;
-      white-space: normal;
-      line-height: 1.05;
-    }
+  /* Pause the row the pointer is resting on so a tile can be read/inspected. */
+  .skill-row:hover .skill-track,
+  .skill-track:focus-within {
+    animation-play-state: paused;
+  }
 
-    .skill-card > span:nth-child(4) {
-      bottom: clamp(0.36rem, 0.5vw, 0.54rem);
-      right: clamp(0.44rem, 0.56vw, 0.6rem);
-      font-size: clamp(0.42rem, 0.5vw, 0.52rem) !important;
-      opacity: 0.72;
+  @keyframes skill-marquee-left {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
     }
   }
 
-  @media (min-width: 1320px) {
-    #skills-grid {
-      gap: 0.68rem;
+  @keyframes skill-marquee-right {
+    from {
+      transform: translateX(-50%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  /* Slightly roomier rows + a touch more breathing space from md up. */
+  @media (min-width: 768px) {
+    .skills-marquee {
+      gap: 1rem;
     }
 
-    .skill-card {
-      aspect-ratio: 1 / 1.08;
+    .skill-track > .element-tile {
+      margin-right: 1rem;
     }
   }
 </style>

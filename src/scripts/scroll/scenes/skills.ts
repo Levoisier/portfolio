@@ -17,7 +17,6 @@ const skillsScene = (el: Element): Scene => {
   const tiles: TileRecord[] = [];
   const cleanup: Array<() => void> = [];
   let activeTile: HTMLElement | null = null;
-  let mm: gsap.MatchMedia | null = null;
 
   function setActive(tile: HTMLElement | null): void {
     activeTile = tile;
@@ -94,10 +93,11 @@ const skillsScene = (el: Element): Scene => {
         tiles.push({ tile, card, badge, bar, proficiency });
       });
 
-      const tileEls = tiles.map((record) => record.tile);
       const cardEls = tiles.map((record) => record.card);
 
-      // Hover/tap interaction (preserved unchanged) is bound in every mode.
+      // Hover/tap interaction (badge + proficiency bar + scale) is bound in every
+      // mode. Tiles are visible by default now — the infinite marquee (pure CSS in
+      // Skills.astro) owns motion, so there is no scroll-scrubbed assemble here.
       tiles.forEach((record) => {
         bind(record.tile, 'mouseenter', () => setActive(record.tile));
         bind(record.tile, 'mouseleave', () => setActive(null));
@@ -114,13 +114,9 @@ const skillsScene = (el: Element): Scene => {
         if (!activeTile.contains(event.target)) setActive(null);
       });
 
-      if (prefersReducedMotion) {
-        // Instant full-opacity grid, no assemble motion (badge stays CSS-only).
-        gsap.set(tileEls, { opacity: 1, y: 0 });
-        return;
-      }
+      if (prefersReducedMotion) return;
 
-      // Hover hooks start hidden/at-rest; the assemble reveal fades the cards in.
+      // Hover reaction targets start at rest; the interaction animates them.
       gsap.set(cardEls, { transformOrigin: '50% 50%' });
       gsap.set(
         tiles.flatMap((record) => (record.badge ? [record.badge] : [])),
@@ -130,52 +126,6 @@ const skillsScene = (el: Element): Scene => {
         tiles.flatMap((record) => (record.bar ? [record.bar] : [])),
         { scaleX: 0, transformOrigin: '0% 50%' }
       );
-
-      // ── Scrubbed assemble reveal ─────────────────────────────────────────────
-      // Tiles assemble into formation on scroll. The assemble drives the TILE
-      // transform + the CARD opacity; hover drives the CARD scale + TILE opacity.
-      // Separate property/element channels (+ overwrite:'auto' on hover) keep the
-      // two from killing each other. matchMedia: desktop scatters; mobile is lean.
-      mm = gsap.matchMedia();
-
-      mm.add('(min-width: 768px)', () => {
-        const assemble = gsap.timeline({
-          scrollTrigger: { trigger: el, start: 'top 80%', end: 'top 35%', scrub: 1 },
-        });
-        assemble
-          .from(
-            tileEls,
-            {
-              y: 44,
-              scale: 0.6,
-              rotate: () => gsap.utils.random(-12, 12),
-              transformOrigin: '50% 50%',
-              ease: 'none',
-              stagger: { each: 0.04, from: 'start' },
-            },
-            0
-          )
-          .from(cardEls, { opacity: 0, ease: 'none', stagger: { each: 0.04, from: 'start' } }, 0);
-
-        return () => {
-          assemble.scrollTrigger?.kill();
-          assemble.kill();
-        };
-      });
-
-      mm.add('(max-width: 767px)', () => {
-        const assemble = gsap.timeline({
-          scrollTrigger: { trigger: el, start: 'top 85%', end: 'top 55%', scrub: 1 },
-        });
-        assemble
-          .from(tileEls, { y: 24, ease: 'none', stagger: { each: 0.02, from: 'start' } }, 0)
-          .from(cardEls, { opacity: 0, ease: 'none', stagger: { each: 0.02, from: 'start' } }, 0);
-
-        return () => {
-          assemble.scrollTrigger?.kill();
-          assemble.kill();
-        };
-      });
     },
 
     enter() {
@@ -192,7 +142,6 @@ const skillsScene = (el: Element): Scene => {
 
     destroy() {
       cleanup.splice(0).forEach((dispose) => dispose());
-      mm?.revert();
       gsap.killTweensOf(
         tiles.map((record) => [record.tile, record.card, record.badge, record.bar]).flat()
       );

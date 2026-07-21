@@ -269,6 +269,36 @@ const projects: Project[] = [
 </section>
 
 <style>
+  /* ── Mobile: horizontal auto-scrolling carousel ──────────────────────────────
+     Below md, the vertical editorial log becomes a swipeable, snap-scrolling row.
+     JS (scenes/projects.ts) drifts it slowly and yields to the reader on the
+     first gesture. Above md the original stacked layout is untouched. */
+  @media (max-width: 767px) {
+    [data-projects-log] {
+      display: flex;
+      grid-template-columns: none;
+      gap: 1rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 0.5rem;
+      scroll-padding-inline: 0.5rem;
+    }
+
+    [data-projects-log]::-webkit-scrollbar {
+      display: none;
+    }
+
+    [data-project-entry] {
+      flex: 0 0 86%;
+      scroll-snap-align: center;
+      border-top: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+  }
+
   .project-title-link {
     position: relative;
     width: fit-content;
