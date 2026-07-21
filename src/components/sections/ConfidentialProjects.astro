@@ -94,7 +94,7 @@ const confidentialProjects: ConfidentialProject[] = [
       </p>
     </div>
 
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-6" data-confidential-log>
       {
         confidentialProjects.map((project, i) => (
           <article
@@ -272,3 +272,34 @@ const confidentialProjects: ConfidentialProject[] = [
     </div>
   </div>
 </section>
+
+<style>
+  /* ── Mobile: horizontal auto-scrolling carousel ──────────────────────────────
+     Matches the Projects section: below md the stacked blueprint files become a
+     swipeable, snap-scrolling row that auto-drifts (scenes/confidential.ts) and
+     yields to the reader on the first gesture. Cards keep their natural height
+     (align-items: flex-start) instead of stretching to the tallest. Above md the
+     original stacked layout is untouched. */
+  @media (max-width: 767px) {
+    [data-confidential-log] {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 1rem;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding-bottom: 0.5rem;
+      scroll-padding-inline: 0.5rem;
+    }
+
+    [data-confidential-log]::-webkit-scrollbar {
+      display: none;
+    }
+
+    [data-confidential-card] {
+      flex: 0 0 85%;
+      scroll-snap-align: center;
+    }
+  }
+</style>

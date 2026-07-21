@@ -247,17 +247,31 @@
   z-index: var(--z-backdrop);
   pointer-events: none;
   overflow: hidden;
+  /* Base fill so the stage is never a bare flash before layer images decode,
+     and so any parallax edge always resolves to the palette (never stark ink). */
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    color-mix(in srgb, var(--navy) 55%, var(--ink)),
+    var(--ink) 70%
+  );
 }
 
-/* OUTER layer — backdrop scene drives parallax (x/y) + atmosphere opacity here. */
+/* OUTER layer — backdrop scene drives parallax (x/y) + atmosphere opacity here.
+   Overscanned well beyond the viewport so the parallax translate (up to ~30% of
+   viewport height and a sideways drift) never exposes an empty edge — this is
+   what fixed the "left side cut" + buggy-seam look on mobile. */
 #scroll-stage .stage-layer {
   position: absolute;
-  inset: 0;
+  top: -8%;
+  left: -10%;
+  width: 120%;
+  height: 155%;
   will-change: transform, opacity;
 }
 
 /* INNER depth — carries the image; hero pin drives depth (scale/translate) here.
-   Independent transform channel from the outer layer. */
+   Independent transform channel from the outer layer. Starts transparent and is
+   faded in by the backdrop scene once its image decodes (no hard pop-in). */
 #scroll-stage .stage-depth {
   position: absolute;
   inset: 0;

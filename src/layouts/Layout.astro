@@ -52,8 +52,11 @@ const {
 
     <!-- Canonical scroll-position hint for ScrollTrigger -->
     <style>
-      /* Prevent lower-section FOUC before GSAP initialises; keep hero paintable for LCP. */
-      [data-scene]:not(#hero) {
+      /* Prevent lower-section FOUC before GSAP initialises; keep hero paintable for LCP.
+         The fixed backdrop stage is excluded — it must paint immediately (its base
+         gradient + faded-in layers) instead of popping in when the deferred
+         controller mounts ~1s later. */
+      [data-scene]:not(#hero):not(#scroll-stage) {
         opacity: 0;
       }
     </style>

@@ -25,6 +25,12 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { Scene } from '../types';
 import { requestTilt, TILT_EVENT, type TiltDetail } from '../../touch-tilt';
+import { getCurrentLang } from '../../i18n';
+import { translations } from '../../../i18n/translations';
+
+function hintText(): string {
+  return translations[getCurrentLang()]['companion.hint'] ?? 'tap me · tilt to play';
+}
 
 type PoseName = 'hero' | 'master' | 'coding' | 'wave' | 'head';
 
@@ -131,11 +137,15 @@ const companionMobileScene = (el: Element): Scene => {
 
         // ── One-time tilt hint (only if the sensor exists) ───────────────────
         let hint: HTMLElement | null = null;
+        const onLangChange = (): void => {
+          if (hint) hint.textContent = hintText();
+        };
         if ('DeviceOrientationEvent' in window) {
           hint = document.createElement('span');
           hint.className = 'panda-tilt-hint';
-          hint.textContent = 'tap me · tilt to play';
+          hint.textContent = hintText();
           stage.appendChild(hint);
+          window.addEventListener('lang:change', onLangChange);
         }
 
         // ── Tap: wave reaction + grant iOS motion access (first tap) ─────────
@@ -207,6 +217,7 @@ const companionMobileScene = (el: Element): Scene => {
         return () => {
           triggers.forEach((t) => t.kill());
           window.removeEventListener(TILT_EVENT, onTilt);
+          window.removeEventListener('lang:change', onLangChange);
           tapTarget?.removeEventListener('click', onTap);
           bob.kill();
           lookX?.tween.kill();

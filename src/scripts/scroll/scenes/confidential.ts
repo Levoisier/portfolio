@@ -1,5 +1,6 @@
 import gsap from 'gsap';
 import type { Scene } from '../types';
+import { initAutoCarousel } from '../../autoCarousel';
 
 type ConfidentialRecord = {
   card: HTMLElement;
@@ -16,6 +17,7 @@ const confidentialScene = (el: Element): Scene => {
   let entered = false;
   let gridPulse: gsap.core.Tween | null = null;
   let shimmer: gsap.core.Tween | null = null;
+  let mm: gsap.MatchMedia | null = null;
 
   function bind<K extends keyof HTMLElementEventMap>(
     target: HTMLElement,
@@ -146,6 +148,14 @@ const confidentialScene = (el: Element): Scene => {
         repeat: -1,
         stagger: 0.2,
       });
+
+      // Mobile only: auto-drift the horizontal blueprint carousel until touched.
+      mm = gsap.matchMedia();
+      mm.add('(max-width: 767px)', () => {
+        const track = el.querySelector<HTMLElement>('[data-confidential-log]');
+        const dispose = track ? initAutoCarousel(track) : () => {};
+        return () => dispose();
+      });
     },
 
     enter() {
@@ -194,6 +204,7 @@ const confidentialScene = (el: Element): Scene => {
       cleanup.splice(0).forEach((dispose) => dispose());
       gridPulse?.kill();
       shimmer?.kill();
+      mm?.revert();
       cards.forEach((record) => {
         gsap.set(
           [record.card, record.content, record.scanLine, ...record.corners, ...record.sheens],

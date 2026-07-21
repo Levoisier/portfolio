@@ -88,6 +88,9 @@ export const translations: Record<Lang, Record<string, string>> = {
     'contact.github-aria': 'Perfil de GitHub (abre en nueva pestaña)',
     'contact.whatsapp-aria': 'Escribirle a Cristian por WhatsApp (abre en nueva pestaña)',
     'contact.linkedin-aria': 'Perfil de LinkedIn (abre en nueva pestaña)',
+
+    // Companion (panda)
+    'companion.hint': 'tócame · inclina para jugar',
   },
 
   en: {
@@ -176,5 +179,8 @@ export const translations: Record<Lang, Record<string, string>> = {
     'contact.github-aria': 'GitHub profile (opens in new tab)',
     'contact.whatsapp-aria': 'Message Cristian on WhatsApp (opens in new tab)',
     'contact.linkedin-aria': 'LinkedIn profile (opens in new tab)',
+
+    // Companion (panda)
+    'companion.hint': 'tap me · tilt to play',
   },
 };

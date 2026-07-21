@@ -10,6 +10,7 @@
 
 import gsap from 'gsap';
 import type { Scene } from '../types';
+import { initAutoCarousel } from '../../autoCarousel';
 
 type ProjectRecord = {
   entry: HTMLElement;
@@ -68,60 +69,6 @@ const projectsScene = (el: Element): Scene => {
   const cleanup: Array<() => void> = [];
   const revealTimelines: gsap.core.Timeline[] = [];
   let mm: gsap.MatchMedia | null = null;
-
-  /**
-   * Mobile only: gently auto-advance the horizontal project carousel. The first
-   * real user gesture (touch / drag / wheel / arrow key) stops the auto-scroll
-   * for good and hands full control to the reader — it does not fight them or
-   * snap back. Returns a disposer that stops the loop and unbinds.
-   */
-  function setupMobileCarousel(): () => void {
-    const track = el.querySelector<HTMLElement>('[data-projects-log]');
-    if (!track) return () => {};
-
-    const SPEED = 0.35; // px per frame (~21px/s at 60fps) — slow, ambient drift
-    let rafId = 0;
-    let stopped = false;
-
-    const tick = (): void => {
-      if (stopped) return;
-      const maxScroll = track.scrollWidth - track.clientWidth;
-      if (maxScroll <= 0) {
-        rafId = requestAnimationFrame(tick);
-        return;
-      }
-      // Loop back to the start once the end is reached.
-      track.scrollLeft = track.scrollLeft >= maxScroll - 0.5 ? 0 : track.scrollLeft + SPEED;
-      rafId = requestAnimationFrame(tick);
-    };
-
-    const stop = (): void => {
-      if (stopped) return;
-      stopped = true;
-      cancelAnimationFrame(rafId);
-      track.removeEventListener('pointerdown', stop);
-      track.removeEventListener('wheel', stop);
-      track.removeEventListener('touchstart', stop);
-      track.removeEventListener('keydown', stop);
-    };
-
-    // User-intent signals only (programmatic scrollLeft never fires these).
-    track.addEventListener('pointerdown', stop, { passive: true });
-    track.addEventListener('wheel', stop, { passive: true });
-    track.addEventListener('touchstart', stop, { passive: true });
-    track.addEventListener('keydown', stop);
-
-    rafId = requestAnimationFrame(tick);
-
-    return () => {
-      stopped = true;
-      cancelAnimationFrame(rafId);
-      track.removeEventListener('pointerdown', stop);
-      track.removeEventListener('wheel', stop);
-      track.removeEventListener('touchstart', stop);
-      track.removeEventListener('keydown', stop);
-    };
-  }
 
   function bind<K extends keyof HTMLElementEventMap>(
     target: HTMLElement,
@@ -239,7 +186,8 @@ const projectsScene = (el: Element): Scene => {
         });
         gsap.set(chips, { opacity: 1 });
 
-        const disposeCarousel = setupMobileCarousel();
+        const track = el.querySelector<HTMLElement>('[data-projects-log]');
+        const disposeCarousel = track ? initAutoCarousel(track) : () => {};
         return () => disposeCarousel();
       });
     },

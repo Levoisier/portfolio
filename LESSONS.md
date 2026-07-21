@@ -274,3 +274,15 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** This remote environment ships Chromium at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` with Playwright globally installed (`/opt/node22/lib/node_modules`). Verified the mobile companion end-to-end against `pnpm preview`: per-section poses (hero→wave, projects→coding, confidential→head silhouette, skills→master, contact→wave), reduced-motion single static `master` pose, zero console errors, zero horizontal overflow at 390px, and the desktop companion correctly `display:none` on mobile / mobile companion `display:none` on desktop. (ESM import needs the absolute path + `const { chromium } = pkg` default-import shape.) Real Lighthouse LCP timing on a throttled device is still worth a human pass.
 
 **Don't repeat:** Check for a usable Chromium/Playwright before deferring rendered-page checks to a human.
+
+### [2026-07-21] scroll-snap mandatory silently kills a JS auto-scroll carousel
+
+**Context:** Mobile auto-scrolling carousels for Projects + Confidential — a rAF loop nudging `track.scrollLeft` a fraction of a pixel per frame, yielding to the reader on first gesture.
+
+**Problem/Dead-end:** The track had `scroll-snap-type: x mandatory` (for nice manual swipe snapping). With mandatory snap the browser re-snaps to the nearest snap point after every programmatic `scrollLeft` write, so sub-card increments get yanked straight back to 0 — the carousel looks completely dead (measured `scrollLeft` delta = 0 over seconds) even though the rAF loop is running fine. Easy to misread as "the loop never started."
+
+**Fix/Decision:** `autoCarousel.ts` sets `track.style.scrollSnapType = 'none'` while the auto-drift runs, and restores it (clears the inline style → falls back to the CSS `x mandatory`) the instant the reader takes over in `stop()`. Best of both: smooth ambient drift + snappy manual swiping after takeover. Also: detect user intent via `pointerdown`/`wheel`/`touchstart`/`keydown` (never `scroll`, since programmatic writes fire it). Reduced motion → util no-ops, snap stays intact for manual use.
+
+**Also:** headless Chromium defaults to `prefers-reduced-motion: reduce`; pass `reducedMotion: 'no-preference'` to the Playwright context or motion-gated code paths look broken in verification.
+
+**Don't repeat:** Never drive `scrollLeft`/`scrollTop` by small steps on a `scroll-snap-type: *-mandatory` element — toggle snap off while animating, or the snap engine erases your motion.
