@@ -20,7 +20,6 @@ function splitWords(el: HTMLElement): HTMLElement[] {
 }
 
 const contactScene = (el: Element): Scene => {
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let entered = false;
   let headingWords: HTMLElement[] = [];
   let tl: gsap.core.Timeline | null = null;
@@ -40,15 +39,6 @@ const contactScene = (el: Element): Scene => {
 
       if (heading) headingWords = splitWords(heading);
 
-      if (prefersReducedMotion) {
-        gsap.set([...headingWords, ...links, glow, ...partyItems], {
-          opacity: 1,
-          x: 0,
-          y: 0,
-        });
-        return;
-      }
-
       gsap.set(headingWords, { opacity: 0, y: 24 });
       gsap.set(links, { opacity: 0, y: 20 });
       gsap.set(glow, { opacity: 0 });
@@ -62,15 +52,6 @@ const contactScene = (el: Element): Scene => {
       entered = true;
 
       const { links, glow, partyItems } = collect();
-
-      if (prefersReducedMotion) {
-        gsap.set([...headingWords, ...links, glow, ...partyItems], {
-          opacity: 1,
-          x: 0,
-          y: 0,
-        });
-        return;
-      }
 
       tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
       tl.to(headingWords, { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 })

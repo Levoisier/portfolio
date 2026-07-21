@@ -23,17 +23,13 @@ const LAYER_CONFIG = [
   { id: 'stage-particles', path: '/media/backdrop/particles.webp', rate: 0.3 },
 ] as const;
 
-function loadLayer(layer: BackdropLayer, animateIn: boolean): void {
+function loadLayer(layer: BackdropLayer): void {
   const image = new Image();
 
   image.onload = () => {
     layer.fill.style.backgroundImage = `url("${layer.path}")`;
     // Fade the image in over the base gradient so it never hard-pops.
-    if (animateIn) {
-      gsap.fromTo(layer.fill, { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'sine.out' });
-    } else {
-      gsap.set(layer.fill, { opacity: 1 });
-    }
+    gsap.fromTo(layer.fill, { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'sine.out' });
   };
 
   image.onerror = () => {
@@ -50,14 +46,13 @@ function atmosphereOpacity(progress: number): number {
 }
 
 const backdropScene = (_el: Element): Scene => {
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let layers: BackdropLayer[] = [];
   let progressHandler: ((event: Event) => void) | null = null;
 
   function render(progress: number): void {
     layers.forEach((layer) => {
-      const y = prefersReducedMotion ? 0 : -window.innerHeight * layer.rate * progress;
-      const x = prefersReducedMotion ? 0 : (layer.drift ?? 0) * progress;
+      const y = -window.innerHeight * layer.rate * progress;
+      const x = (layer.drift ?? 0) * progress;
       const opacity = layer.path.includes('atmosphere') ? atmosphereOpacity(progress) : 1;
 
       gsap.set(layer.el, {
@@ -81,14 +76,12 @@ const backdropScene = (_el: Element): Scene => {
       });
 
       layers.forEach((layer) => {
-        // Start the image transparent so it can fade in on decode (unless reduced
-        // motion, where it just appears). The outer layer stays fully opaque.
-        gsap.set(layer.fill, { opacity: prefersReducedMotion ? 1 : 0 });
-        loadLayer(layer, !prefersReducedMotion);
+        // Start the image transparent so it can fade in on decode. The outer
+        // layer stays fully opaque.
+        gsap.set(layer.fill, { opacity: 0 });
+        loadLayer(layer);
         gsap.set(layer.el, { x: 0, y: 0, opacity: 1 });
       });
-
-      if (prefersReducedMotion) return;
 
       progressHandler = (event: Event) => {
         const progress = (event as CustomEvent<{ progress: number }>).detail?.progress ?? 0;

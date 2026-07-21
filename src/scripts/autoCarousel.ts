@@ -13,8 +13,6 @@
  * tiny per-frame scrollLeft writes back to the current snap point, so the drift
  * never advances. While auto-scrolling we therefore force snap OFF, and restore
  * the CSS value the moment the reader takes over — so manual swiping still snaps.
- *
- * Reduced motion: no-op (the track stays put, fully swipeable, snap intact).
  */
 
 export interface AutoCarouselOptions {
@@ -26,10 +24,6 @@ export function initAutoCarousel(
   track: HTMLElement,
   options: AutoCarouselOptions = {}
 ): () => void {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    return () => {};
-  }
-
   const speed = options.speed ?? 0.7;
   let rafId = 0;
   let direction = 1; // 1 → drift right, -1 → drift back left

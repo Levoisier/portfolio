@@ -6,8 +6,6 @@
  *
  * Replace by registering a dedicated factory in controller.ts registry;
  * this file stays as the fallback — never delete it.
- *
- * Reduced-motion: instant opacity reveal, no Y motion.
  */
 
 import gsap from 'gsap';
@@ -17,30 +15,23 @@ const REVEAL_DURATION = 0.7;
 const REVEAL_Y = 40;
 
 const revealPlaceholder = (el: Element): Scene => {
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let entered = false;
 
   return {
     init(_el: Element) {
-      if (!prefersReducedMotion) {
-        gsap.set(el, { opacity: 0, y: REVEAL_Y });
-      }
+      gsap.set(el, { opacity: 0, y: REVEAL_Y });
     },
 
     enter() {
       if (entered) return;
       entered = true;
 
-      if (prefersReducedMotion) {
-        gsap.set(el, { opacity: 1 });
-      } else {
-        gsap.to(el, {
-          opacity: 1,
-          y: 0,
-          duration: REVEAL_DURATION,
-          ease: 'expo.out',
-        });
-      }
+      gsap.to(el, {
+        opacity: 1,
+        y: 0,
+        duration: REVEAL_DURATION,
+        ease: 'expo.out',
+      });
     },
 
     leave() {

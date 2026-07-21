@@ -286,3 +286,11 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Also:** headless Chromium defaults to `prefers-reduced-motion: reduce`; pass `reducedMotion: 'no-preference'` to the Playwright context or motion-gated code paths look broken in verification.
 
 **Don't repeat:** Never drive `scrollLeft`/`scrollTop` by small steps on a `scroll-snap-type: *-mandatory` element — toggle snap off while animating, or the snap engine erases your motion.
+
+### [2026-07-21] Removed all prefers-reduced-motion handling (owner call)
+
+**Context:** The site is lightweight; the owner asked to drop reduced-motion gating everywhere so the experience is identical for everyone.
+
+**Fix/Decision:** Stripped every `prefers-reduced-motion` branch across the repo — the `@media (prefers-reduced-motion: reduce)` blocks (global.css, LangSwitch, ScreenshotLightbox, Projects), the `const prefersReducedMotion = matchMedia(...)` guards + their static-fallback branches in every scene (hero, backdrop, companion, companionMobile, skills, projects, confidential, contact, revealPlaceholder), the controller's smooth-scroll/scene skip, and the `initAutoCarousel`/`initGlassLoupe` early-returns. Animations, ScrollSmoother, the marquee, and both auto-carousels now run unconditionally. Verified in a headless context (which itself defaults to `reduce`) that everything still animates.
+
+**Don't repeat:** There is intentionally no reduced-motion path anymore — do not re-add `prefers-reduced-motion` guards to "be safe"; that was removed on purpose. (Note the earlier scroll-snap lesson's reduced-motion asides are now historical only.)

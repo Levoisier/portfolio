@@ -1,11 +1,11 @@
 /**
  * Projects Scene.
  *
- * All viewports (no reduced-motion): a normal-scroll reveal — each staggered
- * entry animates in as it scrolls into view (no pin / no held scroll). Entries
- * are left/right offset cards like the Confidential section.
+ * Desktop / tablet: a normal-scroll reveal — each staggered entry animates in as
+ * it scrolls into view (no pin / no held scroll). Entries are left/right offset
+ * cards like the Confidential section.
  *
- * Reduced motion: static, instant, fully readable.
+ * Mobile: a horizontal auto-scrolling carousel (see initAutoCarousel).
  */
 
 import gsap from 'gsap';
@@ -64,7 +64,6 @@ function addEntryReveal(tl: gsap.core.Timeline, record: ProjectRecord, at: numbe
 }
 
 const projectsScene = (el: Element): Scene => {
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const records: ProjectRecord[] = [];
   const cleanup: Array<() => void> = [];
   const revealTimelines: gsap.core.Timeline[] = [];
@@ -118,21 +117,6 @@ const projectsScene = (el: Element): Scene => {
       });
 
       const chips = records.flatMap((record) => record.chips);
-
-      if (prefersReducedMotion) {
-        records.forEach((record) => {
-          gsap.set([record.entry, record.title, record.desc, record.formula], {
-            opacity: 1,
-            x: 0,
-            y: 0,
-            rotation: 0,
-            scale: 1,
-          });
-          gsap.set(record.rule, { scaleY: 1 });
-        });
-        gsap.set(chips, { opacity: 1, y: 0 });
-        return;
-      }
 
       mm = gsap.matchMedia();
 

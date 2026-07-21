@@ -11,7 +11,6 @@ type ConfidentialRecord = {
 };
 
 const confidentialScene = (el: Element): Scene => {
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const cards: ConfidentialRecord[] = [];
   const cleanup: Array<() => void> = [];
   let entered = false;
@@ -35,8 +34,6 @@ const confidentialScene = (el: Element): Scene => {
       ease: 'expo.out',
       overwrite: 'auto',
     });
-
-    if (prefersReducedMotion) return;
 
     gsap.to(record.corners, {
       opacity: active ? 1 : 0.75,
@@ -98,24 +95,6 @@ const confidentialScene = (el: Element): Scene => {
         bind(card, 'focusout', () => reactToFile(record, false));
       });
 
-      if (prefersReducedMotion) {
-        gsap.set(
-          cards.map((record) => record.card),
-          { opacity: 1, y: 0 }
-        );
-        gsap.set(
-          cards.flatMap((record) => [record.content, ...record.corners]),
-          { opacity: 1, scaleX: 1, scaleY: 1, y: 0 }
-        );
-        gsap.set(
-          cards.map((record) => record.scanLine),
-          { opacity: 0, y: 0 }
-        );
-        gsap.set(sheens, { opacity: 0, x: 0, xPercent: 0 });
-        gsap.set(grid, { opacity: 0.6 });
-        return;
-      }
-
       gsap.set(
         cards.map((record) => record.card),
         { opacity: 1 }
@@ -161,14 +140,6 @@ const confidentialScene = (el: Element): Scene => {
     enter() {
       if (entered) return;
       entered = true;
-
-      if (prefersReducedMotion) {
-        gsap.set(
-          cards.flatMap((record) => [record.card, record.content]),
-          { opacity: 1, y: 0 }
-        );
-        return;
-      }
 
       cards.forEach((record, index) => {
         const cardHeight = record.card.getBoundingClientRect().height;

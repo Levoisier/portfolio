@@ -5,8 +5,8 @@
  * magnifies the panel content beneath it — a "pass it around to zoom" feel,
  * framed by scope-style corner brackets (drawn in CSS).
  *
- * Desktop + fine-pointer only; skipped entirely under reduced motion, on coarse
- * pointers, and below the desktop breakpoint, so mobile/LCP is untouched. The
+ * Desktop + fine-pointer only; skipped entirely on coarse pointers and below the
+ * desktop breakpoint, so mobile/LCP is untouched. The
  * lens position and the magnified clone are driven from a SINGLE rAF lerp so they
  * never drift out of sync; only transforms are written (compositor-friendly).
  */
@@ -94,7 +94,6 @@ function setupLoupe(surface: HTMLElement): void {
 }
 
 export function initGlassLoupe(): void {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (!window.matchMedia('(pointer: fine)').matches) return;
   if (!window.matchMedia('(min-width: 1024px)').matches) return;
   document.querySelectorAll<HTMLElement>('.liquid-glass').forEach(setupLoupe);

@@ -1,7 +1,7 @@
 /**
  * Hero Scene — the REFERENCE scene.
  *
- * Desktop (≥768px, no reduced-motion): pinned scrub DEPTH INTRO.
+ * Desktop (≥768px): pinned scrub DEPTH INTRO.
  *   The hero pins for ~140vh of scroll. On scrub 0→1 the atmosphere darkens +
  *   drifts back (scale-up, no edge gap), the particles push toward the viewer,
  *   and a separate non-LCP reaction glow intensifies over the flask.
@@ -13,8 +13,6 @@
  *   sideways exposes the (black) ink behind their edges. Darken + scale-up only.
  *
  * Mobile (<768px): the v1 entrance choreography — no pin, hero panda only.
- *
- * Reduced motion: instant reveal, no pin/scrub/loops.
  *
  * LCP guard: panda-body is the LCP element. This scene never writes opacity or
  * transform to it, so the frame at scroll progress 0 is identical to the static
@@ -56,29 +54,18 @@ const heroScene = (_el: Element): Scene => {
   let chars: HTMLElement[] = [];
   let mm: gsap.MatchMedia | null = null;
 
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
   return {
     init(_el: Element) {
       const nameEl = document.getElementById('hero-name');
       if (nameEl) {
         chars = splitChars(nameEl);
-        gsap.set(chars, {
-          opacity: prefersReducedMotion ? 1 : 0,
-          x: prefersReducedMotion ? 0 : -24,
-        });
+        gsap.set(chars, { opacity: 0, x: -24 });
       }
 
       const premiseEl = document.getElementById('hero-premise');
       const roleEl = document.getElementById('hero-role');
       const scrollHint = document.getElementById('hero-scroll-hint');
       const reactionGlow = document.getElementById('hero-reaction-glow');
-
-      if (prefersReducedMotion) {
-        gsap.set([premiseEl, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
-        gsap.set(reactionGlow, { opacity: 0.14, scale: 1, x: 0, y: 0 });
-        return;
-      }
 
       gsap.set(premiseEl, { opacity: 0, y: 14 });
       gsap.set(roleEl, { opacity: 0, y: 20 });
@@ -135,13 +122,6 @@ const heroScene = (_el: Element): Scene => {
       const premiseEl = document.getElementById('hero-premise');
       const roleEl = document.getElementById('hero-role');
       const scrollHint = document.getElementById('hero-scroll-hint');
-      const reactionGlow = document.getElementById('hero-reaction-glow');
-
-      if (prefersReducedMotion) {
-        gsap.set([premiseEl, roleEl, scrollHint, ...chars], { opacity: 1, x: 0, y: 0 });
-        gsap.set(reactionGlow, { opacity: 0.14, scale: 1, x: 0, y: 0 });
-        return;
-      }
 
       tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
 

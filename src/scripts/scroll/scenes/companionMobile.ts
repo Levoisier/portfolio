@@ -48,7 +48,6 @@ const SECTION_POSE: Record<string, PoseName> = {
 };
 
 const companionMobileScene = (el: Element): Scene => {
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const container = el as HTMLElement;
   const stage = container.querySelector<HTMLElement>('[data-companion-stage]');
   const look = container.querySelector<HTMLElement>('[data-companion-look]');
@@ -86,14 +85,6 @@ const companionMobileScene = (el: Element): Scene => {
       gsap.set(stage, { opacity: 0, y: 0, scale: 1 });
       gsap.set(look, { x: 0, y: 0, rotation: 0 });
       gsap.set(allPoses, { opacity: 0 });
-
-      if (prefersReducedMotion) {
-        // Single static pose, parked in the corner. No route / bob / tilt / tap.
-        gsap.set(stage, { opacity: 0.85 });
-        gsap.set(poseEl('master'), { opacity: 1 });
-        activePose = 'master';
-        return;
-      }
 
       mm = gsap.matchMedia();
 

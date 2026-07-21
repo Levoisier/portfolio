@@ -13,15 +13,12 @@ const ACTIVE_SCALE = 1.08;
 const DIMMED_OPACITY = 0.7;
 
 const skillsScene = (el: Element): Scene => {
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const tiles: TileRecord[] = [];
   const cleanup: Array<() => void> = [];
   let activeTile: HTMLElement | null = null;
 
   function setActive(tile: HTMLElement | null): void {
     activeTile = tile;
-
-    if (prefersReducedMotion) return;
 
     tiles.forEach((record) => {
       const isActive = record.tile === activeTile;
@@ -114,8 +111,6 @@ const skillsScene = (el: Element): Scene => {
         if (!activeTile.contains(event.target)) setActive(null);
       });
 
-      if (prefersReducedMotion) return;
-
       // Hover reaction targets start at rest; the interaction animates them.
       gsap.set(cardEls, { transformOrigin: '50% 50%' });
       gsap.set(
@@ -129,7 +124,7 @@ const skillsScene = (el: Element): Scene => {
     },
 
     enter() {
-      // Reveal is scrub-driven (or instant under reduced motion via init).
+      // Tiles are visible by default; the marquee (CSS) owns motion.
     },
 
     leave() {

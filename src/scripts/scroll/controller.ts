@@ -9,7 +9,6 @@
  *   · Matches each to a registered factory, calls init(), wires ST callbacks.
  *   · Emits a global scroll progress signal (0→1 over the full page) on
  *     a custom event "scroll:progress" for the parallax backdrop stage.
- *   · Respects prefers-reduced-motion: skips animation init, only mount.
  */
 
 import gsap from 'gsap';
@@ -45,16 +44,13 @@ const SCENE_REGISTRY: Record<string, SceneFactory> = {
 
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 
-const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
 // ─── Smooth scroll (SANCTIONED engine infra — Golden Rule 3 covers scene-adding) ──
 // ScrollSmoother owns scrolling for the whole page. It transforms #smooth-content
 // inside the fixed #smooth-wrapper (see Layout.astro). #scroll-stage is a sibling
 // OUTSIDE the wrapper so it stays truly fixed. `effects: true` enables data-speed /
-// data-lag for later phases. Reduced motion: skip entirely → native scroll.
+// data-lag for later phases.
 // This is the ONLY edit permitted to the controller core. Do not add scene logic here.
 function initSmoothScroll(): void {
-  if (prefersReducedMotion) return;
   ScrollSmoother.create({
     wrapper: '#smooth-wrapper',
     content: '#smooth-content',
@@ -96,12 +92,6 @@ function mountScenes(): void {
 
     // Make element visible (was opacity:0 to prevent FOUC)
     gsap.set(el, { opacity: 1 });
-
-    if (prefersReducedMotion) {
-      // Skip GSAP animation — just show content immediately.
-      gsap.set(el, { opacity: 1 });
-      return;
-    }
 
     ScrollTrigger.create({
       trigger: el,
