@@ -367,25 +367,6 @@
   filter: brightness(0);
 }
 
-/* One-time tilt hint bubble (shown until the first tap, then removed by JS). */
-#panda-companion-mobile .panda-tilt-hint {
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  transform: translate(-50%, -0.35rem);
-  padding: 0.3rem 0.55rem;
-  border-radius: 0.6rem;
-  border: 1px solid var(--glass-rim);
-  background-color: var(--glass-fill-solid);
-  color: var(--on-navy);
-  font-family: var(--font-body);
-  font-size: var(--text-xs);
-  line-height: 1.2;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0.92;
-}
-
 @media (min-width: 1024px) {
   #panda-companion-mobile {
     display: none;

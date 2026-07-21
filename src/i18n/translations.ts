@@ -12,21 +12,21 @@ export const translations: Record<Lang, Record<string, string>> = {
     'projects.subheading':
       'Proyectos en producción: marca, comercio, contenido y flujos operativos.',
     'projects.0.description':
-      'Catálogo de repuestos de motocicletas con imágenes de alto rendimiento y muy optimizadas, sincronizado en tiempo real con el ERP, con seguimiento de estado de pedidos para clientes y autenticación con Firebase. Imágenes servidas vía CloudFront sobre AWS S3 y EC2.',
-    'projects.1.description':
-      'Sistema de marca y flujo de reservas para restaurante: fachada cinematográfica con Astro/GSAP combinada con operaciones de reservas impulsadas por Python.',
-    'projects.2.description':
-      'Tienda en Shopify y configuración de comercio para una marca de ropa de dormir, con trabajo en tema Liquid, Mercado Pago, SellerChat, y manual de marca completo.',
-    'projects.3.description':
-      'Landing de agencia, portafolio, sistema de blog y manual de marca construidos de punta a punta con Next.js y TypeScript.',
-    'projects.0.live-aria': 'Abrir sitio en vivo de JapaniRacer',
-    'projects.1.live-aria': 'Abrir sitio en vivo de Le Parché',
-    'projects.2.live-aria': 'Abrir sitio en vivo de Maison Cielare',
-    'projects.3.live-aria': 'Abrir sitio en vivo de Orquestia',
-    'projects.4.description':
       'App móvil de finanzas personales para Android: gestión de tarjetas de crédito, presupuestos por categoría, calendario de gastos y balance multi-cuenta, con recomendaciones de ahorro. En producción, sin listado público todavía — la galería muestra la app real.',
-    'projects.4.gallery-aria': 'Ver capturas de pantalla de Fiora',
-    'projects.4.platform-note': 'Android · Expo — app en producción, sin enlace público',
+    'projects.0.gallery-aria': 'Ver capturas de pantalla de Fiora',
+    'projects.0.platform-note': 'Android · Expo — app en producción, sin enlace público',
+    'projects.1.description':
+      'Catálogo de repuestos de motocicletas con imágenes de alto rendimiento y muy optimizadas, sincronizado en tiempo real con el ERP, con seguimiento de estado de pedidos para clientes y autenticación con Firebase. Imágenes servidas vía CloudFront sobre AWS S3 y EC2.',
+    'projects.2.description':
+      'Sistema de marca y flujo de reservas para restaurante: fachada cinematográfica con Astro/GSAP combinada con operaciones de reservas impulsadas por Python.',
+    'projects.3.description':
+      'Tienda en Shopify y configuración de comercio para una marca de ropa de dormir, con trabajo en tema Liquid, Mercado Pago, SellerChat, y manual de marca completo.',
+    'projects.4.description':
+      'Landing de agencia, portafolio, sistema de blog y manual de marca construidos de punta a punta con Next.js y TypeScript.',
+    'projects.1.live-aria': 'Abrir sitio en vivo de JapaniRacer',
+    'projects.2.live-aria': 'Abrir sitio en vivo de Le Parché',
+    'projects.3.live-aria': 'Abrir sitio en vivo de Maison Cielare',
+    'projects.4.live-aria': 'Abrir sitio en vivo de Orquestia',
 
     // Lightbox
     'lightbox.eyebrow': 'Capturas de pantalla',
@@ -88,9 +88,6 @@ export const translations: Record<Lang, Record<string, string>> = {
     'contact.github-aria': 'Perfil de GitHub (abre en nueva pestaña)',
     'contact.whatsapp-aria': 'Escribirle a Cristian por WhatsApp (abre en nueva pestaña)',
     'contact.linkedin-aria': 'Perfil de LinkedIn (abre en nueva pestaña)',
-
-    // Companion (panda)
-    'companion.hint': 'tócame · inclina para jugar',
   },
 
   en: {
@@ -104,21 +101,21 @@ export const translations: Record<Lang, Record<string, string>> = {
     'projects.subheading':
       'Live projects across brand, commerce, content, and production workflows.',
     'projects.0.description':
-      'High-performance, heavily optimized motorcycle parts catalog images, synced in real time with the ERP, with client order-status tracking and Firebase authentication. Images served through CloudFront on AWS S3 and EC2.',
-    'projects.1.description':
-      'Restaurant brand system and booking flow: cinematic Astro/GSAP frontage paired with Python-powered reservation operations.',
-    'projects.2.description':
-      'Shopify storefront and commerce setup for a sleepwear brand, with Liquid theme work, Mercado Pago, SellerChat, and a complete brand manual.',
-    'projects.3.description':
-      'Agency landing page, portfolio, blog system, and brand manual built end-to-end with a focused Next.js and TypeScript stack.',
-    'projects.0.live-aria': 'Open live site for JapaniRacer',
-    'projects.1.live-aria': 'Open live site for Le Parché',
-    'projects.2.live-aria': 'Open live site for Maison Cielare',
-    'projects.3.live-aria': 'Open live site for Orquestia',
-    'projects.4.description':
       'Personal finance app for Android: credit card management, category budgets, a spending calendar, and multi-account balance tracking, with savings recommendations. Live in production, no public listing yet — the gallery shows the real app.',
-    'projects.4.gallery-aria': 'View screenshots of Fiora',
-    'projects.4.platform-note': 'Android · Expo — live app, no public link',
+    'projects.0.gallery-aria': 'View screenshots of Fiora',
+    'projects.0.platform-note': 'Android · Expo — live app, no public link',
+    'projects.1.description':
+      'High-performance, heavily optimized motorcycle parts catalog images, synced in real time with the ERP, with client order-status tracking and Firebase authentication. Images served through CloudFront on AWS S3 and EC2.',
+    'projects.2.description':
+      'Restaurant brand system and booking flow: cinematic Astro/GSAP frontage paired with Python-powered reservation operations.',
+    'projects.3.description':
+      'Shopify storefront and commerce setup for a sleepwear brand, with Liquid theme work, Mercado Pago, SellerChat, and a complete brand manual.',
+    'projects.4.description':
+      'Agency landing page, portfolio, blog system, and brand manual built end-to-end with a focused Next.js and TypeScript stack.',
+    'projects.1.live-aria': 'Open live site for JapaniRacer',
+    'projects.2.live-aria': 'Open live site for Le Parché',
+    'projects.3.live-aria': 'Open live site for Maison Cielare',
+    'projects.4.live-aria': 'Open live site for Orquestia',
 
     // Lightbox
     'lightbox.eyebrow': 'Screenshots',
@@ -179,8 +176,5 @@ export const translations: Record<Lang, Record<string, string>> = {
     'contact.github-aria': 'GitHub profile (opens in new tab)',
     'contact.whatsapp-aria': 'Message Cristian on WhatsApp (opens in new tab)',
     'contact.linkedin-aria': 'LinkedIn profile (opens in new tab)',
-
-    // Companion (panda)
-    'companion.hint': 'tap me · tilt to play',
   },
 };
