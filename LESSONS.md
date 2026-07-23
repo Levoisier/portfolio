@@ -304,3 +304,13 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Sized each layer's overscan to ITS max travel (rate × viewport + hero-pin scale), kept `will-change` only on the outer layer (GSAP promotes the inner during the pin anyway), generated 1280/1920 webp variants picked by effective viewport width (DPR capped at 2), chained the loads sequentially with `image.decoding='async'` + `await image.decode()` + `fetchpriority=low`, and switched per-tick writes to cached `gsap.quickSetter`s with an epsilon skip. One trap: the mid-glass layer drifts +32px in **px**, so its left cover must be fixed px (`left:-48px`) — a `-4%` cover is thinner than the drift on narrow phones and exposes the edge.
 
 **Don't repeat:** Don't give parallax layers a shared worst-case overscan or blanket `will-change`; budget each layer to its own travel. And when a transform travel is in px, the safety cover must be px too, not %.
+
+### [2026-07-23] GSAP yPercent doubles a CSS translate baseline
+
+**Context:** Skills tiles fill with "liquid" up to the proficiency level on hover. The fill's height is the level (inline style); the scene slides it in via `yPercent: 102 → 0`. A CSS `transform: translateY(102%)` was left on `.skill-liquid` for the pre-JS resting state.
+
+**Problem/Dead-end:** On hover the liquid never rose. `gsap.set(el, {yPercent:102})` with an existing CSS `translateY(102%)` reads the computed matrix (≈75px) into the tween's **px** channel AND adds `yPercent:102` on top → measured translateY ≈ 150px (double). Animating `yPercent → 0` only zeroes the percent channel; the ≈75px CSS-seeded px baseline stays, so the fill sits one card-height low and looks stuck.
+
+**Fix/Decision:** Dropped the CSS transform (the whole Skills section is `opacity:0` until the controller mounts, so the resting fill is never visible pre-JS anyway) and pinned `y: 0` alongside `yPercent: 102` in the scene's init so both channels are explicit. Verified in-browser: liquid rests below the card (y≈75px) and rises to y=0 on hover with a gentle rotation slosh.
+
+**Don't repeat:** Don't seed a CSS `translate`/`translateY` on an element you'll drive with GSAP `x/yPercent` — GSAP treats the computed px as a separate additive channel. Set the resting offset in GSAP (`gsap.set`), or zero the px channel (`y:0`) explicitly.

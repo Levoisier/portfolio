@@ -5,8 +5,9 @@
 
    Layout (mobile + desktop): three infinite-scrolling rows. Row 1 drifts right,
    row 2 left, row 3 right — each an endless loop (content duplicated so the seam
-   never shows). Hover/tap still reveals the category badge + proficiency bar
-   (see BACKLOG item: skills-interactive) and pauses the row it sits in.
+   never shows). Hover/tap reveals the category badge and fills the tile with
+   "liquid" up to the proficiency level (chemistry read — the tile is a vessel),
+   and pauses the row it sits in.
 
    The looping is pure CSS (@keyframes translateX 0 ↔ -50% over a doubled track).
 
@@ -389,7 +390,14 @@ const marqueeRows = rows.map((row, rowIndex) => ({
                         style="border-color: var(--tile-color); background: color-mix(in srgb, var(--tile-color) 8%, var(--ink));"
                       >
                         <span
-                          class="font-display absolute left-1 top-1 leading-none"
+                          class="skill-liquid"
+                          data-skill-liquid
+                          style={`height: ${el.proficiency}%;`}
+                          aria-hidden="true"
+                        />
+
+                        <span
+                          class="font-display absolute left-1 top-1 z-10 leading-none"
                           style="font-size: 0.5rem; color: var(--tile-color); opacity: 0.7;"
                           aria-hidden="true"
                         >
@@ -397,34 +405,27 @@ const marqueeRows = rows.map((row, rowIndex) => ({
                         </span>
 
                         <span
-                          class="font-display font-bold leading-none"
+                          class="font-display relative z-10 font-bold leading-none"
                           style="font-size: var(--text-xl); color: var(--paper);"
                         >
                           {el.symbol}
                         </span>
 
                         <span
-                          class="font-body mt-1 w-full truncate px-1 text-center leading-none"
+                          class="font-body relative z-10 mt-1 w-full truncate px-1 text-center leading-none"
                           style="font-size: 0.55rem; color: color-mix(in srgb, var(--paper) 70%, transparent);"
                         >
                           {el.name}
                         </span>
 
                         <span
-                          class="font-body absolute bottom-1 right-1 leading-none opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                          class="font-body absolute bottom-1 right-1 z-10 leading-none opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
                           data-category-badge
                           style="font-size: 0.45rem; color: var(--tile-color);"
                           aria-hidden="true"
                         >
                           {el.category}
                         </span>
-
-                        <span
-                          class="absolute bottom-0 left-0 h-0.5 w-full origin-left"
-                          data-proficiency-bar
-                          style="background-color: var(--scarlet); transform: scaleX(0);"
-                          aria-hidden="true"
-                        />
                       </div>
                     </div>
                   ))}
@@ -537,6 +538,33 @@ const marqueeRows = rows.map((row, rowIndex) => ({
       transform: translateX(0);
     }
   }
+
+  /* ── Liquid proficiency fill ─────────────────────────────────────────────────
+     Each tile is a vessel: the fill's HEIGHT is the proficiency level (inline
+     style), and activation slides it up from below the card (transform-only —
+     the skills scene drives yPercent 100 → 0 plus a gentle rotation slosh).
+     Wider than the card with a rounded top so the tilting surface reads as
+     liquid, not a bar; the card's overflow-hidden crops the overhang. */
+  .skill-liquid {
+    position: absolute;
+    left: -25%;
+    bottom: 0;
+    width: 150%;
+    border-radius: 46% 40% 0 0 / 14px 10px 0 0;
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--tile-color) 58%, var(--ink)),
+      color-mix(in srgb, var(--tile-color) 30%, transparent)
+    );
+    box-shadow: 0 -2px 8px color-mix(in srgb, var(--tile-color) 40%, transparent);
+    transform-origin: 50% 100%;
+    pointer-events: none;
+    will-change: transform;
+  }
+  /* NOTE: no CSS transform here on purpose. The skills section is opacity:0 until
+     the controller mounts, so the resting fill is never seen pre-JS; the scene
+     owns the position via yPercent from init. A CSS translateY here would seed a
+     px baseline that GSAP adds its own yPercent onto (doubling the offset). */
 
   /* Slightly roomier rows + a touch more breathing space from md up. */
   @media (min-width: 768px) {
