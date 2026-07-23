@@ -74,6 +74,7 @@ const backdropScene = (_el: Element): Scene => {
   let progressHandler: ((event: Event) => void) | null = null;
   let resizeHandler: (() => void) | null = null;
   let viewportHeight = 0;
+  let lastWidth = 0;
   let lastProgress = -1;
 
   function render(progress: number): void {
@@ -90,6 +91,7 @@ const backdropScene = (_el: Element): Scene => {
   return {
     init() {
       viewportHeight = window.innerHeight;
+      lastWidth = window.innerWidth;
 
       layers = LAYER_CONFIG.flatMap((config) => {
         const el = document.getElementById(config.id);
@@ -131,6 +133,13 @@ const backdropScene = (_el: Element): Scene => {
       };
 
       resizeHandler = () => {
+        // Ignore height-only changes. On mobile the address bar hiding/showing
+        // as you scroll fires `resize` with a new innerHeight but the same
+        // width; recomputing the parallax translate off that made the layers
+        // jump when scrolling stopped. Only a real reflow (width change from an
+        // orientation change or a desktop window resize) updates the reference.
+        if (window.innerWidth === lastWidth) return;
+        lastWidth = window.innerWidth;
         viewportHeight = window.innerHeight;
         lastProgress = -1; // force a re-render with the new metrics
       };

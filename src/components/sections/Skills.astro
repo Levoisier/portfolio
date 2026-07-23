@@ -490,7 +490,12 @@ const marqueeRows = rows.map((row, rowIndex) => ({
   }
 
   .skill-row {
-    overflow: hidden;
+    /* `clip` + a small clip-margin lets the active tile's 1.08 scale grow past
+       the row edge without being cropped (the old `overflow: hidden` cut its top
+       and bottom), while still clipping the infinite marquee track. No extra row
+       spacing, no scrollbar. The horizontal edges stay covered by the mask. */
+    overflow: clip;
+    overflow-clip-margin: 0.5rem;
     /* Fade the horizontal edges so tiles slide in/out instead of hard-clipping. */
     -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
     mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);

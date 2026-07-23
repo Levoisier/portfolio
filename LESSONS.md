@@ -314,3 +314,23 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Dropped the CSS transform (the whole Skills section is `opacity:0` until the controller mounts, so the resting fill is never visible pre-JS anyway) and pinned `y: 0` alongside `yPercent: 102` in the scene's init so both channels are explicit. Verified in-browser: liquid rests below the card (y≈75px) and rises to y=0 on hover with a gentle rotation slosh.
 
 **Don't repeat:** Don't seed a CSS `translate`/`translateY` on an element you'll drive with GSAP `x/yPercent` — GSAP treats the computed px as a separate additive channel. Set the resting offset in GSAP (`gsap.set`), or zero the px channel (`y:0`) explicitly.
+
+### [2026-07-23] Astro scopes `<style>` — you can't target another component's class
+
+**Context:** Projects.astro needed the `.liquid-glass` card (rendered by GlassSurface.astro) to fill the stretched mobile carousel item and to carry a desktop `min-height`, so the cards read as uniform.
+
+**Problem/Dead-end:** Rules written as `[data-project-entry] > .liquid-glass { … }` silently did nothing to the glass. Astro scopes every component `<style>` by appending that component's `data-astro-cid-*` to each selector. `.liquid-glass` lives in GlassSurface (a different cid), so the scoped selector `.liquid-glass[data-astro-cid-projects]` never matched. The desktop min-height stayed unapplied (cards measured 259px, not the 320px asked for); mobile only looked right by accident because the uniform height came from `align-items: stretch` + the `[data-project-desc]` clamp (both Projects-owned elements), not from the glass rule.
+
+**Fix/Decision:** Wrap the foreign-component part in `:global()` — `[data-project-entry] > :global(.liquid-glass)`. The `[data-project-entry]` half stays scoped (keeps the rule local to Projects), and `:global(.liquid-glass)` matches the GlassSurface element. After that the desktop min-height applied (320px) and the mobile glass filled the stretched card (575/575).
+
+**Don't repeat:** A selector in an Astro `<style>` only reaches elements that component renders. To style a child component's root/class, use `:global()` on that part (keep an owned ancestor scoped so it doesn't leak), or pass a class the child spreads onto its root.
+
+### [2026-07-23] Mobile URL-bar resize rescaled the fixed backdrop ("images reload on scroll-stop")
+
+**Context:** The fixed parallax stage layers visibly changed size whenever mobile scrolling stopped.
+
+**Problem/Dead-end:** Two coupled causes. (1) `#scroll-stage` was `position: fixed; inset: 0`, so its height tracked the _dynamic_ viewport; when the address bar hides/shows on scroll the box resized and the `background-size: cover` layers re-scaled. (2) the backdrop scene's `resize` handler recomputed the parallax reference `viewportHeight = innerHeight` on every resize — and the URL-bar toggle fires `resize` with a new height but the same width — so the translate multiplier jumped too.
+
+**Fix/Decision:** (1) Pin the stage to the large viewport with `height: 100lvh` (`100vh` fallback) and drop `inset: 0`'s bottom anchor, so it stays constant across the URL-bar toggle. (2) Gate the resize handler on **width**: `if (innerWidth === lastWidth) return;` — only a real reflow (orientation / desktop resize) updates the reference. Verified the atmosphere transform is now stable to <0.01px across a height-only viewport change (the residual is just scroll-progress recalc, not the layer rescale).
+
+**Don't repeat:** For fixed full-bleed backdrops on mobile, size them with `lvh` (or `dvh` only if you _want_ to follow the bar) and never key parallax math to a live `innerHeight` that jitters with the address bar — gate on width.
