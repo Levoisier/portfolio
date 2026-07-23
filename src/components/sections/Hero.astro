@@ -11,6 +11,7 @@
        (grid placement) — NOT a GSAP move — so the LCP panda paints immediately
        and its scroll-0 frame equals the static state.
    Structure:
+     · #hero-veil         — presentation curtain over the backdrop stage; fades on scroll
      · #hero-panda        — centerpiece (panda-hero.png; LCP image remains untouched)
      · #hero-reaction-glow — non-LCP flask reaction layer (child of #hero-panda)
      · #hero-premise      — story opener
@@ -27,8 +28,12 @@ import GlassSurface from '../ui/GlassSurface.astro';
   class="portfolio-section relative flex min-h-screen flex-col items-center justify-center overflow-hidden section-pad"
   data-scene="hero"
 >
+  <!-- Presentation veil — covers the parallax stage for the first view; the
+       hero scene fades it out on scroll (see #hero-veil in global.css). -->
+  <div id="hero-veil" aria-hidden="true"></div>
+
   <div
-    class="mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-8 lg:grid lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-16"
+    class="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-8 lg:grid lg:grid-cols-[1fr_1.05fr] lg:items-center lg:gap-16"
   >
     <!-- Panda centerpiece — left column on desktop -->
     <div

@@ -1,9 +1,15 @@
 /**
  * Hero Scene — the REFERENCE scene.
  *
+ * Presentation veil: #hero-veil is a static full-bleed curtain over the fixed
+ *   backdrop stage so the first view is a clean presentation (panda + name on
+ *   the palette gradient). Scrolling fades it out — inside the pinned scrub on
+ *   desktop, via a plain scrub trigger on mobile — revealing the parallax art.
+ *
  * Desktop (≥768px): pinned scrub DEPTH INTRO.
- *   The hero pins for ~140vh of scroll. On scrub 0→1 the atmosphere darkens +
- *   drifts back (scale-up, no edge gap), the particles push toward the viewer,
+ *   The hero pins for ~140vh of scroll. On scrub 0→1 the veil lifts, the
+ *   atmosphere darkens + drifts back (scale-up, no edge gap), the particles
+ *   push toward the viewer,
  *   and a separate non-LCP reaction glow intensifies over the flask.
  *   Depth runs on the INNER .stage-depth channel so the backdrop's outer parallax
  *   keeps running with no conflict and no jump when the pin releases. The text
@@ -92,7 +98,11 @@ const heroScene = (_el: Element): Scene => {
         // progress-0 frame equals the static hero. The LCP panda body is not a
         // target. No lateral drift on full-bleed layers (would expose black
         // edges); atmosphere scales UP while darkening.
+        // The presentation veil fades over the first ~64% of the pin (duration
+        // 0.32 vs 0.5 on the depth tweens) so the backdrop art is fully
+        // revealed before the pin releases.
         depthTl
+          .fromTo('#hero-veil', { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.32 }, 0)
           .fromTo(
             '#hero-reaction-glow',
             { opacity: 0, scale: 0.85 },
@@ -110,6 +120,31 @@ const heroScene = (_el: Element): Scene => {
         return () => {
           depthTl.scrollTrigger?.kill();
           depthTl.kill();
+        };
+      });
+
+      // ── Mobile veil fade ─────────────────────────────────────────────────────
+      // No pin on mobile — the veil simply scrubs out as the hero scrolls away,
+      // revealing the backdrop stage behind the following sections.
+      mm.add('(max-width: 767px)', () => {
+        const veilTween = gsap.fromTo(
+          '#hero-veil',
+          { autoAlpha: 1 },
+          {
+            autoAlpha: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: '#hero',
+              start: 'top top',
+              end: 'bottom 45%',
+              scrub: true,
+            },
+          }
+        );
+
+        return () => {
+          veilTween.scrollTrigger?.kill();
+          veilTween.kill();
         };
       });
     },

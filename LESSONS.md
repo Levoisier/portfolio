@@ -294,3 +294,13 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** Stripped every `prefers-reduced-motion` branch across the repo — the `@media (prefers-reduced-motion: reduce)` blocks (global.css, LangSwitch, ScreenshotLightbox, Projects), the `const prefersReducedMotion = matchMedia(...)` guards + their static-fallback branches in every scene (hero, backdrop, companion, companionMobile, skills, projects, confidential, contact, revealPlaceholder), the controller's smooth-scroll/scene skip, and the `initAutoCarousel`/`initGlassLoupe` early-returns. Animations, ScrollSmoother, the marquee, and both auto-carousels now run unconditionally. Verified in a headless context (which itself defaults to `reduce`) that everything still animates.
 
 **Don't repeat:** There is intentionally no reduced-motion path anymore — do not re-add `prefers-reduced-motion` guards to "be safe"; that was removed on purpose. (Note the earlier scroll-snap lesson's reduced-motion asides are now historical only.)
+
+### [2026-07-23] Backdrop stage jank: uniform overscan + parallel decodes, and px drift vs % cover
+
+**Context:** Startup felt laggy; the 3-layer fixed parallax stage was the main cost. Also added the hero presentation veil (`#hero-veil`) that fades on scroll.
+
+**Problem/Dead-end:** Every `.stage-layer` used one uniform 120%×155% box with `will-change: transform, opacity` on BOTH the outer layer and the inner `.stage-depth` — six viewport-plus composited layers (~11 viewports of GPU memory) alive from first paint. On top of that, all three 2560px webp sources downloaded and decoded in parallel right when the controller mounted, competing with the LCP panda, and `render()` allocated a `gsap.set` per layer on every scroll tick.
+
+**Fix/Decision:** Sized each layer's overscan to ITS max travel (rate × viewport + hero-pin scale), kept `will-change` only on the outer layer (GSAP promotes the inner during the pin anyway), generated 1280/1920 webp variants picked by effective viewport width (DPR capped at 2), chained the loads sequentially with `image.decoding='async'` + `await image.decode()` + `fetchpriority=low`, and switched per-tick writes to cached `gsap.quickSetter`s with an epsilon skip. One trap: the mid-glass layer drifts +32px in **px**, so its left cover must be fixed px (`left:-48px`) — a `-4%` cover is thinner than the drift on narrow phones and exposes the edge.
+
+**Don't repeat:** Don't give parallax layers a shared worst-case overscan or blanket `will-change`; budget each layer to its own travel. And when a transform travel is in px, the safety cover must be px too, not %.
