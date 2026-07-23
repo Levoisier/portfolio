@@ -224,7 +224,17 @@
 /* ─── Scroll stage (fixed background layers) ──────────────────────────────── */
 #scroll-stage {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  /* Height is pinned to the LARGE viewport (URL bar retracted) and does NOT
+     track the dynamic viewport. On mobile the address bar shows/hides as you
+     scroll, which resizes a plain `inset: 0` / `100vh` fixed box — that made the
+     cover-sized layer images visibly rescale ("reload") every time scrolling
+     stopped. `100lvh` stays constant across that toggle, so the art holds still.
+     100vh is the fallback for browsers without large-viewport units. */
+  height: 100vh;
+  height: 100lvh;
   z-index: var(--z-backdrop);
   pointer-events: none;
   overflow: hidden;

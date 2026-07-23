@@ -277,9 +277,10 @@ const projects: Project[] = [
     [data-projects-log] {
       display: flex;
       grid-template-columns: none;
-      /* Cards keep their natural height instead of all stretching to the tallest
-         (the Fiora gallery card) — that stretch was the huge empty space. */
-      align-items: flex-start;
+      /* Uniform card height now that the description is clamped: every card
+         stretches to the tallest, so the carousel reads as one clean row
+         instead of the old ragged 360–720px spread. */
+      align-items: stretch;
       gap: 1rem;
       overflow-x: auto;
       scroll-snap-type: x mandatory;
@@ -294,11 +295,37 @@ const projects: Project[] = [
     }
 
     [data-project-entry] {
-      flex: 0 0 85%;
+      flex: 0 0 86%;
       scroll-snap-align: center;
       border-top: 0;
       padding-top: 0;
       padding-bottom: 0;
+    }
+
+    /* GlassSurface fills the stretched card as a flex column. (`:global` because
+       .liquid-glass is rendered by GlassSurface, outside this component's scope.) */
+    [data-project-entry] > :global(.liquid-glass) {
+      display: flex;
+      height: 100%;
+      flex-direction: column;
+    }
+
+    /* Clamp the description so the long entries (Fiora, JapaniRacer) no longer
+       run the card off-screen; the tail below (chips / gallery) stays visible. */
+    [data-project-desc] {
+      display: -webkit-box;
+      -webkit-line-clamp: 5;
+      line-clamp: 5;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  /* Desktop: even out the log entries so a one-line project (Orquestia) isn't a
+     stub next to a gallery card — a shared floor keeps the column rhythm calm. */
+  @media (min-width: 768px) {
+    [data-project-entry] > :global(.liquid-glass) {
+      min-height: 20rem;
     }
   }
 

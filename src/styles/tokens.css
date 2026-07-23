@@ -56,7 +56,7 @@
   --glass-blur: 14px;
   --glass-blur-mobile: 8px; /* lighter blur on touch — protects mobile LCP budget */
   --glass-saturate: 1.4;
-  --glass-radius: 1.1rem;
+  --glass-radius: 0.5rem; /* technical edge — softened, not pillowed */
 
   /* ── Typography: variable fonts, self-hosted ──────────────── */
   /* Display: DM Mono (technical/geometric — monospaced precision)
