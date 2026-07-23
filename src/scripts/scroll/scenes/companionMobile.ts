@@ -6,7 +6,9 @@
  * signature panda entirely. This is the touch-native counterpart: a compact
  * corner buddy that
  *   · swaps pose per section via per-section ScrollTriggers (work on native
- *     touch scroll — no ScrollSmoother needed),
+ *     touch scroll — no ScrollSmoother needed); it stays HIDDEN during the
+ *     hero — the centerpiece panda owns that view — and first appears when
+ *     Projects scrolls in,
  *   · bobs gently while idle,
  *   · follows device tilt instead of the cursor (touch-tilt.ts → `tilt:change`),
  *   · reacts to a tap with a wave, and grants iOS motion access on that tap.
@@ -31,10 +33,12 @@ type PoseName = 'hero' | 'master' | 'coding' | 'wave' | 'head';
 const MOBILE_QUERY = '(max-width: 1023px)';
 const VISIBLE_OPACITY = 0.95;
 
-// Pose shown while each section is the active one. Hero greets + Contact says
-// goodbye with the wave; Confidential uses the redacted head silhouette guard.
+// Pose shown while each section is the active one. The HERO is deliberately
+// absent: the hero already shows the big centerpiece panda on mobile, so the
+// corner buddy stays hidden there (no double panda) and first appears at
+// Projects. Contact says goodbye with the wave; Confidential uses the redacted
+// head silhouette guard.
 const SECTION_POSE: Record<string, PoseName> = {
-  hero: 'wave',
   projects: 'coding',
   confidential: 'head',
   skills: 'master',
@@ -99,6 +103,18 @@ const companionMobileScene = (el: Element): Scene => {
           });
         }
 
+        // Hide the buddy (used while the hero is on screen — its centerpiece
+        // panda already owns that view).
+        function hideStage(): void {
+          gsap.to(stage, {
+            opacity: 0,
+            y: 16,
+            duration: 0.4,
+            ease: 'power2.in',
+            overwrite: 'auto',
+          });
+        }
+
         // ── Idle bob (look-y channel; tilt only writes x + rotation) ─────────
         const bob = gsap.to(look, {
           y: -6,
@@ -136,6 +152,20 @@ const companionMobileScene = (el: Element): Scene => {
 
         // ── Per-section pose route ───────────────────────────────────────────
         const triggers: ScrollTrigger[] = [];
+
+        // Hero guard: the buddy first appears when Projects scrolls in and
+        // drops back out of sight when the user returns to the hero.
+        const projects = document.getElementById('projects');
+        if (projects) {
+          triggers.push(
+            ScrollTrigger.create({
+              trigger: projects,
+              start: 'top 70%',
+              onLeaveBack: () => hideStage(),
+            })
+          );
+        }
+
         for (const [id, pose] of Object.entries(SECTION_POSE)) {
           const section = document.getElementById(id);
           if (!section) continue;

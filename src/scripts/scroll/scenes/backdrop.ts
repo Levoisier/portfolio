@@ -4,6 +4,16 @@
  * This scene listens to the controller's page-level `scroll:progress` event
  * instead of section-local progress so the fixed stage moves as one narrative
  * layer behind every section.
+ *
+ * Performance contract (the stage was the main startup-jank source):
+ *   · Responsive sources — a 1280/1920 generated variant is picked per the
+ *     effective viewport width so phones/laptops never decode the 2560px art.
+ *   · Sequential loading — layers download + decode one at a time (async,
+ *     low fetch priority), back to front, so they never compete with the LCP
+ *     panda or block the main thread with three simultaneous webp decodes.
+ *   · Per-frame writes go through cached gsap.quickSetter functions (no tween
+ *     allocation per scroll tick) and skip when progress hasn't meaningfully
+ *     changed. Viewport height is cached and refreshed on resize.
  */
 
 import gsap from 'gsap';
@@ -14,30 +24,44 @@ type BackdropLayer = {
   fill: HTMLElement; // INNER .stage-depth — receives the background image
   path: string;
   rate: number;
-  drift?: number;
+  drift: number;
+  setX: (value: number) => void;
+  setY: (value: number) => void;
+  setOpacity: ((value: number) => void) | null;
 };
 
 const LAYER_CONFIG = [
-  { id: 'stage-atmosphere', path: '/media/backdrop/atmosphere.webp', rate: 0.05 },
-  { id: 'stage-mid-glass', path: '/media/backdrop/mid-glass.webp', rate: 0.15, drift: 32 },
-  { id: 'stage-particles', path: '/media/backdrop/particles.webp', rate: 0.3 },
+  { id: 'stage-atmosphere', name: 'atmosphere', rate: 0.05 },
+  { id: 'stage-mid-glass', name: 'mid-glass', rate: 0.15, drift: 32 },
+  { id: 'stage-particles', name: 'particles', rate: 0.3 },
 ] as const;
 
-function loadLayer(layer: BackdropLayer): void {
-  const image = new Image();
+/** Smallest generated variant that still covers the effective viewport width. */
+function layerPath(name: string): string {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const effectiveWidth = window.innerWidth * dpr;
 
-  image.onload = () => {
+  if (effectiveWidth <= 1280) return `/media/backdrop/generated/${name}-1280.webp`;
+  if (effectiveWidth <= 1920) return `/media/backdrop/generated/${name}-1920.webp`;
+  return `/media/backdrop/${name}.webp`;
+}
+
+/** Download + decode off the critical path, then fade the fill in. */
+async function loadLayer(layer: BackdropLayer): Promise<void> {
+  const image = new Image();
+  image.decoding = 'async';
+  image.setAttribute('fetchpriority', 'low');
+  image.src = layer.path;
+
+  try {
+    await image.decode();
     layer.fill.style.backgroundImage = `url("${layer.path}")`;
     // Fade the image in over the base gradient so it never hard-pops.
     gsap.fromTo(layer.fill, { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'sine.out' });
-  };
-
-  image.onerror = () => {
+  } catch {
     layer.fill.style.backgroundImage = '';
     gsap.set(layer.fill, { opacity: 1 });
-  };
-
-  image.src = layer.path;
+  }
 }
 
 function atmosphereOpacity(progress: number): number {
@@ -48,30 +72,45 @@ function atmosphereOpacity(progress: number): number {
 const backdropScene = (_el: Element): Scene => {
   let layers: BackdropLayer[] = [];
   let progressHandler: ((event: Event) => void) | null = null;
+  let resizeHandler: (() => void) | null = null;
+  let viewportHeight = 0;
+  let lastProgress = -1;
 
   function render(progress: number): void {
-    layers.forEach((layer) => {
-      const y = -window.innerHeight * layer.rate * progress;
-      const x = (layer.drift ?? 0) * progress;
-      const opacity = layer.path.includes('atmosphere') ? atmosphereOpacity(progress) : 1;
+    if (Math.abs(progress - lastProgress) < 0.0005) return;
+    lastProgress = progress;
 
-      gsap.set(layer.el, {
-        x,
-        y,
-        opacity,
-      });
+    layers.forEach((layer) => {
+      layer.setY(-viewportHeight * layer.rate * progress);
+      layer.setX(layer.drift * progress);
+      layer.setOpacity?.(atmosphereOpacity(progress));
     });
   }
 
   return {
     init() {
+      viewportHeight = window.innerHeight;
+
       layers = LAYER_CONFIG.flatMap((config) => {
         const el = document.getElementById(config.id);
         const fill = el?.querySelector<HTMLElement>('.stage-depth') ?? null;
-        const drift = 'drift' in config ? config.drift : undefined;
 
         return el instanceof HTMLElement && fill instanceof HTMLElement
-          ? [{ el, fill, path: config.path, rate: config.rate, drift }]
+          ? [
+              {
+                el,
+                fill,
+                path: layerPath(config.name),
+                rate: config.rate,
+                drift: 'drift' in config ? config.drift : 0,
+                setX: gsap.quickSetter(el, 'x', 'px') as (value: number) => void,
+                setY: gsap.quickSetter(el, 'y', 'px') as (value: number) => void,
+                setOpacity:
+                  config.name === 'atmosphere'
+                    ? (gsap.quickSetter(el, 'opacity') as (value: number) => void)
+                    : null,
+              },
+            ]
           : [];
       });
 
@@ -79,20 +118,30 @@ const backdropScene = (_el: Element): Scene => {
         // Start the image transparent so it can fade in on decode. The outer
         // layer stays fully opaque.
         gsap.set(layer.fill, { opacity: 0 });
-        loadLayer(layer);
         gsap.set(layer.el, { x: 0, y: 0, opacity: 1 });
       });
+
+      // Back-to-front chain: each layer starts only after the previous one has
+      // decoded, so startup never pays for three decodes at once.
+      void layers.reduce((chain, layer) => chain.then(() => loadLayer(layer)), Promise.resolve());
 
       progressHandler = (event: Event) => {
         const progress = (event as CustomEvent<{ progress: number }>).detail?.progress ?? 0;
         render(progress);
       };
 
+      resizeHandler = () => {
+        viewportHeight = window.innerHeight;
+        lastProgress = -1; // force a re-render with the new metrics
+      };
+
       window.addEventListener('scroll:progress', progressHandler);
+      window.addEventListener('resize', resizeHandler);
       render(0);
     },
 
     enter() {
+      lastProgress = -1;
       render(0);
     },
 
@@ -107,6 +156,9 @@ const backdropScene = (_el: Element): Scene => {
     destroy() {
       if (progressHandler) {
         window.removeEventListener('scroll:progress', progressHandler);
+      }
+      if (resizeHandler) {
+        window.removeEventListener('resize', resizeHandler);
       }
 
       layers.forEach((layer) => {

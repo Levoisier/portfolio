@@ -89,6 +89,21 @@ Source: real device screenshots (Android), optimized to WebP.
 | `/media/backdrop/mid-glass.webp`  | 2560×1440  | Mid parallax layer (glassware silhouettes) | Y           | final  |
 | `/media/backdrop/particles.webp`  | 2560×1440  | Foreground particle drift layer            | Y           | final  |
 
+### Generated Backdrop Derivatives
+
+Responsive variants picked by the backdrop scene at runtime (≤1280 effective px
+→ `-1280`, ≤1920 → `-1920`, larger → original). Derived with sharp (webp q78);
+regenerate after replacing a source layer.
+
+| Path                                             | Dimensions | Source                            | Purpose / Scene       | Transparent | Status    |
+| ------------------------------------------------ | ---------- | --------------------------------- | --------------------- | ----------- | --------- |
+| `/media/backdrop/generated/atmosphere-1280.webp` | 1280×754   | `/media/backdrop/atmosphere.webp` | Mobile back layer     | N           | generated |
+| `/media/backdrop/generated/atmosphere-1920.webp` | 1920×1132  | `/media/backdrop/atmosphere.webp` | Laptop back layer     | N           | generated |
+| `/media/backdrop/generated/mid-glass-1280.webp`  | 1280×714   | `/media/backdrop/mid-glass.webp`  | Mobile mid layer      | Y           | generated |
+| `/media/backdrop/generated/mid-glass-1920.webp`  | 1920×1071  | `/media/backdrop/mid-glass.webp`  | Laptop mid layer      | Y           | generated |
+| `/media/backdrop/generated/particles-1280.webp`  | 1280×694   | `/media/backdrop/particles.webp`  | Mobile particle layer | Y           | generated |
+| `/media/backdrop/generated/particles-1920.webp`  | 1920×1041  | `/media/backdrop/particles.webp`  | Laptop particle layer | Y           | generated |
+
 ## Lab Decor
 
 | Path                               | Dimensions | Purpose / Scene                                    | Transparent | Status |

@@ -5,7 +5,8 @@ type TileRecord = {
   tile: HTMLElement;
   card: HTMLElement;
   badge: HTMLElement | null;
-  bar: HTMLElement | null;
+  liquid: HTMLElement | null;
+  slosh: gsap.core.Tween | null;
   proficiency: number;
 };
 
@@ -49,13 +50,30 @@ const skillsScene = (el: Element): Scene => {
         });
       }
 
-      if (record.bar) {
-        gsap.to(record.bar, {
-          scaleX: isActive ? record.proficiency / 100 : 0,
-          duration: 0.25,
-          ease: 'expo.out',
+      if (record.liquid) {
+        // The fill's height IS the proficiency level (set in markup), so the
+        // pour is just a slide: below the card (yPercent 100) → in place (0).
+        // While filled, a gentle rotation slosh tilts the rounded surface so
+        // it reads as liquid settling in a vessel. Separate transform channels
+        // (y vs rotation) with overwrite:'auto' so they never kill each other.
+        gsap.to(record.liquid, {
+          yPercent: isActive ? 0 : 102,
+          duration: isActive ? 0.7 : 0.45,
+          ease: isActive ? 'power3.out' : 'power2.in',
           overwrite: 'auto',
         });
+
+        if (isActive && !record.slosh) {
+          record.slosh = gsap.fromTo(
+            record.liquid,
+            { rotation: -2.2 },
+            { rotation: 2.2, duration: 1.1, ease: 'sine.inOut', yoyo: true, repeat: -1 }
+          );
+        } else if (!isActive && record.slosh) {
+          record.slosh.kill();
+          record.slosh = null;
+          gsap.to(record.liquid, { rotation: 0, duration: 0.4, ease: 'sine.out' });
+        }
       }
     });
   }
@@ -85,9 +103,9 @@ const skillsScene = (el: Element): Scene => {
 
         const proficiency = Number(tile.dataset['proficiency'] ?? 0);
         const badge = tile.querySelector<HTMLElement>('[data-category-badge]');
-        const bar = tile.querySelector<HTMLElement>('[data-proficiency-bar]');
+        const liquid = tile.querySelector<HTMLElement>('[data-skill-liquid]');
 
-        tiles.push({ tile, card, badge, bar, proficiency });
+        tiles.push({ tile, card, badge, liquid, slosh: null, proficiency });
       });
 
       const cardEls = tiles.map((record) => record.card);
@@ -118,8 +136,8 @@ const skillsScene = (el: Element): Scene => {
         { opacity: 0 }
       );
       gsap.set(
-        tiles.flatMap((record) => (record.bar ? [record.bar] : [])),
-        { scaleX: 0, transformOrigin: '0% 50%' }
+        tiles.flatMap((record) => (record.liquid ? [record.liquid] : [])),
+        { y: 0, yPercent: 102, rotation: 0 }
       );
     },
 
@@ -137,11 +155,12 @@ const skillsScene = (el: Element): Scene => {
 
     destroy() {
       cleanup.splice(0).forEach((dispose) => dispose());
+      tiles.forEach((record) => record.slosh?.kill());
       gsap.killTweensOf(
-        tiles.map((record) => [record.tile, record.card, record.badge, record.bar]).flat()
+        tiles.map((record) => [record.tile, record.card, record.badge, record.liquid]).flat()
       );
       tiles.forEach((record) => {
-        gsap.set([record.tile, record.card, record.badge, record.bar], {
+        gsap.set([record.tile, record.card, record.badge, record.liquid], {
           clearProps: 'opacity,transform,visibility',
         });
       });

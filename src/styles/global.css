@@ -238,16 +238,36 @@
 }
 
 /* OUTER layer — backdrop scene drives parallax (x/y) + atmosphere opacity here.
-   Overscanned well beyond the viewport so the parallax translate (up to ~30% of
-   viewport height and a sideways drift) never exposes an empty edge — this is
-   what fixed the "left side cut" + buggy-seam look on mobile. */
+   Each layer is overscanned only as far as ITS maximum travel (parallax y is
+   -rate × viewport, mid-glass drifts up to +32px right, the hero pin scales the
+   atmosphere/particles depth UP) so no edge is ever exposed — the old uniform
+   120%×155% box promoted ~11 viewports of GPU layer memory and was a large part
+   of the startup lag. Only the outer layer keeps will-change: it animates on
+   every scroll tick; the inner depth is promoted by GSAP during the hero pin. */
 #scroll-stage .stage-layer {
   position: absolute;
-  top: -8%;
-  left: -10%;
-  width: 120%;
-  height: 155%;
-  will-change: transform, opacity;
+  top: 0;
+  left: 0;
+  width: 100%;
+  will-change: transform;
+}
+
+#stage-atmosphere {
+  /* rate 0.05 → max 5vh upward + hero depth scale 1.05 */
+  height: 110%;
+}
+
+#stage-mid-glass {
+  /* rate 0.15 → max 15vh upward; +32px x drift needs fixed px cover on the
+     left (a % would be thinner than the drift on narrow phones) */
+  left: -48px;
+  width: calc(100% + 48px);
+  height: 120%;
+}
+
+#stage-particles {
+  /* rate 0.3 → max 30vh upward + hero depth y:-60/scale 1.18 */
+  height: 142%;
 }
 
 /* INNER depth — carries the image; hero pin drives depth (scale/translate) here.
@@ -259,7 +279,6 @@
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  will-change: transform, opacity;
 }
 
 /* ─── Fixed panda companion ────────────────────────────────────────────────── */
@@ -371,6 +390,28 @@
   #panda-companion-mobile {
     display: none;
   }
+}
+
+/* ─── Hero presentation veil ──────────────────────────────────────────────────
+   A full-bleed curtain behind the hero content (and above the fixed backdrop
+   stage) so the first view reads as a calm presentation surface — panda + name
+   on the palette gradient, no parallax art. The hero scene fades it out on
+   scroll (scrubbed with the desktop pin; plain scrub on mobile) so the stage
+   layers "appear behind". Opacity-only (compositor-cheap) and painted from
+   static markup, so the first frame never waits on JS. Same gradient family as
+   the #scroll-stage base fill, slightly denser, so the reveal reads as the art
+   emerging rather than a color swap. */
+#hero-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    color-mix(in srgb, var(--navy) 62%, var(--ink)),
+    var(--ink) 82%
+  );
+  will-change: opacity;
 }
 
 /* ─── Hero name ───────────────────────────────────────────────────────────────
