@@ -71,6 +71,15 @@ const srcsetFor = (base: string) =>
 
     <title>{title}</title>
 
+    <!-- Marks that scripting is available, before first paint. Anything that is
+         hidden in CSS *because* JS will animate it in must be gated on this, so
+         a blocked or failed script can never leave content permanently
+         invisible (see `html.js .hero-char` in global.css). Inline and first in
+         <head> so it applies to the very first painted frame. -->
+    <script is:inline>
+      document.documentElement.classList.add('js');
+    </script>
+
     <!-- Canonical scroll-position hint for ScrollTrigger -->
     <style>
       /* Prevent lower-section FOUC before GSAP initialises; keep hero paintable for LCP.
@@ -194,16 +203,48 @@ const srcsetFor = (base: string) =>
       }
     </script>
 
-    <!-- GSAP ScrollTrigger controller — deferred so static hero content can paint first. -->
+    <!-- Hero copy entrance. Deliberately NOT part of the deferred controller:
+         this is the site's first impression and must play on arrival, not after
+         ~51 KB gzip of GSAP has downloaded and mounted. ~1 KB, no dependencies. -->
+    <script>
+      import { initHeroEntrance } from '../scripts/heroEntrance';
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHeroEntrance);
+      } else {
+        initHeroEntrance();
+      }
+    </script>
+
+    <!-- GSAP ScrollTrigger controller — mounted as soon as the LCP panda has
+         painted, and not before.
+
+         This used to wait for `requestIdleCallback(…, { timeout: 1200 })`. On a
+         throttled phone the main thread is busy through that whole window, so it
+         always hit the timeout and mounted at ~1.27s — a second AFTER the hero
+         name had been painted and read. The scene then set the name to
+         opacity 0 and re-animated it, which read as the title blinking out.
+
+         Gating on the LCP image's decode keeps the original intent (never put
+         GSAP's ~180ms mount in front of the largest paint) but expresses it
+         precisely instead of guessing with a timeout, so the hero entrance now
+         plays on arrival. The double rAF guarantees a frame has actually been
+         presented before the mount task starts. -->
     <script>
       const mountScrollController = () => import('../scripts/scroll/controller.ts');
-      const requestIdle = window.requestIdleCallback;
 
-      if (requestIdle) {
-        requestIdle(mountScrollController, { timeout: 1200 });
-      } else {
-        globalThis.setTimeout(mountScrollController, 800);
-      }
+      const lcpImage = document.getElementById('panda-body') as HTMLImageElement | null;
+      const lcpPainted = lcpImage?.decode
+        ? lcpImage.decode().catch(() => undefined)
+        : Promise.resolve();
+
+      // Safety net: mount anyway if decode() never settles (image failed, or a
+      // browser that resolves it oddly). Everything below the fold is
+      // opacity:0 until the controller runs, so this must never be skipped.
+      const fallback = new Promise((resolve) => globalThis.setTimeout(resolve, 1200));
+
+      void Promise.race([lcpPainted, fallback]).then(() =>
+        requestAnimationFrame(() => requestAnimationFrame(mountScrollController))
+      );
     </script>
   </body>
 </html>

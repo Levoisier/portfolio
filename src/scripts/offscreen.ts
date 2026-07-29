@@ -28,8 +28,8 @@
 const ROOT_MARGIN = '100% 0px';
 
 export function initOffscreenGating(): void {
-  const surfaces = document.querySelectorAll<HTMLElement>('.liquid-glass');
-  if (!surfaces.length || typeof IntersectionObserver === 'undefined') return;
+  const targets = document.querySelectorAll<HTMLElement>('.liquid-glass');
+  if (!targets.length || typeof IntersectionObserver === 'undefined') return;
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -40,5 +40,5 @@ export function initOffscreenGating(): void {
     { rootMargin: ROOT_MARGIN }
   );
 
-  surfaces.forEach((surface) => observer.observe(surface));
+  targets.forEach((target) => observer.observe(target));
 }

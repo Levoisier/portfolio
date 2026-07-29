@@ -483,10 +483,27 @@
   display: inline-block;
 }
 
-@media (min-width: 1024px) {
-  #hero-name {
-    font-size: clamp(3rem, 5vw, 5.5rem);
-  }
+/* ─── Hero entrance (opening frame only) ─────────────────────────────────────
+   The entrance itself is driven by src/scripts/heroEntrance.ts using the Web
+   Animations API — NOT by CSS keyframes. ScrollTrigger's desktop hero pin
+   re-parents #hero into a .pin-spacer when the controller mounts, and that
+   re-insertion restarts CSS animations (measured: parent flips to pin-spacer at
+   1551ms, entrance restarts at 1551ms). WAAPI animations belong to the element
+   and survive the move.
+
+   All this rule does is hold the opening frame so nothing flashes in the gap
+   between first paint and that module running. Gated on `.js` (set by an inline
+   script in Layout.astro's <head>) so that with scripting unavailable the copy
+   renders plainly instead of being stuck invisible.
+
+   Do NOT add `transform` here: heroEntrance.ts owns the transform channel, and
+   seeding a CSS translate under an element whose transform is animated
+   elsewhere is its own trap (see LESSONS 2026-07-23). */
+html.js #hero-premise,
+html.js #hero-role,
+html.js .hero-char,
+html.js #hero-scroll-hint {
+  opacity: 0;
 }
 
 /* ─── Section wrappers ────────────────────────────────────────────────────── */

@@ -34,6 +34,7 @@ import GlassSurface from '../ui/GlassSurface.astro';
    Built as a string (not JSX) so no template whitespace can slip between the
    character spans and open gaps inside the words. */
 const HERO_NAME = 'Cristian Zapata Cartagena';
+
 const heroNameHtml = HERO_NAME.split(' ')
   .map((word) =>
     [...word].map((char) => `<span class="hero-char" aria-hidden="true">${char}</span>`).join('')
@@ -96,7 +97,7 @@ const heroNameHtml = HERO_NAME.split(' ')
         <p
           id="hero-premise"
           class="font-display mb-4 uppercase tracking-[0.18em] sm:tracking-[0.24em]"
-          style="font-size: var(--text-sm); color: var(--paper); opacity: 0;"
+          style="font-size: var(--text-sm); color: var(--paper);"
           data-i18n="hero.premise"
         >
           Conoce un poco de mi trabajo
@@ -117,7 +118,7 @@ const heroNameHtml = HERO_NAME.split(' ')
         <p
           id="hero-role"
           class="font-body mt-4 uppercase tracking-widest"
-          style="font-size: var(--text-lg); color: var(--scarlet); opacity: 0;"
+          style="font-size: var(--text-lg); color: var(--scarlet);"
         >
           <span class="block" data-i18n="hero.role.line1">Full Stack Developer &amp;</span>
           <span class="block" data-i18n="hero.role.line2">Ingeniero Químico</span>
@@ -126,13 +127,9 @@ const heroNameHtml = HERO_NAME.split(' ')
     </div>
   </div>
 
-  <!-- Scroll hint -->
-  <div
-    id="hero-scroll-hint"
-    class="absolute bottom-8 left-1/2 -translate-x-1/2"
-    style="opacity: 0;"
-    aria-hidden="true"
-  >
+  <!-- Scroll hint — faded in, then bobbed, by heroEntrance.ts (which also parks
+       the bob once the hero leaves the viewport). -->
+  <div id="hero-scroll-hint" class="absolute bottom-8 left-1/2 -translate-x-1/2" aria-hidden="true">
     <!-- Inline SVG chevron so no extra asset request -->
     <svg width="24" height="40" viewBox="0 0 24 40" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path

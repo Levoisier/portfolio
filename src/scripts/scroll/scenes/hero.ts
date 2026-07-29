@@ -28,41 +28,22 @@
 import gsap from 'gsap';
 import type { Scene } from '../types';
 
-/**
- * Collect the hero name's character spans for the stagger.
- *
- * These are emitted by Hero.astro at BUILD time (`heroNameHtml`), already one
- * word per line with `<br>` between words. This function only reads them — it
- * must never rewrite `#hero-name`. Rebuilding the name here is what used to
- * reflow the hero when the deferred controller mounted and produced the site's
- * only layout shift (CLS 0.076). Keep this read-only.
- */
-function readChars(el: HTMLElement): HTMLElement[] {
-  return Array.from(el.querySelectorAll<HTMLElement>('.hero-char'));
-}
-
 const heroScene = (_el: Element): Scene => {
-  let tl: gsap.core.Timeline | null = null;
-  let bobTween: gsap.core.Tween | null = null;
-  let chars: HTMLElement[] = [];
   let mm: gsap.MatchMedia | null = null;
 
   return {
     init(_el: Element) {
-      const nameEl = document.getElementById('hero-name');
-      if (nameEl) {
-        chars = readChars(nameEl);
-        gsap.set(chars, { opacity: 0, x: -24 });
-      }
-
-      const premiseEl = document.getElementById('hero-premise');
-      const roleEl = document.getElementById('hero-role');
-      const scrollHint = document.getElementById('hero-scroll-hint');
+      // NOTE: the hero copy entrance (premise → name stagger → role → scroll
+      // hint → idle bob) is NOT here. It is a CSS animation in global.css so it
+      // plays at first paint instead of waiting for this deferred controller to
+      // download and mount — which measured ~1.6s on a throttled phone and made
+      // the name blink out after it had already been read. Do not re-add GSAP
+      // writes to #hero-premise, #hero-name/.hero-char, #hero-role or
+      // #hero-scroll-hint; CSS owns their opacity and transform now.
+      //
+      // This scene owns only scroll-driven work: the veil, the pinned depth
+      // scrub, and the reaction glow.
       const reactionGlow = document.getElementById('hero-reaction-glow');
-
-      gsap.set(premiseEl, { opacity: 0, y: 14 });
-      gsap.set(roleEl, { opacity: 0, y: 20 });
-      gsap.set(scrollHint, { opacity: 0 });
       gsap.set(reactionGlow, { opacity: 0, scale: 0.85 });
 
       // ── Desktop pinned depth intro ───────────────────────────────────────────
@@ -137,49 +118,13 @@ const heroScene = (_el: Element): Scene => {
     },
 
     enter() {
-      if (tl) tl.kill();
-      bobTween?.kill();
-      bobTween = null;
-
-      const premiseEl = document.getElementById('hero-premise');
-      const roleEl = document.getElementById('hero-role');
-      const scrollHint = document.getElementById('hero-scroll-hint');
-
-      tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
-
-      tl.to(premiseEl, { opacity: 1, y: 0, duration: 0.5 })
-        .to(
-          chars,
-          {
-            opacity: 1,
-            x: 0,
-            duration: 0.6,
-            stagger: { each: 0.035, from: 'start' },
-          },
-          '-=0.2'
-        )
-        .to(roleEl, { opacity: 1, y: 0, duration: 0.6 })
-        .to(
-          scrollHint,
-          { opacity: 1, duration: 0.4, onComplete: () => bobTween?.play(0) },
-          '+=0.1'
-        );
-
-      // Bob loop for scroll hint
-      if (scrollHint) {
-        bobTween = gsap.to(scrollHint, {
-          y: 8,
-          duration: 0.8,
-          ease: 'sine.inOut',
-          yoyo: true,
-          repeat: -1,
-          paused: true,
-        });
-      }
+      // The copy entrance is a CSS animation that has already played by the
+      // time this runs (see init). The scroll-hint's idle bob is a CSS loop too,
+      // parked by offscreen.ts when the hero leaves the viewport.
     },
 
     leave() {
-      bobTween?.pause();
+      // Nothing to pause — see enter().
     },
 
     progress(_p: number) {
@@ -188,8 +133,6 @@ const heroScene = (_el: Element): Scene => {
     },
 
     destroy() {
-      tl?.kill();
-      bobTween?.kill();
       mm?.revert();
     },
   };
