@@ -46,11 +46,42 @@ Cristian generates final assets with **Nano Banana**.
 
 These files are derived from canonical Panda sources for responsive delivery. Regenerate them after replacing the matching source asset.
 
-| Path                                         | Dimensions | Source                        | Purpose / Scene         | Transparent | Status    |
-| -------------------------------------------- | ---------- | ----------------------------- | ----------------------- | ----------- | --------- |
-| `/media/panda/generated/panda-hero-320.webp` | 320×400    | `/media/panda/panda-hero.png` | Hero LCP mobile source  | Y           | generated |
-| `/media/panda/generated/panda-hero-480.webp` | 480×600    | `/media/panda/panda-hero.png` | Hero LCP tablet source  | Y           | generated |
-| `/media/panda/generated/panda-hero-800.webp` | 800×1000   | `/media/panda/panda-hero.png` | Hero LCP desktop source | Y           | generated |
+**Regenerate with `node scripts/generate-panda-derivatives.mjs`** — except the
+three `panda-hero-*` LCP files, which that script deliberately does not touch
+(see the note below the table).
+
+| Path                                              | Dimensions | Source                          | Purpose / Scene                 | Transparent | Status    |
+| ------------------------------------------------- | ---------- | ------------------------------- | ------------------------------- | ----------- | --------- |
+| `/media/panda/generated/panda-hero-320.webp`      | 320×320    | `/media/panda/panda-hero.png`   | Hero LCP mobile source          | Y           | generated |
+| `/media/panda/generated/panda-hero-480.webp`      | 480×480    | `/media/panda/panda-hero.png`   | Hero LCP tablet source          | Y           | generated |
+| `/media/panda/generated/panda-hero-800.webp`      | 800×800    | `/media/panda/panda-hero.png`   | Hero LCP desktop source         | Y           | generated |
+| `/media/panda/generated/panda-hero-pose-320.webp` | 320×452    | `/media/panda/panda-hero.png`   | Companion + party `hero` pose   | Y           | generated |
+| `/media/panda/generated/panda-hero-pose-480.webp` | 480×678    | `/media/panda/panda-hero.png`   | Companion + party `hero` pose   | Y           | generated |
+| `/media/panda/generated/panda-master-320.webp`    | 320×320    | `/media/panda/panda-master.png` | Companion + party `master` pose | Y           | generated |
+| `/media/panda/generated/panda-master-480.webp`    | 480×480    | `/media/panda/panda-master.png` | Companion + party `master` pose | Y           | generated |
+| `/media/panda/generated/panda-coding-320.webp`    | 320×320    | `/media/panda/panda-coding.png` | Companion + party `coding` pose | Y           | generated |
+| `/media/panda/generated/panda-coding-480.webp`    | 480×480    | `/media/panda/panda-coding.png` | Companion + party `coding` pose | Y           | generated |
+| `/media/panda/generated/panda-wave-320.webp`      | 320×389    | `/media/panda/panda-wave.png`   | Companion + party `wave` pose   | Y           | generated |
+| `/media/panda/generated/panda-wave-480.webp`      | 480×583    | `/media/panda/panda-wave.png`   | Companion + party `wave` pose   | Y           | generated |
+| `/media/panda/generated/panda-head-320.webp`      | 320×301    | `/media/panda/panda-head.png`   | Companion + party `head` pose   | Y           | generated |
+| `/media/panda/generated/panda-head-480.webp`      | 480×451    | `/media/panda/panda-head.png`   | Companion + party `head` pose   | Y           | generated |
+
+> **Two ladders for one source.** `panda-hero-*` and `panda-hero-pose-*` are both
+> derived from `panda-hero.png` but are NOT interchangeable. The `panda-hero-*`
+> ladder is **square-cropped** — it is letterboxed inside `#panda-body`'s fixed
+> `aspect-[4/5]` box with `object-contain`, and it is the LCP element. The
+> `panda-hero-pose-*` ladder is **proportional** to the 847×1196 source, which is
+> what the companion rigs and the Contact party row render. Swapping one for the
+> other changes the composition. `scripts/generate-panda-derivatives.mjs` only
+> emits the proportional ladder; if `panda-hero.png` is ever replaced, redo the
+> square crop by hand.
+
+> **The canonical PNGs are no longer served.** The five ~1 MB poses are sources
+> only — the companions and the party row reference the WebP derivatives above
+> via `srcset`. They were 82% of the page's transfer weight when they were
+> requested directly. The one remaining reference to `panda-hero.png` is the
+> `<img src>` fallback inside the hero `<picture>`, which no browser fetches
+> because both `<source>` media queries cover every viewport.
 
 > **Project media note.** The v3 Featured Projects section is a card-less
 > experiment log and mostly does not reference project screenshots — it uses
@@ -141,7 +172,19 @@ The following visual elements are rendered entirely in CSS/SVG and do not need i
 
 ## Fonts (self-hosted, not in `/media/`)
 
-| Path                                        | Purpose                                    | Status |
-| ------------------------------------------- | ------------------------------------------ | ------ |
-| `/fonts/DMMono-VariableFont_wght.woff2`     | Display / headings — static fallback       | placed |
-| `/fonts/Inter-VariableFont_opsz,wght.woff2` | Body copy — variable weight + optical size | placed |
+| Path                                        | Purpose                                    | Size  | Status       |
+| ------------------------------------------- | ------------------------------------------ | ----- | ------------ |
+| `/fonts/DMMono-VariableFont_wght.woff2`     | Display / headings — static fallback       | 9 KB  | latin subset |
+| `/fonts/Inter-VariableFont_opsz,wght.woff2` | Body copy — variable weight + optical size | 98 KB | latin subset |
+
+> **Both files are subset in place** by `node scripts/subset-fonts.mjs` to
+> Google's `latin` range (393 KB → 107 KB). The paths are unchanged, so the swap
+> contract holds. The script is idempotent; the full upstream files are in git
+> history if a wider range is ever needed. Two things to keep in mind:
+>
+> - The `unicode-range` descriptors in `global.css` must MATCH the subset.
+>   `unicode-range` only decides whether the file downloads — declaring a
+>   narrower range than the file contains silently pushes real glyphs to a
+>   fallback font. The previous `U+0000-00FF` did that to the em dash.
+> - Despite its filename, **DM Mono has no variable axes** — the upstream file is
+>   static. Inter's `opsz` + `wght` axes survive subsetting and still work.

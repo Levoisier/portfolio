@@ -14,12 +14,16 @@
    so it simply reverts to its plain resting circle — no jump, no motion.
 */
 
+/* Party items paint at clamp(3.4rem, 12vw, 6rem) — 96px max, so the 320w
+   derivative already covers 3× DPR. The canonical PNGs (~1 MB each) are never
+   requested here; see scripts/generate-panda-derivatives.mjs + ASSETS.md.
+   `hero` keeps its own square-cropped ladder (LCP asset, different crop). */
 const pandaParty = [
-  { pose: 'wave', src: '/media/panda/panda-wave.png', width: 160, height: 200 },
-  { pose: 'hero', src: '/media/panda/panda-hero.png', width: 160, height: 200 },
-  { pose: 'coding', src: '/media/panda/panda-coding.png', width: 160, height: 200 },
-  { pose: 'master', src: '/media/panda/panda-master.png', width: 160, height: 160 },
-  { pose: 'head', src: '/media/panda/panda-head.png', width: 160, height: 160 },
+  { pose: 'wave', src: '/media/panda/generated/panda-wave-320.webp', width: 160, height: 200 },
+  { pose: 'hero', src: '/media/panda/generated/panda-hero-pose-320.webp', width: 160, height: 200 },
+  { pose: 'coding', src: '/media/panda/generated/panda-coding-320.webp', width: 160, height: 200 },
+  { pose: 'master', src: '/media/panda/generated/panda-master-320.webp', width: 160, height: 160 },
+  { pose: 'head', src: '/media/panda/generated/panda-head-320.webp', width: 160, height: 160 },
 ];
 ---
 

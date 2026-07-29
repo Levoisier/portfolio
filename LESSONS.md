@@ -334,3 +334,43 @@ When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
 **Fix/Decision:** (1) Pin the stage to the large viewport with `height: 100lvh` (`100vh` fallback) and drop `inset: 0`'s bottom anchor, so it stays constant across the URL-bar toggle. (2) Gate the resize handler on **width**: `if (innerWidth === lastWidth) return;` — only a real reflow (orientation / desktop resize) updates the reference. Verified the atmosphere transform is now stable to <0.01px across a height-only viewport change (the residual is just scroll-progress recalc, not the layer rescale).
 
 **Don't repeat:** For fixed full-bleed backdrops on mobile, size them with `lvh` (or `dvh` only if you _want_ to follow the bar) and never key parallax math to a live `innerHeight` that jitters with the address bar — gate on width.
+
+### [2026-07-29] `content-visibility: auto` silently corrupts ScrollTrigger geometry
+
+**Context:** Perf pass. Off-screen sections were doing paint/composite work for content nobody could see, and `content-visibility: auto` is the textbook fix.
+
+**Problem/Dead-end:** It quietly breaks the whole scroll model. With `#skills,#projects,#confidential,#contact { content-visibility: auto; contain-intrinsic-size: auto 1200px }`, every not-yet-rendered section reports the **placeholder** size instead of its real one — measured `confidential` 1903px → 1488, `skills` 745 → 1488, `contact` 712 → 1488, and total `scrollHeight` 8535 → 9639px. ScrollTrigger computes every trigger position against that wrong geometry at `refresh()` time, and `contain-intrinsic-size: auto` doesn't save you: on first load there is no remembered size to use. It was also _slower_ in the scroll benchmark (avg frame 46.8ms → 50.4ms), because sections kept entering/leaving the render tree while scrolling past them.
+
+**Fix/Decision:** Rejected it. To skip off-screen work on a ScrollTrigger page, gate the _expensive effects_ rather than the _rendering_: an IntersectionObserver that toggles a class (`src/scripts/offscreen.ts` → `.is-offscreen`), with CSS dropping `backdrop-filter` and setting `animation-play-state: paused`. That touches no layout, so measurements stay exact. Polarity matters — effects must be **on by default and switched off**, never the reverse, or the hero's glass renders unblurred on first paint and pops when the observer first fires.
+
+**Don't repeat:** Never put `content-visibility: auto` on an element whose height feeds a scroll-driven animation. Verify any containment change by diffing `document.documentElement.scrollHeight` before/after — if it moves, the trigger positions moved with it.
+
+### [2026-07-29] `unicode-range` doesn't shrink a font — and a too-narrow range hides real glyphs
+
+**Context:** Inter shipped at 344 KB for a site that renders ~90 distinct characters.
+
+**Problem/Dead-end:** Both `@font-face` rules already declared `unicode-range: U+0000-00FF`, which reads like the font was trimmed to Latin-1. It wasn't: `unicode-range` only tells the browser **whether to download** the file for a given character — the file itself is untouched. Worse, the declared range was _narrower than the copy_: the em dash (U+2014) is used throughout, sits outside U+0000-00FF, and was therefore being rendered from a system fallback font, mid-sentence, in a different typeface. `format('truetype')` on a `.woff2` was a third latent bug (Chrome sniffs past it; not everything does).
+
+**Fix/Decision:** Actually subset the files with `scripts/subset-fonts.mjs` (fontTools) to Google's `latin` range, **in place** so the paths in ASSETS.md stay valid — 393 KB → 107 KB. Widened both `unicode-range` descriptors to match the subset exactly, and fixed the format hint. Verified with fontTools that Inter's `opsz`/`wght` axes survive subsetting (`--layout-features=*`, no instancing). Note DM Mono has **no** `fvar` despite its `VariableFont` filename — it was always static.
+
+**Don't repeat:** `unicode-range` is a download gate, not a diet. Keep it in sync with what the file actually contains, and after subsetting a variable font always re-check `fvar` is intact.
+
+### [2026-07-29] Rewriting the hero name on mount WAS the site's entire CLS
+
+**Context:** Mobile CLS measured 0.0756 — a single shift, always at ~1.5s.
+
+**Problem/Dead-end:** `hero.ts`'s `splitChars()` cleared `#hero-name` and re-appended one `<span>` per character with `<br>` at the spaces. That happens when the deferred controller mounts, so the name reflowed from its natural wrap to three forced lines a second and a half after paint, moving the whole hero copy block. Every bit of the site's CLS came from the animation's own setup code.
+
+**Fix/Decision:** Emit the split spans at **build time** in `Hero.astro` (`heroNameHtml`) and reduce the scene to a read-only `readChars()` query. Pre-JS and post-JS DOM are now identical, so there is nothing to reflow — CLS 0.0756 → 0.0002. Build the string rather than JSX-mapping the characters, or Prettier's formatting puts whitespace between the spans and opens gaps inside the words.
+
+**Don't repeat:** Any character/word splitter that runs on mount is a layout shift waiting to happen. Ship the final DOM structure statically and let JS only animate it. (The related blink — name painted at 66ms, blanked at controller mount, re-staggered — was fixed separately by moving the entrance off GSAP entirely; see the next entry.)
+
+### [2026-07-29] A ScrollTrigger pin re-parents its trigger, which restarts CSS animations inside it
+
+**Context:** The hero copy entrance (premise → name stagger → role → hint) lived in the hero scene's `enter()`, so it could not start until the deferred controller had downloaded and mounted — measured at ~1.6s on a throttled phone. Worse, `#hero-name` is the painted `<h1>`, so the scene had to blank it to `opacity: 0` first: the title was readable at 66ms, then visibly blinked out and re-staggered 1.5s later.
+
+**Problem/Dead-end:** Rewriting the entrance as CSS `@keyframes` fixed the wait but broke in a new way — the animation played, finished, and then **restarted from zero** partway through the page's life. Cause: ScrollTrigger's desktop hero pin wraps `#hero` in a generated `.pin-spacer` and **moves the element into it**. Re-inserting an element into the DOM restarts every CSS animation in its subtree. Instrumenting `#hero.parentElement` made it unambiguous — the parent flipped `scroll-content` → `pin-spacer` at 1551ms and the entrance reset at exactly 1551ms. Confirmed by viewport: at 393px, where the `min-width: 768px` matchMedia never creates the pin, there was no reset at all. No CSS-only workaround exists; you cannot ask a CSS animation not to restart on re-insertion.
+
+**Fix/Decision:** Drove the entrance with the **Web Animations API** instead (`src/scripts/heroEntrance.ts`, ~1 KB, no GSAP). A WAAPI animation is owned by the element rather than resolved from its computed style, so it survives the re-parent and keeps its current time — verified opacity stays monotonic straight through the pin swap. CSS keeps only the opening frame (`html.js` gated) to cover the gap before the module runs; every animation uses `fill: 'both'` so the final frame persists. Two details worth keeping: a transform keyframe replaces the **whole** transform, so the scroll hint's `-translate-x-1/2` had to be written into its keyframes as `translate(-50%, …)` (verified centre X = 720 on a 1440 viewport); and the hint's infinite bob is parked off-screen through its `Animation` handle, not `animation-play-state`.
+
+**Don't repeat:** Don't put a CSS animation on anything inside a pinned ScrollTrigger subtree — it will replay when the pin is created. Use WAAPI (or GSAP) there. And don't couple a first-impression animation to the deferred controller: if it must play on arrival, it cannot wait on 51 KB gzip of GSAP.

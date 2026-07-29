@@ -176,11 +176,26 @@ interface Scene {
 
 `src/scripts/scroll/scenes/hero.ts` — the reference scene. Covers:
 
-- `splitChars()` for manual char splitting (no SplitText dependency)
-- Timeline sequencing with GSAP `timeline.to()` and stagger
-- `progress(p)` for per-frame parallax (panda-head layer)
-- Bob loop on scroll hint
-- Full reduced-motion branch
+- `gsap.matchMedia()` for a breakpoint-specific pin (desktop pins the hero for
+  ~140vh; mobile gets a plain scrub instead)
+- Scrubbed `fromTo()` depth tweens on the inner `.stage-depth` channel, so
+  progress 0 equals the static hero and the backdrop's outer parallax is untouched
+- The presentation veil fade (`#hero-veil`) and the non-LCP reaction glow
+- The five-method `Scene` interface, including no-op `enter`/`leave`/`progress`
+
+**What is deliberately NOT in this scene:** the hero copy entrance
+(premise → name stagger → role → hint → idle bob). It lives in
+`src/scripts/heroEntrance.ts` and runs on the Web Animations API, outside the
+deferred controller, so the site's first impression plays on arrival instead of
+waiting ~1.6s for GSAP to download and mount. It must stay out of GSAP for a
+second reason too: the desktop pin re-parents `#hero` into a `.pin-spacer`,
+which restarts CSS animations inside it (see LESSONS 2026-07-29). Do not add
+GSAP writes to `#hero-premise`, `.hero-char`, `#hero-role` or
+`#hero-scroll-hint`.
+
+> Note: no scene currently implements a `prefers-reduced-motion` branch, and
+> there is no sitewide motion kill-switch in `global.css` — despite what Golden
+> Rule 4 in AGENTS.md requires. This is a known open gap, not a pattern to copy.
 
 ### Global scroll progress signal
 
