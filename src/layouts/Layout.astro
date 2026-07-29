@@ -11,6 +11,27 @@ const {
   title = 'Cristian Zapata Cartagena — Full Stack Developer',
   description = 'Full Stack Developer & Chemical Engineer. Building precision interfaces fused with scientific thinking.',
 } = Astro.props;
+
+/* Companion poses — order is meaningful (scenes address them by
+   data-companion-pose, not by index, but keep it stable for readability).
+
+   Both rigs share ONE srcset so the browser downloads a single file per pose no
+   matter which rig is visible. `base` differs from `pose` for hero: the
+   companions need the proportional `panda-hero-pose-*` ladder, not the
+   square-cropped `panda-hero-*` LCP ladder. Canonical PNGs (~1 MB each) are no
+   longer requested by any rig — see scripts/generate-panda-derivatives.mjs.
+   `sizes` mirrors the CSS: desktop rig ≤16rem, mobile rig ≤8rem. */
+const COMPANION_POSES = [
+  { pose: 'hero', base: 'panda-hero-pose', ratio: [4, 5] },
+  { pose: 'master', base: 'panda-master', ratio: [1, 1] },
+  { pose: 'coding', base: 'panda-coding', ratio: [4, 5] },
+  { pose: 'wave', base: 'panda-wave', ratio: [4, 5] },
+  { pose: 'head', base: 'panda-head', ratio: [1, 1] },
+] as const;
+
+const COMPANION_SIZES = '(min-width: 1024px) 16rem, 8rem';
+const srcsetFor = (base: string) =>
+  `/media/panda/generated/${base}-320.webp 320w, /media/panda/generated/${base}-480.webp 480w`;
 ---
 
 <!doctype html>
@@ -85,51 +106,21 @@ const {
     <div id="panda-companion" data-scene="companion" aria-hidden="true">
       <div class="panda-companion-stage" data-companion-stage>
         <div class="panda-companion-look" data-companion-look>
-          <img
-            src="/media/panda/panda-hero.png"
-            alt=""
-            width="320"
-            height="400"
-            loading="lazy"
-            decoding="async"
-            data-companion-pose="hero"
-          />
-          <img
-            src="/media/panda/panda-master.png"
-            alt=""
-            width="320"
-            height="320"
-            loading="lazy"
-            decoding="async"
-            data-companion-pose="master"
-          />
-          <img
-            src="/media/panda/panda-coding.png"
-            alt=""
-            width="320"
-            height="400"
-            loading="lazy"
-            decoding="async"
-            data-companion-pose="coding"
-          />
-          <img
-            src="/media/panda/panda-wave.png"
-            alt=""
-            width="320"
-            height="400"
-            loading="lazy"
-            decoding="async"
-            data-companion-pose="wave"
-          />
-          <img
-            src="/media/panda/panda-head.png"
-            alt=""
-            width="320"
-            height="320"
-            loading="lazy"
-            decoding="async"
-            data-companion-pose="head"
-          />
+          {
+            COMPANION_POSES.map(({ pose, base, ratio }) => (
+              <img
+                src={`/media/panda/generated/${base}-320.webp`}
+                srcset={srcsetFor(base)}
+                sizes={COMPANION_SIZES}
+                alt=""
+                width={320}
+                height={(320 / ratio[0]) * ratio[1]}
+                loading="lazy"
+                decoding="async"
+                data-companion-pose={pose}
+              />
+            ))
+          }
         </div>
       </div>
     </div>
@@ -141,51 +132,21 @@ const {
     <div id="panda-companion-mobile" data-scene="companion-mobile" aria-hidden="true">
       <div class="panda-companion-stage" data-companion-stage data-companion-tap>
         <div class="panda-companion-look" data-companion-look>
-          <img
-            src="/media/panda/panda-hero.png"
-            alt=""
-            width="160"
-            height="200"
-            loading="lazy"
-            decoding="async"
-            data-companion-pose="hero"
-          />
-          <img
-            src="/media/panda/panda-master.png"
-            alt=""
-            width="160"
-            height="160"
-            loading="lazy"
-            decoding="async"
-            data-companion-pose="master"
-          />
-          <img
-            src="/media/panda/panda-coding.png"
-            alt=""
-            width="160"
-            height="200"
-            loading="lazy"
-            decoding="async"
-            data-companion-pose="coding"
-          />
-          <img
-            src="/media/panda/panda-wave.png"
-            alt=""
-            width="160"
-            height="200"
-            loading="lazy"
-            decoding="async"
-            data-companion-pose="wave"
-          />
-          <img
-            src="/media/panda/panda-head.png"
-            alt=""
-            width="160"
-            height="160"
-            loading="lazy"
-            decoding="async"
-            data-companion-pose="head"
-          />
+          {
+            COMPANION_POSES.map(({ pose, base, ratio }) => (
+              <img
+                src={`/media/panda/generated/${base}-320.webp`}
+                srcset={srcsetFor(base)}
+                sizes={COMPANION_SIZES}
+                alt=""
+                width={160}
+                height={(160 / ratio[0]) * ratio[1]}
+                loading="lazy"
+                decoding="async"
+                data-companion-pose={pose}
+              />
+            ))
+          }
         </div>
       </div>
     </div>
@@ -217,6 +178,19 @@ const {
         document.addEventListener('DOMContentLoaded', initGlassLoupe);
       } else {
         initGlassLoupe();
+      }
+    </script>
+
+    <!-- Off-screen effect gating — drops backdrop-filter + parks the sheen on
+         glass surfaces that are ~a screen away. Not deferred with the
+         controller: it only toggles a class, and running it early means
+         off-screen surfaces never pay for the blur even once. -->
+    <script>
+      import { initOffscreenGating } from '../scripts/offscreen';
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initOffscreenGating);
+      } else {
+        initOffscreenGating();
       }
     </script>
 

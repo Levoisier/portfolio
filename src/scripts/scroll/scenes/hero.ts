@@ -28,30 +28,17 @@
 import gsap from 'gsap';
 import type { Scene } from '../types';
 
-function splitChars(el: HTMLElement): HTMLElement[] {
-  const text = el.getAttribute('aria-label') ?? el.textContent?.trim() ?? '';
-  el.textContent = '';
-  el.setAttribute('aria-label', text);
-
-  // Each word goes on its own line (a <br> at spaces) so the full name never
-  // truncates on any viewport: "Cristian" / "Zapata" / "Cartagena". Only the
-  // character spans are returned for the stagger; the breaks are decorative.
-  const chars: HTMLElement[] = [];
-  text.split('').forEach((char) => {
-    if (char === ' ') {
-      const br = document.createElement('br');
-      br.setAttribute('aria-hidden', 'true');
-      el.appendChild(br);
-      return;
-    }
-    const span = document.createElement('span');
-    span.textContent = char;
-    span.style.display = 'inline-block';
-    span.setAttribute('aria-hidden', 'true');
-    el.appendChild(span);
-    chars.push(span);
-  });
-  return chars;
+/**
+ * Collect the hero name's character spans for the stagger.
+ *
+ * These are emitted by Hero.astro at BUILD time (`heroNameHtml`), already one
+ * word per line with `<br>` between words. This function only reads them — it
+ * must never rewrite `#hero-name`. Rebuilding the name here is what used to
+ * reflow the hero when the deferred controller mounted and produced the site's
+ * only layout shift (CLS 0.076). Keep this read-only.
+ */
+function readChars(el: HTMLElement): HTMLElement[] {
+  return Array.from(el.querySelectorAll<HTMLElement>('.hero-char'));
 }
 
 const heroScene = (_el: Element): Scene => {
@@ -64,7 +51,7 @@ const heroScene = (_el: Element): Scene => {
     init(_el: Element) {
       const nameEl = document.getElementById('hero-name');
       if (nameEl) {
-        chars = splitChars(nameEl);
+        chars = readChars(nameEl);
         gsap.set(chars, { opacity: 0, x: -24 });
       }
 

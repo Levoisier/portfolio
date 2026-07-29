@@ -21,6 +21,24 @@
 */
 
 import GlassSurface from '../ui/GlassSurface.astro';
+
+/* Hero name, PRE-SPLIT AT BUILD TIME.
+   The scene used to rewrite #hero-name on mount — clearing it and re-appending
+   one <span> per character with <br> at the spaces. That reflowed the name from
+   its natural wrap to three forced lines ~1.5s in (whenever the deferred
+   controller mounted), which was the site's ENTIRE CLS: a single 0.076 shift on
+   the hero copy block. Emitting the final structure here makes the pre-JS and
+   post-JS layouts byte-identical, so the stagger animates spans that were
+   always there. hero.ts now reads these instead of building them.
+
+   Built as a string (not JSX) so no template whitespace can slip between the
+   character spans and open gaps inside the words. */
+const HERO_NAME = 'Cristian Zapata Cartagena';
+const heroNameHtml = HERO_NAME.split(' ')
+  .map((word) =>
+    [...word].map((char) => `<span class="hero-char" aria-hidden="true">${char}</span>`).join('')
+  )
+  .join('<br aria-hidden="true" />');
 ---
 
 <section
@@ -84,16 +102,16 @@ import GlassSurface from '../ui/GlassSurface.astro';
           Conoce un poco de mi trabajo
         </p>
 
-        <!-- Name — split into one word per line by the hero scene (avoids any
-             truncation); characters are split for the stagger animation. -->
+        <!-- Name — one word per line (avoids any truncation); characters are
+             pre-split into spans at build time for the stagger animation.
+             See heroNameHtml above: this markup is final, JS never rebuilds it. -->
         <h1
           id="hero-name"
           class="font-display leading-[0.96] tracking-normal"
           style="color: var(--paper);"
-          aria-label="Cristian Zapata Cartagena"
-        >
-          Cristian Zapata Cartagena
-        </h1>
+          aria-label={HERO_NAME}
+          set:html={heroNameHtml}
+        />
 
         <!-- Role line — always two lines, each translated independently. -->
         <p

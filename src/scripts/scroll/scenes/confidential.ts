@@ -112,12 +112,18 @@ const confidentialScene = (el: Element): Scene => {
         { opacity: 0, scaleX: 0, scaleY: 0, transformOrigin: '50% 50%' }
       );
 
+      // Both ambient loops start PAUSED and are played/paused by enter()/leave().
+      // init() runs for every scene the moment the controller mounts, so leaving
+      // these running would animate an off-screen section from first paint until
+      // the visitor happened to scroll past it — which, for a section this far
+      // down, is most of the session.
       gridPulse = gsap.to(grid, {
         opacity: 1,
         duration: 4,
         ease: 'sine.inOut',
         yoyo: true,
         repeat: -1,
+        paused: true,
       });
 
       shimmer = gsap.to(sheens, {
@@ -126,6 +132,7 @@ const confidentialScene = (el: Element): Scene => {
         ease: 'none',
         repeat: -1,
         stagger: 0.2,
+        paused: true,
       });
 
       // Mobile only: auto-drift the horizontal blueprint carousel until touched.
@@ -138,6 +145,10 @@ const confidentialScene = (el: Element): Scene => {
     },
 
     enter() {
+      // Ambient loops only run while the section is in view — see leave().
+      gridPulse?.play();
+      shimmer?.play();
+
       if (entered) return;
       entered = true;
 
@@ -164,7 +175,14 @@ const confidentialScene = (el: Element): Scene => {
     },
 
     leave() {
-      // Cards remain visible once revealed.
+      // Cards remain visible once revealed — the reveal is not replayed.
+      // But the two ambient loops (grid pulse + card shimmer) are `repeat: -1`
+      // and used to keep ticking for the whole session, compositing off-screen
+      // work several viewports away and stealing frames from whatever IS on
+      // screen. Pause them here; enter() resumes mid-cycle, so the section
+      // looks identical whenever it's actually visible.
+      gridPulse?.pause();
+      shimmer?.pause();
     },
 
     progress() {

@@ -3,13 +3,22 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Font face declarations ──────────────────────────────────────────────── */
+/* ─── Font face declarations ──────────────────────────────────────────────────
+   Both files are subset to Google's `latin` range by scripts/subset-fonts.mjs
+   (393 KB → 107 KB). `unicode-range` must MATCH that subset: it only decides
+   whether the file downloads, so declaring a narrower range than the file
+   actually contains silently pushes real glyphs to a fallback font. The old
+   U+0000-00FF did exactly that to the em dash (U+2014), which this copy uses.
+   Keep this list and UNICODES in scripts/subset-fonts.mjs in sync. */
 @font-face {
   font-family: 'DM Mono';
-  src: url('/fonts/DMMono-VariableFont_wght.woff2') format('truetype');
+  src: url('/fonts/DMMono-VariableFont_wght.woff2') format('woff2');
+  /* Static despite the upstream filename — it has no `fvar` axes. */
   font-weight: 400;
   font-display: swap;
-  unicode-range: U+0000-00FF;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -17,7 +26,9 @@
   src: url('/fonts/Inter-VariableFont_opsz,wght.woff2') format('woff2');
   font-weight: 100 900;
   font-display: swap;
-  unicode-range: U+0000-00FF;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 /* ─── Base resets ─────────────────────────────────────────────────────────── */
@@ -133,6 +144,15 @@
   animation: glass-sheen-drift 9s ease-in-out infinite;
 }
 
+/* Park the sheen while its surface is far from the viewport (offscreen.ts).
+   Nine surfaces each animating a full-bleed gradient inside an
+   `overflow: hidden` container is continuous compositor work with nothing to
+   look at. `paused` (not `none`) keeps the current frame, so resuming is
+   seamless rather than a jump back to the keyframe start. */
+.liquid-glass.is-offscreen::after {
+  animation-play-state: paused;
+}
+
 @keyframes glass-sheen-drift {
   0%,
   100% {
@@ -158,7 +178,6 @@
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.18s ease;
-  will-change: transform, opacity;
   /* Scope corner brackets (an L at each corner of the bounding square). */
   background:
     linear-gradient(var(--scarlet), var(--scarlet)) left top / 15px 2px no-repeat,
@@ -171,8 +190,16 @@
     linear-gradient(var(--scarlet), var(--scarlet)) right bottom / 2px 15px no-repeat;
 }
 
+/* will-change lives on the ACTIVE state only. A loupe exists on every glass
+   surface but only moves while the cursor is inside that surface, so hinting it
+   permanently kept a promoted layer alive per surface for nothing. */
 .liquid-glass .glass-loupe.is-active {
   opacity: 1;
+  will-change: transform;
+}
+
+.glass-loupe.is-active .glass-lens-inner {
+  will-change: transform;
 }
 
 .glass-lens {
@@ -194,7 +221,6 @@
   top: 0;
   left: 0;
   transform-origin: 0 0;
-  will-change: transform;
 }
 
 /* Upgrade to true refractive glass only where it is cheap + supported. */
@@ -205,6 +231,19 @@
       -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
       backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     }
+  }
+
+  /* Drop the blur on surfaces that are ~a screen away from the viewport
+     (offscreen.ts). ScrollSmoother transforms the whole page as one composited
+     layer, so a backdrop-filter inside it is re-sampled and re-blurred every
+     frame and can never be cached — paying that for surfaces nobody can see was
+     the single most expensive effect on the page. The solid tint underneath is
+     the same fallback mobile already uses, and the surface is restored to full
+     blur long before it scrolls into view. */
+  .liquid-glass.is-offscreen {
+    background-color: var(--glass-fill-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 
   /* Mobile refractive path — OPT-IN per surface (.liquid-glass--refractive-mobile)
@@ -318,6 +357,10 @@
   will-change: transform;
 }
 
+/* No will-change here. Five poses × two rigs = ten permanently promoted layers
+   for elements that only cross-fade on a section change; the wrappers above
+   (which bob continuously) keep their hints. Opacity cross-fades on a box this
+   small are cheap without the promotion. */
 #panda-companion .panda-companion-look img {
   position: absolute;
   inset: 0;
@@ -326,7 +369,6 @@
   object-fit: contain;
   opacity: 0;
   transform-origin: 50% 80%;
-  will-change: opacity;
 }
 
 #panda-companion .panda-companion-look img[data-companion-pose='master'] {
@@ -380,6 +422,7 @@
   will-change: transform;
 }
 
+/* See the desktop rig above — no permanent promotion on the pose images. */
 #panda-companion-mobile .panda-companion-look img {
   position: absolute;
   inset: 0;
@@ -388,7 +431,6 @@
   object-fit: contain;
   opacity: 0;
   transform-origin: 50% 90%;
-  will-change: opacity;
 }
 
 /* Confidential guard: the head pose reads as a redacted silhouette. */
@@ -432,6 +474,13 @@
 #hero-name {
   font-size: var(--text-hero);
   white-space: nowrap;
+}
+
+/* One span per character of the hero name, emitted by Hero.astro at build time
+   so the pre-JS layout already equals the animated layout (see CLS note there).
+   inline-block is what makes the per-character x/opacity stagger possible. */
+.hero-char {
+  display: inline-block;
 }
 
 @media (min-width: 1024px) {
