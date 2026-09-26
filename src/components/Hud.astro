@@ -1,0 +1,55 @@
+---
+/**
+ * HUD slots (Phase 7 fills them: name badge, Contact, ES·EN, sound, menu) and the interact
+ * prompt live region (Phase 5). Present now so later phases only add content.
+ */
+---
+
+<div id="hud" class="hud">
+  <div class="hud__slot hud__slot--left" data-slot="badge"></div>
+  <div class="hud__slot hud__slot--right" data-slot="actions"></div>
+  <p class="hud__prompt" data-slot="prompt" aria-live="polite"></p>
+</div>
+
+<style>
+  .hud {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-hud);
+    pointer-events: none;
+    padding: max(var(--space-2), env(safe-area-inset-top))
+      max(var(--space-2), env(safe-area-inset-right))
+      max(var(--space-2), env(safe-area-inset-bottom))
+      max(var(--space-2), env(safe-area-inset-left));
+  }
+
+  .hud > * {
+    pointer-events: auto;
+  }
+
+  .hud__slot--left {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+  }
+
+  .hud__slot--right {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+  }
+
+  .hud__prompt {
+    position: absolute;
+    left: 50%;
+    bottom: var(--space-6);
+    margin: 0;
+    transform: translateX(-50%);
+    font-family: var(--font-display);
+    color: var(--color-text);
+  }
+
+  .hud__prompt:empty {
+    display: none;
+  }
+</style>

@@ -50,9 +50,9 @@ src/
   assets/registry.ts          ← typed view of art/manifest.json (exists)
   assets/runtime.ts           ← types of public/game/assets.json — pipeline ↔ game contract (exists)
   policy/                     ← repo-policy tests, e.g. not-a-PWA (exists)
-  i18n/                       ← lang detection/persistence + UI strings (Phase 2)
-  shared/                     ← bus, motion preference, layout-mode (Phase 2)
-  game/                       ← everything Phaser (Phase 2+)
+  i18n/                       ← lang.ts (default/persistence) + ui.ts (UI strings) (exists)
+  shared/                     ← bus, motion preference, layout-mode, debug hook types (exists)
+  game/                       ← everything Phaser (shell exists; Phase 3+ adds the rest)
     boot.ts                   ← NO static import of phaser (or anything importing it); after first
                                 paint runs `const { startGame } = await import('./main')`
     main.ts                   ← the only entry that statically imports phaser + scenes; creates the game
@@ -60,6 +60,10 @@ src/
     render/zoom.ts            ← pure zoom/viewport math (unit-tested)
     render/follow.ts          ← pure integer camera follow (unit-tested)
     quality.ts                ← tier detection + runtime downgrade
+    context.ts                ← session state shared by main.ts and the scenes (registry `ctx`)
+    load-plan.ts              ← inlined manifest + tier → exact loader calls (pure, unit-tested)
+    text/                     ← pixel-font.ts (pure rasterizer) + bitmap-font.ts (registers it)
+    render/viewport.ts        ← watches #screen in device px + DPR changes
     scenes/                   ← BootScene (load), WorldScene (play)
     player/                   ← logic.ts (pure state machine) + PandaSprite.ts
     input/                    ← intent sources: keyboard, wheel, pointer, touch pad, travel; merge.ts (pure)
@@ -67,8 +71,8 @@ src/
     stations/                 ← station objects, triggers, prompts
     fx/                       ← sky, parallax, particles, filters (tiered)
     travel/                   ← plan.ts (pure) + auto-walk (Phase 5/7)
-  ui/                         ← DOM: HUD, panels, menu, touch pad, loading screen (Phase 2+)
-  components/                 ← Astro components for the shell + pre-rendered panels (Phase 2+)
+  ui/                         ← DOM: main.ts (page entry), loading, fonts, debug overlay; later HUD, panels, menu, pad
+  components/                 ← Astro components: Loading, Hud (exists); pre-rendered panels (Phase 5+)
   pages/index.astro           ← the single page
 public/
   media/projects/…            ← content media (Fiora screenshots) — referenced from src/content
@@ -107,11 +111,20 @@ index.astro (static HTML)
 5. The UI listens on the bus and emits intents back. The game never touches DOM; the UI never
    touches Phaser objects.
 
-**Bus contract (Phase 2):** `src/shared/bus.ts` exports a typed emitter keyed by an `Events` map;
+**Bus contract:** `src/shared/bus.ts` exports a typed emitter keyed by an `Events` map;
 adding an event = adding a key with its payload type. Known events: `game:progress`, `game:ready`,
 `zone:enter`, `station:enter`, `station:leave`, `station:open`, `panel:closed`, `ui:modal`
 `{ open: boolean }`, `menu:open`, `travel:to`, `travel:arrived`, `lang:change`, `sound:toggle`,
-`input:wheel`, `fonts:ready`. No `window` custom events for game↔UI traffic.
+`input:wheel`, `fonts:ready`, `tier:change`, `debug:stats`. No `window` custom events for game↔UI
+traffic. The bus remembers each event's last payload: `on(event, fn, { replay: true })` also
+receives it immediately (the lazy game chunk subscribes after `fonts:ready` and the initial
+`lang:change` have already fired).
+
+**Entry points:** `src/ui/main.ts` is the page's only script. It reads the inlined manifest, sets
+`html[data-mode]`, mounts the loading screen, loads the fonts, emits the initial `lang:change`
+and calls `boot({ parent: #screen, manifest, debug })`. The game receives the mount element
+and the manifest as arguments; it never queries the DOM. `main.ts` may style its own canvas
+(offset) because Phaser owns that element.
 
 ---
 
@@ -145,7 +158,8 @@ adding an event = adding a key with its payload type. Known events: `game:progre
   only rewrites the CSS size when zoom ≠ 1). Never use `FIT`/`RESIZE`/`EXPAND`, never
   `camera.setZoom()` (camera zoom ≠ 1 disables vertex rounding). Recompute on a `ResizeObserver`
   of `#screen` plus a `matchMedia('(resolution: <dpr>dppx)')` listener (moving the window to
-  another monitor fires no resize).
+  another monitor fires no resize). `devicePixelContentBoxSize` is trusted only when it agrees with CSS size ×
+  DPR (emulated DPR in DevTools/Playwright reports CSS px there).
 - **Rounding:** Phaser 4 rounds vertices per object (`vertexRoundMode`, default `safeAuto`: only
   when the object's matrix is a pure translation). A flip counts as a −1 scale, so call
   `setVertexRoundMode('full')` on the panda and every sprite that flips. Never `setScale` art;
@@ -174,7 +188,10 @@ adding an event = adding a key with its payload type. Known events: `game:progre
   rasterize Pixelify Sans at the size where one design pixel = 1 px into a canvas, threshold alpha
   at 50 %, register it with `textures.addCanvas` + `cache.bitmapFont.add` and draw with
   `BitmapText`. Glyphs cover Latin-1 incl. á é í ó ú ü ñ Ñ ¿ ¡. (Phaser `Text` is anti-aliased;
-  `RetroFont` needs a fixed-width grid.) Record the final choice in DECISIONS.md (Phase 2).
+  `RetroFont` needs a fixed-width grid.) Implemented in `game/text/` — see DECISIONS.md →
+  _In-world pixel text_: Pixelify Sans is rendered at 88 px (8 px per design pixel), the grid
+  phase is detected and each 8×8 cell becomes one binary pixel; `add.bitmapText(x, y,
+PIXEL_FONT, text, PIXEL_FONT_SIZE)` at integer positions, tinted with a palette color.
 
 ## Layout modes
 
@@ -283,7 +300,7 @@ Every source writes into one per-frame `Intent` (`moveX ∈ [−1, 1]`, `run`, `
   content as plain HTML.
 - Visited state + language + sound live in `localStorage` (wrapped in try/catch).
 
-## i18n **(Phase 2)**
+## i18n
 
 `src/i18n/lang.ts`: initial language = stored choice → otherwise **ES** (no browser detection; see
 DECISIONS.md → _Languages_). Setting a language
@@ -406,28 +423,31 @@ frame sizes, baked shadows, black-on-black fur).
   port **4323** (never reuses a server), projects `desktop` (1440×900) and `mobile` (390×844,
   touch). Baseline (smoke spec): no console errors, no failed requests or HTTP ≥ 400, not
   installable. The no-manifest case is covered by building with `PORTFOLIO_NO_ASSETS=1`, which makes
-  `index.astro` treat the manifest as `null` (Phase 2 adds that project). From Phase 2: canvas
+  `index.astro` treat the manifest as `null` and builds into `dist-no-assets/` (projects `no-assets`
+  and `no-assets-mobile`, served on port 4324, run the smoke and shell specs). Shell spec: canvas
   non-blank via `locator('canvas').screenshot()` pixel variance (the WebGL drawing buffer is not
   preserved), `#loading` disappears, `getBoundingClientRect()` × dpr within 0.1 px of an integer
   multiple of the backing size. Each phase adds specs; move the mouse onto the canvas before
   `page.mouse.wheel`.
-- **Debug/test hook (Phase 2):** with `?debug` (or in dev), `window.__PORTFOLIO__` exposes
-  `getState()`, `teleport(x)`, `openStation(id)`, `setTier(t)`, plus an FPS/zoom/tier/mode overlay.
+- **Debug/test hook:** with `?debug` (or in dev), `window.__PORTFOLIO__` exposes `getState()`
+  (ready, paused, tier, mode, zoom, dpr, backing size, fps, lang, pixelFont, pandaTexture) and
+  `setTier(t)`, plus an FPS/zoom/tier/mode overlay (`debug:stats` on the bus); Phase 3 adds
+  `teleport(x)`, Phase 5 `openStation(id)` (types in `src/shared/debug.ts`).
   E2E uses it instead of simulating long walks.
 - Visual checks: specs save screenshots to `test-results/`; review them before claiming a visual
   acceptance criterion.
 
 ## Performance budgets
 
-| Budget                              | Target                                   |
-| ----------------------------------- | ---------------------------------------- |
-| HTML + inline CSS (gzip)            | ≤ 60 KB                                  |
-| App JS excluding Phaser (gzip)      | ≤ 80 KB                                  |
-| Phaser chunk (gzip)                 | ~353 KB (custom build optional)          |
-| Game assets, high tier / low tier   | ≤ 1.2 MB / ≤ 0.7 MB                      |
-| Loading screen visible (mobile, 4G) | ≤ 1.5 s                                  |
-| Playable (mobile, 4G)               | ≤ 4 s                                    |
-| Frame rate                          | 60 fps desktop, ≥ 50 fps mid-range phone |
+| Budget                              | Target                                     |
+| ----------------------------------- | ------------------------------------------ |
+| HTML + inline CSS (gzip)            | ≤ 60 KB                                    |
+| App JS excluding Phaser (gzip)      | ≤ 80 KB                                    |
+| Phaser chunk (gzip)                 | ~383 KB measured in P2 (custom build opt.) |
+| Game assets, high tier / low tier   | ≤ 1.2 MB / ≤ 0.7 MB                        |
+| Loading screen visible (mobile, 4G) | ≤ 1.5 s                                    |
+| Playable (mobile, 4G)               | ≤ 4 s                                      |
+| Frame rate                          | 60 fps desktop, ≥ 50 fps mid-range phone   |
 
 ## SEO & sharing **(Phase 10/12)**
 

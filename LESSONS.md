@@ -111,3 +111,25 @@ dither: 0` round-tripped exactly — verify by reading the file back.
   the whole width never matches.
   **Rule of thumb:** Classify a source (native vs. fake, green vs. transparent) once, up front, and
   make every later step depend on that classification instead of re-guessing.
+
+## 2026-09-26 — Phase 2 shell: hidden, emulated DPR, fonts
+
+**Context:** Building the loading screen, zoom and pixel text.
+**Problem / finding:**
+
+- A component rule like `.loading { display: grid }` beats the UA `[hidden] { display: none }`:
+  the loading screen stayed visible with `hidden` set. `shell.css` now has
+  `[hidden] { display: none !important }`.
+- Under emulated DPR (Playwright `deviceScaleFactor`, DevTools), ResizeObserver's
+  `devicePixelContentBoxSize` reports CSS px, so a 390×844@3 phone got zoom 1. Trust it only when
+  it matches `contentBoxSize × devicePixelRatio`; otherwise use `floor(css × dpr)`.
+- Pixelify Sans at its nominal 11 px is blurry (outlines are off the pixel grid by ~0.66 px, and
+  canvas `fillText` snaps sub-pixel offsets so you cannot shift it). Render at 88 px and
+  downsample by cells with a detected phase. Its Z and C really do look like that — compare with
+  a large render before "fixing" glyphs.
+- Phaser already pauses its loop on `visibilitychange` (`Game#onHidden` → `loop.pause()`); listen
+  to `Phaser.Core.Events.HIDDEN/VISIBLE` for state instead of adding a second handler.
+- `Bus.once(…, { replay: true })` must not call `on()` and then `off()` inside the handler —
+  the replay runs synchronously before `off` exists (TDZ error).
+  **Rule of thumb:** Verify DPR-dependent code at a real emulated DPR, not only at @1, and check
+  `hidden` elements are actually invisible in a screenshot.

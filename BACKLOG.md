@@ -66,7 +66,7 @@ import boundary; not-a-PWA policy tests; docs rewritten and reviewed.
 
 ---
 
-## Phase 1 — Asset pipeline
+## Phase 1 — Asset pipeline ✅
 
 ### [x] feat(assets): `pnpm assets` — normalize art/raw into public/game
 
@@ -115,9 +115,9 @@ field — update ARCHITECTURE.md with it), `art/manifest.json` (data only), `ARC
 
 ---
 
-## Phase 2 — Game shell
+## Phase 2 — Game shell ✅
 
-### [ ] feat(shell): page, loading screen, Phaser boot, pixel-perfect zoom, tiers, bus, i18n
+### [x] feat(shell): page, loading screen, Phaser boot, pixel-perfect zoom, tiers, bus, i18n
 
 **Goal:** a page that paints instantly and boots Phaser lazily into a pixel-perfect canvas at the
 right integer zoom on every screen, with the plumbing every later phase uses.

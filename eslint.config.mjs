@@ -17,7 +17,14 @@ const PHASER_ALLOWED = [
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', '.astro/**', 'public/game/**', 'test-results/**'],
+    ignores: [
+      'dist/**',
+      'dist-no-assets/**',
+      'node_modules/**',
+      '.astro/**',
+      'public/game/**',
+      'test-results/**',
+    ],
   },
   ...eslintPluginAstro.configs.recommended,
   {

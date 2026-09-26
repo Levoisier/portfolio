@@ -4,6 +4,10 @@
  * drift. Add a color there first, then here. Never write a color literal anywhere else.
  */
 
+/* Pixelify Sans + Inter, self-hosted; unicode-range subsets (latin, latin-ext) load on use. */
+@import '@fontsource/pixelify-sans/400.css';
+@import '@fontsource-variable/inter/wght.css';
+
 :root {
   /* ─── Palette (mirror of src/design/palette.json) ─────────────────────── */
   --c-ink-900: #0a0a0a;
@@ -44,9 +48,9 @@
   --color-accent: var(--c-scarlet-500);
   --color-focus: var(--c-amber-400);
 
-  /* ─── Typography (families installed in BACKLOG Phase 2) ──────────────── */
+  /* ─── Typography (@fontsource, imported at the top of this file) ─────────── */
   --font-display: 'Pixelify Sans', ui-monospace, monospace;
-  --font-body: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter Variable', system-ui, sans-serif;
 
   /* ─── Pixel UI rhythm: multiples of 4 CSS px ──────────────────────────── */
   --space-1: 4px;
@@ -56,6 +60,8 @@
   --space-6: 24px;
   --space-8: 32px;
   --pixel-border: 4px;
+  /* Loading-screen art pixel; the pre-paint script replaces it with whole device px. */
+  --px: 2px;
 
   /* ─── Layers ──────────────────────────────────────────────────────────── */
   --z-screen: 0;

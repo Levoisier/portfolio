@@ -1,81 +1,61 @@
 ---
-/*
- * Phase 0 placeholder. BACKLOG Phase 2 replaces this with the game shell (loading screen,
- * canvas, HUD, pre-rendered panels, menu). It already reads everything from src/content so
- * the page stays truthful if it is ever deployed before the game exists.
+/**
+ * The single page (ARCHITECTURE.md → Runtime overview). The asset manifest is inlined at build
+ * time — nothing fetches it at runtime — and the pre-paint script applies the stored language
+ * and the pixel size before anything renders.
  */
 import '../styles/tokens.css';
+import '../styles/shell.css';
+import Hud from '../components/Hud.astro';
+import Loading from '../components/Loading.astro';
+import { inlineJson, readRuntimeManifest } from '../assets/inline';
 import { profile } from '../content';
+import { DEFAULT_LANG, HTML_LANG, LANG_STORAGE_KEY } from '../i18n/lang';
+import { ui } from '../i18n/ui';
 
-const lang = 'es';
-const roles = profile.roles.map((r) => r[lang]).join(' · ');
+const manifest = readRuntimeManifest();
+const roles = (lang: 'es' | 'en') => profile.roles.map((r) => r[lang]).join(' · ');
 ---
 
 <!doctype html>
-<html lang="es-419">
+<html lang={HTML_LANG[DEFAULT_LANG]} data-lang={DEFAULT_LANG}>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={profile.summary[lang]} />
-    <title>{profile.name} — {roles}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content={profile.summary[DEFAULT_LANG]} />
+    <title>{profile.name} — {roles(DEFAULT_LANG)}</title>
+    <script is:inline define:vars={{ key: LANG_STORAGE_KEY, htmlLang: HTML_LANG }}>
+      try {
+        const stored = localStorage.getItem(key);
+        if (stored && stored in htmlLang) {
+          document.documentElement.lang = htmlLang[stored];
+          document.documentElement.dataset.lang = stored;
+        }
+      } catch {
+        // Blocked storage: keep the default language.
+      }
+      // Loading-screen pixel: a whole number of device px (about 2 CSS px).
+      const k = Math.max(1, Math.round(2 * devicePixelRatio));
+      document.documentElement.style.setProperty('--px', `${k / devicePixelRatio}px`);
+    </script>
   </head>
   <body>
-    <main>
-      <h1>{profile.name}</h1>
-      <p>{roles}</p>
-      <p>Nuevo portafolio en construcción · New portfolio in development</p>
-      <ul>
-        {
-          profile.contact.map((link) => (
-            <li>
-              <a
-                href={link.href}
-                aria-label={link.ariaLabel[lang]}
-                {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-              >
-                {link.label}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </main>
+    <h1 class="sr-only">
+      {profile.name} — <span lang="es-419">{roles('es')}</span><span lang="en">{roles('en')}</span>
+    </h1>
+    <script is:inline type="application/json" id="assets" set:html={inlineJson(manifest)} />
+    <Loading manifest={manifest} />
+    <div id="screen"></div>
+    <Hud />
+    <div id="panels"></div>
+    <div id="menu" hidden></div>
+    <noscript>
+      <p class="noscript">
+        <span lang="es-419">{ui.noscript.es}</span><span lang="en">{ui.noscript.en}</span>
+      </p>
+    </noscript>
+    <script>
+      import '../ui/main';
+    </script>
   </body>
 </html>
-
-<style>
-  body {
-    margin: 0;
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    background: var(--color-bg);
-    color: var(--color-text);
-    font-family: var(--font-body);
-  }
-
-  main {
-    padding: var(--space-8) var(--space-4);
-    text-align: center;
-  }
-
-  h1 {
-    font-family: var(--font-display);
-    color: var(--color-accent);
-  }
-
-  ul {
-    list-style: none;
-    padding: 0;
-    display: grid;
-    gap: var(--space-2);
-  }
-
-  a {
-    color: var(--color-text);
-  }
-
-  a:focus-visible {
-    outline: var(--pixel-border) solid var(--color-focus);
-  }
-</style>

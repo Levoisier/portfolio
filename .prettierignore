@@ -1,4 +1,5 @@
 dist/
+dist-no-assets/
 node_modules/
 .astro/
 .claude/settings.local.json

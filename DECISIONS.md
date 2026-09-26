@@ -104,10 +104,31 @@ screens; a low-resolution backing store is also cheap on phones. Target view hei
 
 ## Fonts: Pixelify Sans + Inter
 
-**Status:** Accepted (installation in Phase 2)
+**Status:** Accepted (installed in Phase 2: `@fontsource/pixelify-sans` 5.3.0 → `400.css`,
+`@fontsource-variable/inter` 5.3.0 → `wght.css`, imported by `tokens.css`)
 **Why:** Pixelify Sans (OFL, Google Fonts, latin + latin-ext → Spanish accents) matches the
-pixel look for headings/UI; Inter (OFL) keeps long panel text readable.
-**Trade-off:** Two font families to load; subset both.
+pixel look for headings/UI; Inter (OFL) keeps long panel text readable. Self-hosted: no
+third-party font request.
+**Trade-off:** Two font families to load. Both CSS files declare every subset with a
+`unicode-range`, so the browser downloads only latin (and latin-ext when used); the other subset
+files ship in `dist/` but are never requested. (Fontsource's `latin-400.css` alone has no
+`unicode-range`, so combining it with `latin-ext-400.css` would let the latin-ext face shadow
+basic Latin.)
+
+## In-world pixel text: rasterized Pixelify Sans as a BitmapText font
+
+**Status:** Accepted (Phase 2 prototype: the name label in the empty world)
+**Why:** Canvas text must be binary-alpha and crisp at every zoom. Pixelify Sans has 11 design px
+per em, but its outlines are offset ~0.66 px from the pen and chamfered, so drawing at 11 px
+blurs every stem across two pixels. `game/text/` renders each glyph at 88 px (8 px per design
+pixel), finds the grid phase once on a sample, turns each 8×8 cell into one pixel (coverage
+≥ 50 %), packs a white atlas with `textures.createCanvas` and registers it with
+`cache.bitmapFont.add`. Glyphs: printable ASCII, Latin-1 (á é í ó ú ü ñ ¿ ¡) and — – … ’ “ ”.
+It is rebuilt after `fonts:ready` in about the time of one frame.
+**Rejected:** Phaser `Text` (anti-aliased); `RetroFont` (fixed-width grid); a prebuilt BMFont
+file (one more asset and a second font source of truth).
+**Trade-off:** One size (11 px, cap height 7); larger in-world text would need a second
+registration at a multiple.
 
 ## Languages: ES + EN, Spanish by default
 
