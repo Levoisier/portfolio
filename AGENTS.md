@@ -6,6 +6,9 @@ Canonical instructions for coding agents working in **portfolio**. Read this fil
 It applies to this project and its subdirectories; read a nested project’s `AGENTS.md` when working in that scope.
 Follow the current user request, the shared working agreement, and the project-specific requirements below.
 
+Read order for any task: **AGENTS.md → GAME_DESIGN.md → ARCHITECTURE.md → the BACKLOG.md phase
+you are working on → the ASSETS.md rows it names → related LESSONS.md entries.**
+
 ## Working agreement
 
 - Communicate in clear, concise English unless the user requests another language. Preserve the product's required language and locale.
@@ -21,9 +24,18 @@ Follow the current user request, the shared working agreement, and the project-s
 
 ### Project Overview
 
-This is the personal portfolio of **Cristian Zapata Cartagena** — Full Stack Developer & Chemical Engineer. It is a single-page, long-scroll narrative site built with **Astro (static)**, **GSAP + ScrollTrigger** for animation, **Tailwind** for layout, and **CSS custom properties** as the design-token layer. The visual identity fuses dev precision with chemical engineering aesthetics: molecular motifs, blueprint grids, a signature panda mascot. The site is deployed to Vercel as a static output.
+The personal portfolio of **Cristian Zapata Cartagena** — Full Stack Developer & Chemical
+Engineer — is a **2D pixel-art side-scrolling game**. The visitor plays a panda with a red scarf
+through one level, a chemical plant at night that turns into sunrise: five project stations, a
+classified wing for NDA work, a reagent lab for the tech stack, and a contact lookout. There is
+no classic page view by design.
 
-This is an **agent-first project**: autonomous agents (Codex, Claude Code, etc.) execute the build by working through `BACKLOG.md`. Cristian generates media assets externally (Nano Banana). Your job is to implement backlog items correctly, safely, and without breaking what came before.
+Stack: **Astro 5 (static shell + DOM panels) · Phaser 4 (game) · TypeScript strict · Vitest ·
+Playwright · sharp (asset pipeline) · pnpm · Vercel.**
+
+This is an **agent-first project**: agents build it phase by phase from `BACKLOG.md`. Cristian
+produces the media (PixelLab / Nano Banana) exactly as specified in `ASSETS.md`. Your job is to
+implement a phase correctly, verifiably, and without breaking earlier phases.
 
 ## Commands and verification
 
@@ -31,27 +43,30 @@ Use focused checks while iterating and run the project-specific gates below at t
 For guidance changes, also check links, instruction consistency, and `git diff --check`.
 Report failures and unavailable checks explicitly; a documentation check does not prove application behavior.
 
-### Verify Command
-
 ```bash
-pnpm verify
+pnpm install          # first, in a fresh checkout
+pnpm dev              # http://localhost:4321
+pnpm test             # Vitest unit tests (watch: pnpm test:watch)
+pnpm verify           # THE GATE: prettier --check → eslint → astro check → vitest → astro build
+pnpm test:e2e         # Playwright against a production preview (desktop + mobile projects)
+pnpm assets           # asset pipeline (exists from BACKLOG Phase 1)
 ```
 
-This runs: `astro build` → `astro check` → `eslint` → `prettier --check`.  
-Source: `scripts/verify.sh`. Run it; read the output; fix errors before committing.
+`scripts/verify.sh` is the gate; it must exit 0 before every commit. Playwright in the cloud
+container uses the preinstalled Chromium; on a local machine run
+`pnpm exec playwright install chromium` once.
 
-### Definition of Done
+### Definition of Done (every BACKLOG phase)
 
-A BACKLOG item is **done** when:
-
-- [ ] `pnpm verify` passes clean (zero errors, zero lint warnings).
-- [ ] The feature works correctly in `pnpm dev` (start server, manually verify the behaviour described in acceptance criteria).
-- [ ] Reduced-motion behaviour is correct (test with DevTools → Rendering → Emulate CSS media feature: prefers-reduced-motion: reduce).
-- [ ] No hardcoded colors introduced.
-- [ ] If a scene was added: registered in controller registry, implements all 5 Scene interface methods.
-- [ ] If an asset was used: path matches ASSETS.md exactly.
-- [ ] LESSONS.md updated if anything non-obvious was encountered.
-- [ ] The BACKLOG checkbox for the item is checked `[x]`.
+- [ ] `pnpm verify` passes (zero errors, zero lint warnings).
+- [ ] `pnpm test:e2e` passes, including the new specs the phase requires.
+- [ ] Every acceptance criterion checked in `pnpm preview` at desktop **1440×900** and mobile
+      **390×844** (touch); screenshots reviewed (not just taken).
+- [ ] Both quality tiers and `prefers-reduced-motion: reduce` behave per ARCHITECTURE.md.
+- [ ] No color literals outside `src/design/palette.json` / `src/styles/tokens.css` (a test enforces it).
+- [ ] Assets referenced only by manifest id; ASSETS.md and `art/manifest.json` agree (a test enforces it).
+- [ ] All copy comes from `src/content/` or `src/i18n/ui.ts`, in ES and EN.
+- [ ] ARCHITECTURE.md / DECISIONS.md / LESSONS.md updated where relevant; the BACKLOG box is checked `[x]`.
 
 ## Architecture and conventions
 
@@ -59,13 +74,33 @@ A BACKLOG item is **done** when:
 
 Breaking any of these is a blocking error. Revert and fix before committing.
 
-1. **Never break the build.** Run `pnpm verify` before every commit. It must exit 0.
-2. **Never hardcode a color value outside `src/styles/tokens.css`.** All colors go through CSS custom properties (`var(--token-name)`). Adding a new color = add a token first.
-3. **Never modify the controller core.** `src/scripts/scroll/controller.ts` is the engine. Add new animations by creating a scene in `src/scripts/scroll/scenes/` and registering it in the controller's `SCENE_REGISTRY` (one dictionary entry). See ARCHITECTURE.md for the exact pattern.
-4. **Every animation must have a reduced-motion fallback.** Check `window.matchMedia('(prefers-reduced-motion: reduce)').matches`. If true: instant reveal (opacity only, no translation/rotation/scale). No exceptions.
-5. **The Confidential Projects section must never contain screenshots, repository links, live-demo links, client names, or employer names.** Allowed: industry, role, stack, abstracted impact metrics, duration, team size.
-6. **Never rename or relocate asset paths.** Paths are documented in `ASSETS.md` and referenced in component markup. A path change breaks the swap contract. To add a new asset: add a row to ASSETS.md first.
-7. **Append to LESSONS.md whenever you hit a gotcha, a dead-end approach, or a non-obvious fix.** This log is how agents learn from each other across sessions. See the entry template in LESSONS.md.
+1. **Never break the build.** `pnpm verify` exits 0 before every commit.
+2. **Content has one home.** Profile, projects, confidential work and skills live only in
+   `src/content/` (typed, bilingual, tested); UI strings live in `src/i18n/ui.ts`. Never hardcode
+   copy in game code or components. Every string exists in **ES and EN**.
+3. **Confidential work never shows screenshots, repository links, live-demo links, client names,
+   or employer names.** Allowed: industry, role, stack, abstracted impact, duration, team size.
+4. **Colors come only from the palette.** `src/design/palette.json` (canvas, pipeline) and its
+   mirror `src/styles/tokens.css` (`var(--c-*)`). Use `hex()`/`num()`/`cssVar()` from
+   `src/design/palette.ts`. A new color = a palette entry first (and an ADR if it changes the look).
+5. **Assets go through the registry.** Every media file has an entry in `art/manifest.json` and
+   a row in ASSETS.md. Game code references assets by id only. `art/raw/` is Cristian's — never
+   edit, rename or delete his files. `public/game/` is generated — never hand-edit or commit it.
+6. **Pixel-perfect or nothing.** Integer zoom in device pixels, nearest-neighbor, integer
+   positions (`roundPixels`), no CSS smoothing, no non-integer scaling of art (ARCHITECTURE.md →
+   _Rendering contract_).
+7. **Game and UI meet only at the bus.** Phaser code never builds or queries DOM; UI code never
+   touches Phaser objects. They communicate through the typed events in `src/shared/bus.ts`.
+8. **Ambience goes through the tier.** Only `src/game/quality.ts` decides device/tier; no ad-hoc
+   `innerWidth`/user-agent checks. Mobile stays within the budgets in ARCHITECTURE.md.
+9. **Everyone can reach everything.** Every station and panel is reachable by keyboard, touch,
+   mouse and the menu; panels are real DOM dialogs with focus management;
+   `prefers-reduced-motion` is honored (no shake, no flashes, reduced parallax/particles).
+10. **Pure logic stays pure and tested.** Movement, input merging, zoom math, layout validation,
+    travel planning and the pipeline steps live in modules that do not import Phaser, with
+    Vitest tests.
+11. **No new dependency without an ADR** in DECISIONS.md (bundle budget).
+12. **Append to LESSONS.md** whenever you hit a gotcha, a dead end, or a non-obvious fix.
 
 ## Git and delivery
 
@@ -86,15 +121,16 @@ Breaking any of these is a blocking error. Revert and fix before committing.
 [optional body — only if the why isn't obvious from the diff]
 ```
 
-Types: `feat` · `fix` · `style` · `refactor` · `docs` · `chore` · `perf`  
-Scope examples: `hero` · `skills` · `controller` · `tokens` · `a11y` · `perf`
+Types: `feat` · `fix` · `style` · `refactor` · `docs` · `chore` · `perf` · `test`
+Scopes: `assets` · `shell` · `player` · `input` · `world` · `stations` · `mobile` · `ui` ·
+`confidential` · `skills` · `story` · `fx` · `audio` · `content` · `palette` · `a11y` · `perf`
 
 Examples:
 
 ```
-feat(hero): add char-stagger entrance animation with reduced-motion fallback
-fix(tokens): correct --scarlet-soft tint calculation
-docs(backlog): check off skills-interactive item
+feat(player): add coyote time and jump buffer to the panda controller
+fix(assets): keep scarf tails attached to their frame when slicing
+docs(backlog): check off phase 3
 ```
 
 ## References and lessons
@@ -104,20 +140,25 @@ Record verified, non-obvious lessons in the project's existing lessons log; keep
 
 ### Document Map — What to Read for What
 
-| I need to know about…                               | Read                                              |
-| --------------------------------------------------- | ------------------------------------------------- |
-| Project overview, rules, verify gate                | **AGENTS.md** (this file)                         |
-| Stack, folder structure, how to add a scene/section | **ARCHITECTURE.md**                               |
-| What to build next, acceptance criteria             | **BACKLOG.md**                                    |
-| Design tokens, color names, easing scale            | `src/styles/tokens.css` + ARCHITECTURE.md §tokens |
-| Asset paths and dimensions                          | **ASSETS.md**                                     |
-| Why a decision was made (Astro, GSAP, fonts, etc.)  | **DECISIONS.md**                                  |
-| Past failures and non-obvious fixes                 | **LESSONS.md**                                    |
-| How to run/build/deploy for a human reader          | **README.md**                                     |
+| I need to know about…                                  | Read                                |
+| ------------------------------------------------------ | ----------------------------------- |
+| Rules, verify gate, Definition of Done                 | **AGENTS.md** (this file)           |
+| What the game is: world, stations, controls, tiers     | **GAME_DESIGN.md**                  |
+| How it is built: runtime, rendering, pipeline, testing | **ARCHITECTURE.md**                 |
+| What to build next and its acceptance criteria         | **BACKLOG.md**                      |
+| Every media file: specs, prompts, status               | **ASSETS.md** + `art/manifest.json` |
+| Colors                                                 | `src/design/palette.json`           |
+| Portfolio content (projects, stack, contact)           | `src/content/`                      |
+| Why a decision was made                                | **DECISIONS.md**                    |
+| Past failures and non-obvious fixes                    | **LESSONS.md**                      |
+| Running, branching and deploying (humans)              | **README.md**                       |
 
 ### Project documents
 
 - [README.md](README.md)
+- [GAME_DESIGN.md](GAME_DESIGN.md)
 - [ARCHITECTURE.md](ARCHITECTURE.md)
 - [BACKLOG.md](BACKLOG.md)
+- [ASSETS.md](ASSETS.md)
+- [DECISIONS.md](DECISIONS.md)
 - [LESSONS.md](LESSONS.md)

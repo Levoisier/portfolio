@@ -1,306 +1,262 @@
 # ARCHITECTURE.md
 
-Technical reference for the portfolio codebase. Read this when adding a section, scene, token, or asset.
+Technical reference for the game portfolio. GAME*DESIGN.md is the \_what*; this is the _how_.
+Anything marked **(Phase N)** does not exist yet — BACKLOG.md phase N builds it. Everything
+else exists today.
 
 ---
 
 ## Stack
 
-| Layer       | Choice                        | Notes                                                        |
-| ----------- | ----------------------------- | ------------------------------------------------------------ |
-| Framework   | Astro 5, static output        | Zero client JS by default; GSAP loaded as a client module    |
-| Animation   | GSAP 3 + ScrollTrigger        | Free after Webflow acquisition; vanilla TS, no React islands |
-| Styling     | Tailwind 3 + CSS custom props | Tailwind for layout/spacing; tokens.css for all colors       |
-| Language    | TypeScript strict             | `noUncheckedIndexedAccess` on                                |
-| Deploy      | Vercel static                 | `vercel.json` at root; no adapter needed                     |
-| Package mgr | pnpm                          | `pnpm-workspace.yaml` approves esbuild + sharp builds        |
+| Layer          | Choice                          | Notes                                                                  |
+| -------------- | ------------------------------- | ---------------------------------------------------------------------- |
+| Shell          | Astro 5, `output: 'static'`     | HTML shell, meta/OG, pre-rendered DOM panels, bundles TS via Vite      |
+| Game engine    | Phaser **4.2.x** (MIT)          | Arcade physics, animations, cameras, input, loader, particles, filters |
+| Language       | TypeScript strict               | `noUncheckedIndexedAccess`; Phaser ships its own `types/phaser.d.ts`   |
+| Unit tests     | Vitest                          | Pure logic, content, palette, manifest, pipeline                       |
+| E2E tests      | Playwright (`@playwright/test`) | Pinned to 1.56.1 to match the container's preinstalled Chromium        |
+| Asset pipeline | Node + sharp **(Phase 1)**      | `art/raw` → `public/game`, palette snapping, placeholders              |
+| Package mgr    | pnpm                            | Use the lockfile; never npm/yarn                                       |
+| Deploy         | Vercel static                   | `vercel.json` at root                                                  |
+
+No other runtime dependency without an ADR in DECISIONS.md (bundle budget below).
+
+**Phaser 4 vs your Phaser 3 memory.** Phaser 4 (stable since April 2026) keeps most of the v3
+API but: custom WebGL pipelines are replaced by render nodes, FX + masks are unified into
+**Filters** (`gameObject.filters` / camera filters), `setTintFill()` became
+`setTint()` + `setTintMode()`, `Geom.Point` → `Vector2`, `Mesh`/`Plane` are gone, lighting is
+`sprite.setLighting(true)`. Trust `node_modules/phaser/types/phaser.d.ts` over memory — `astro
+check`/`tsc` will reject v3-only calls. Source: https://phaser.io/news/2026/05/phaser-3-vs-phaser-4
 
 ---
 
-## Folder Map
+## Folder map
 
 ```
-src/
-  styles/
-    tokens.css          ← SINGLE SOURCE OF TRUTH — all CSS custom properties
-    global.css          ← Tailwind directives + font-face + scroll-stage CSS
-  layouts/
-    Layout.astro        ← HTML shell, fixed #scroll-stage + #panda-companion, imports controller
-  pages/
-    index.astro         ← Assembles all 5 sections in narrative order
-  components/
-    sections/           ← One file per section (Hero, Skills, Projects, Confidential, Contact)
-    ui/                 ← Shared primitives (empty for now — add as needed)
-  scripts/
-    scroll/
-      types.ts          ← Scene interface, SceneFactory, RegistryEntry
-      controller.ts     ← GSAP engine; add scenes via SCENE_REGISTRY only
-      scenes/
-        hero.ts         ← REFERENCE scene — fully working choreography
-        backdrop.ts     ← Fixed parallax stage driven by global scroll progress
-        companion.ts    ← Fixed desktop panda companion, outside ScrollSmoother
-        companionMobile.ts ← Mobile (<1024px) corner companion: pose-per-section + tap/tilt
-        projects.ts     ← v3 experiment-log reveal
-        confidential.ts ← Classified-file treatment
-        skills.ts       ← Periodic-table reagent shelf
-        contact.ts      ← Closing contact flourish
-        revealPlaceholder.ts ← Generic fallback reveal
-
-public/
-  fonts/                ← Self-hosted variable woff2 files
-  media/
-    panda/              ← Panda images (see ASSETS.md for exact paths + dims)
-    backdrop/           ← Full-bleed parallax layers
-    lab/                ← Lab/chemical decor elements
-    texture/            ← Blueprint paper, light-leak overlay
-
+art/                          ← media SOURCES (never served directly)
+  manifest.json               ← asset registry: every media id + geometry (exists)
+  raw/                        ← Cristian's deliveries, named <id>.png (user-owned; agents never edit)
+  reference/
+    panda-sheet-v1.png        ← approved character concept sheet (the design reference)
+    panda-sheet-v1.slices.json← frame boxes → interim panda until final strips arrive
 scripts/
-  verify.sh             ← pnpm verify entry point
+  verify.sh                   ← the gate (exists)
+  assets/                     ← asset pipeline CLI + tests (Phase 1)
+src/
+  content/                    ← ALL portfolio content, bilingual, typed + tested (exists)
+  design/palette.{json,ts}    ← the only color definitions (exists)
+  styles/tokens.css           ← CSS mirror of the palette + fonts/z-index/spacing (exists)
+  assets/registry.ts          ← typed view of art/manifest.json (exists)
+  i18n/                       ← lang detection/persistence + UI strings (Phase 2)
+  shared/                     ← event bus, motion preference, small utils (Phase 2)
+  game/                       ← everything Phaser (Phase 2+)
+    boot.ts                   ← dynamic-imports Phaser, creates the game
+    config.ts                 ← physics + camera constants
+    render/zoom.ts            ← pure zoom/viewport math (unit-tested)
+    quality.ts                ← tier detection + runtime downgrade
+    scenes/                   ← BootScene (load), WorldScene (play)
+    player/                   ← logic.ts (pure state machine) + PandaSprite
+    input/                    ← intent sources: keyboard, wheel, pointer, touch pad, travel
+    world/                    ← layout.ts (data) + validate.ts (pure) + builders
+    stations/                 ← station objects, triggers, prompts
+    fx/                       ← sky gradient, parallax, particles, filters (tiered)
+  ui/                         ← DOM: HUD, panels, menu, touch pad, loading screen (Phase 2+)
+  components/                 ← Astro components for the shell + pre-rendered panels (Phase 2+)
+  pages/index.astro           ← the single page
+public/
+  media/projects/…            ← content media (Fiora screenshots) — referenced from src/content
+  game/                       ← GENERATED by `pnpm assets` (gitignored — never edit, never commit)
+tests/e2e/                    ← Playwright specs
 ```
-
-## Current Section Order
-
-`src/pages/index.astro` assembles the v3 narrative in this order:
-
-1. `Hero`
-2. `Projects`
-3. `ConfidentialProjects`
-4. `Skills`
-5. `Contact`
-
-The scroll controller queries `[data-scene]` in DOM order, so section reorder work
-should happen in `index.astro` unless a fixed scene belongs outside the smoother
-wrapper.
 
 ---
 
-## Design Tokens
+## Runtime overview
 
-**File:** `src/styles/tokens.css`  
-**Rule:** Every color, font, spacing rhythm, easing value, and z-index is a CSS custom property in this file. Never write a hex/rgb/hsl value anywhere else in the codebase.
+```
+index.astro (static HTML)
+ ├─ <head> meta, OG, JSON-LD Person, fonts
+ ├─ #loading   DOM loading screen (CSS-animated panda strip + progress)      ← paints first
+ ├─ #screen    <canvas> mount (the game)                                     ← Phaser
+ ├─ #hud       DOM: name badge, Contact, ES·EN, sound, menu, interact prompt
+ ├─ #pad       DOM touch controls (handheld / touch layouts only)
+ ├─ #panels    pre-rendered <section data-panel="…" hidden> for EVERY station, both languages
+ └─ #menu      DOM map / fast-travel list
+       ▲                    │
+       │   typed event bus  │   src/shared/bus.ts — the ONLY game↔UI channel
+       └────────────────────┘
+```
 
-### Color palette
+1. The HTML paints the loading screen immediately; `src/game/boot.ts` then dynamic-imports
+   Phaser (~355 KB gzip) so the engine never blocks first paint.
+2. `BootScene` fetches `/game/manifest.json` (written by the pipeline: resolved frame counts,
+   sizes, and whether each asset came from `raw`, `reference` or `placeholder`), queues only
+   the assets for the active quality tier, reports progress on the bus, then starts
+   `WorldScene`.
+3. `WorldScene` builds the level from `world/layout.ts`, spawns the panda (or at a
+   `/#<station-id>` deep link), and runs the loop.
+4. The UI layer listens on the bus (`station:enter`, `station:open`, `travel:arrived`, …) and
+   emits intents back (`panel:closed`, `travel:to`, `lang:change`, `sound:toggle`). The game
+   never touches DOM; UI never touches Phaser objects.
 
-| Token            | Value                  | Use                                    |
-| ---------------- | ---------------------- | -------------------------------------- |
-| `--scarlet`      | `#E11D2A`              | Primary accent, CTAs, category accents |
-| `--scarlet-soft` | `#F07A82`              | Hover states, muted accents            |
-| `--scarlet-dim`  | `rgba(225,29,42,0.12)` | Background washes                      |
-| `--navy`         | `#0F2342`              | Dark surface, confidential section bg  |
-| `--navy-soft`    | `#1E3A6E`              | Lighter navy surface                   |
-| `--ink`          | `#0A0A0A`              | Near-black base                        |
-| `--paper`        | `#F5F3EE`              | Warm off-white foreground text         |
-
-### Periodic table category colors (`--cat-*`)
-
-Defined in `tokens.css`. Each maps to a GSAP-animated skill category. Add new categories here only.
-
-### Easing scale
-
-| Token                | Curve                               | Use                        |
-| -------------------- | ----------------------------------- | -------------------------- |
-| `--ease-out-expo`    | `cubic-bezier(0.16, 1, 0.3, 1)`     | Main reveal easing         |
-| `--ease-in-out-circ` | `cubic-bezier(0.85, 0, 0.15, 1)`    | Transitions between states |
-| `--ease-spring`      | `cubic-bezier(0.34, 1.56, 0.64, 1)` | Elastic bounce effects     |
-
-In GSAP use `'expo.out'` which matches the out-expo curve natively.
+**Bus contract (Phase 2):** `src/shared/bus.ts` exports a typed emitter keyed by an
+`Events` map; adding an event = adding a key with its payload type. No `window` custom events
+for game↔UI traffic.
 
 ---
 
-## Typography
+## Rendering contract (pixel-perfect)
 
-**Display font:** DM Mono (variable weight)  
-— Technical, geometric, monospaced. Used for: section headings, hero name, element symbols, labels, code-adjacent text.  
-— File to add: `/public/fonts/DMMono-VariableFont_wght.woff2`
+- **Art pixel** = one pixel of the art as drawn. Grid = **16** art px. Character cell = **64×64**,
+  the panda is **~48 art px** tall, feet on baseline `y = 60` inside the cell.
+- The canvas backing store is **low resolution** (art pixels) and is upscaled by the browser
+  by an **integer factor in device pixels** with `image-rendering: pixelated`. No
+  non-integer scaling of art anywhere, ever.
+- `zoom` (device px per art px) = `max(1, floor(screenHeightCss × dpr / targetViewHeight))`.
+  Canvas backing size = `floor(screenCss × dpr / zoom)` art px (width clamped to **200–960**);
+  CSS size = `backing × zoom / dpr`; any remainder is letterboxed in `--c-ink-900`.
+  Put this math in `src/game/render/zoom.ts` as a pure function and unit-test it.
+- Target view heights: **desktop 360**, **handheld 240**, **landscape-touch 240**.
+  Examples: 1920×1080@1 → zoom 3 → 640×360 · 1440×900@1 → zoom 2 → 720×450 · 1440×900@2 →
+  zoom 5 → 576×360 · 390×844@3 handheld screen 390×420 → zoom 5 → 234×252.
+- Phaser: `pixelArt: true`, `roundPixels: true`, game size = backing size, resize via
+  `scale.resize()` on viewport/orientation change (debounced).
+- Camera: horizontal follow with lerp + deadzone, clamped to world bounds; **vertically
+  bottom-anchored** (extra view height reveals more sky, never less ground). No vertical
+  follow; platforms stay within one screen.
+- World: height **480**, ground top at **y = 432**. Everything positions on integer art px.
+- In-world text (sign, station names, element symbols) is drawn in canvas in a pixel font and
+  must be crisp (binary alpha) at every zoom; long text is DOM only. Pick the technique in
+  Phase 2 (runtime-generated bitmap font from the loaded web font, or an OFL bitmap font) and
+  record it in DECISIONS.md.
 
-**Body font:** Inter (variable weight + optical size)  
-— Clean neutral sans. Used for: body copy, descriptions, metadata.  
-— File to add: `/public/fonts/Inter-VariableFont_opsz,wght.woff2`
+## Layout modes
 
-**Status:** Font-face declarations are scaffolded in `global.css` (commented out). System-ui fallback renders until woff2 files are placed. See BACKLOG item `feat: self-hosted fonts`.
+| Mode              | When                      | Screen                         | Controls                |
+| ----------------- | ------------------------- | ------------------------------ | ----------------------- |
+| `desktop`         | fine pointer, or no touch | full viewport                  | keyboard, wheel, click  |
+| `handheld`        | touch + portrait          | top area; pad below (~40 % vh) | DOM D-pad, A, B, START  |
+| `landscape-touch` | touch + landscape         | full viewport                  | translucent pad overlay |
 
-**Rationale:** Both are open-licensed (SIL OFL), variable-weight for a single HTTP request, and convey the technical precision of the identity. See DECISIONS.md.
+Mode is recomputed on resize/orientation change; the zoom contract above applies to the
+"screen" rectangle of the current mode. Respect `env(safe-area-inset-*)`.
 
----
+## Quality tiers
 
-## GSAP Scene Pattern
+`src/game/quality.ts` is the single source of truth for ambience decisions (no ad-hoc
+`innerWidth`/UA checks elsewhere).
 
-### The Scene interface (`src/scripts/scroll/types.ts`)
+- `high` when `(pointer: fine)` and viewport ≥ 1024 px and not `navigator.connection.saveData`;
+  otherwise `low`. Override with `?tier=high|low`.
+- Runtime guard: if the high tier averages < 50 fps for 3 s, downgrade to `low` and never
+  re-upgrade in that session.
+- The tier returns flags (`parallaxLayers`, `particleScale`, `filters`, `animatedPropRadius`,
+  …) that fx/world builders read. Manifest assets with `tier: "high"` load only on `high`.
 
-```typescript
-interface Scene {
-  init(el: Element): void; // called once; set up initial GSAP state
-  enter(): void; // section enters viewport
-  leave(): void; // section leaves viewport
-  progress(p: number): void; // 0→1 while section is pinned/active
-  destroy(): void; // cleanup (kill tweens, revert state)
-}
-```
+## Motion preference
 
-### How to add a new scene
+`src/shared/motion.ts` exposes `prefersReducedMotion()` + a change listener. Under reduce: no
+camera shake, no screen flashes, parallax differential ×0.3, particles minimal, travel uses
+fades. Player movement stays.
 
-1. **Create** `src/scripts/scroll/scenes/<name>.ts`
-2. **Implement** the Scene interface and export a factory:
-   ```typescript
-   import type { Scene } from '../types';
-   const myScene = (el: Element): Scene => ({
-     init(_el) {
-       /* gsap.set() initial state */
-     },
-     enter() {
-       /* gsap.to() reveal */
-     },
-     leave() {
-       /* pause loops, etc. */
-     },
-     progress(p) {
-       /* per-frame parallax */
-     },
-     destroy() {
-       /* tl.kill() */
-     },
-   });
-   export default myScene;
-   ```
-3. **Register** in `controller.ts` — two lines only:
-   ```typescript
-   // In imports section:
-   import mySceneFactory from './scenes/myScene';
-   // In SCENE_REGISTRY:
-   'my-section-id': mySceneFactory,
-   ```
-4. **Add** `data-scene="my-section-id"` to the section element in the Astro component.
-5. **Never** modify the controller core logic (below the registry).
+## World model **(Phase 4)**
 
-### Worked example
+`src/game/world/layout.ts` is plain typed data (no Phaser import): `width`, `height`,
+`groundY`, `zones[]` (id, x-range, sky keyframe), `platforms[]` (asset item + x,y),
+`stations[]`, `props[]`, `sky[]` (x → palette gradient stops). `validate.ts` is a pure
+function checked by a unit test: stations inside their zone, station ids resolve to
+`src/content`, no overlapping triggers, platforms reachable with the jump constants, props on
+the ground or a platform.
 
-`src/scripts/scroll/scenes/hero.ts` — the reference scene. Covers:
+## Player **(Phase 3)**
 
-- `gsap.matchMedia()` for a breakpoint-specific pin (desktop pins the hero for
-  ~140vh; mobile gets a plain scrub instead)
-- Scrubbed `fromTo()` depth tweens on the inner `.stage-depth` channel, so
-  progress 0 equals the static hero and the backdrop's outer parallax is untouched
-- The presentation veil fade (`#hero-veil`) and the non-LCP reaction glow
-- The five-method `Scene` interface, including no-op `enter`/`leave`/`progress`
+- `player/logic.ts` — a **pure** state machine (`idle | walk | run | rise | fall | land |
+interact | wave`) that takes an `Intent` + `dt` + `grounded` and returns the desired
+  velocity, animation key and flip. Unit-tested without Phaser.
+- Arcade physics body applies it. Starting constants (`config.ts`): gravity 900 px/s², walk
+  90 px/s, run 150 px/s, jump velocity −330 px/s (apex ≈ 60 px), coyote 90 ms, jump buffer
+  120 ms, jump-cut ×0.5 on early release. Tune by feel; keep them in `config.ts`.
+- The body is a fixed box (not per-frame), anchored bottom-centre, so animation frames never
+  change collision.
 
-**What is deliberately NOT in this scene:** the hero copy entrance
-(premise → name stagger → role → hint → idle bob). It lives in
-`src/scripts/heroEntrance.ts` and runs on the Web Animations API, outside the
-deferred controller, so the site's first impression plays on arrival instead of
-waiting ~1.6s for GSAP to download and mount. It must stay out of GSAP for a
-second reason too: the desktop pin re-parents `#hero` into a `.pin-spacer`,
-which restarts CSS animations inside it (see LESSONS 2026-07-29). Do not add
-GSAP writes to `#hero-premise`, `.hero-char`, `#hero-role` or
-`#hero-scroll-hint`.
+## Input **(Phase 3 / 6)**
 
-> Note: no scene currently implements a `prefers-reduced-motion` branch, and
-> there is no sitewide motion kill-switch in `global.css` — despite what Golden
-> Rule 4 in AGENTS.md requires. This is a known open gap, not a pattern to copy.
+Every source writes into one per-frame `Intent` (`moveX ∈ [−1, 1]`, `run`, `jumpPressed`,
+`jumpHeld`, `interactPressed`, `menuPressed`). Sources: keyboard, **wheel** (vertical delta →
+`moveX` with a short decay, so scrolling walks), pointer (click a station → travel), touch pad
+(Phase 6), travel/auto-walk (Phase 7, overrides the rest while active). Merging is pure and
+unit-tested.
 
-### Global scroll progress signal
+## Stations & panels **(Phase 5)**
 
-The controller emits `CustomEvent('scroll:progress', { detail: { progress } })` on every ScrollTrigger tick. Listen for it in any module that needs to react to page-level scroll position (e.g., the backdrop stage parallax scene once implemented):
+- A station = layout entry (`id`, `kind`, `x`, `asset`, `trigger` width) + a panel id.
+- Panels are **Astro components rendered at build time** from `src/content`, once per language
+  (`<div lang="es">` / `<div lang="en">`, visibility from `html[data-lang]`), inside
+  `<section data-panel="<id>" hidden>`. The UI un-hides, traps focus, handles `Esc`/close,
+  restores focus, and emits `panel:closed`. Search engines and screen readers get all content
+  as plain HTML.
+- Visited state + language + sound live in `localStorage` (wrapped in try/catch).
 
-```typescript
-window.addEventListener('scroll:progress', (e) => {
-  const { progress } = (e as CustomEvent<{ progress: number }>).detail;
-  // drive backdrop layers here
-});
-```
+## i18n **(Phase 2)**
 
-### Device-tilt signal (mobile, touch-native)
+`src/i18n/lang.ts`: initial language = stored choice → `navigator.language` starting with `es`
+→ `es`, else `en`. Setting a language updates `html[lang]`, `html[data-lang]`, storage, and
+emits `lang:change` on the bus (canvas text re-renders). `src/i18n/ui.ts` holds UI strings
+(`Localized` values); content strings stay in `src/content`.
 
-Touch devices have no cursor, so `src/scripts/touch-tilt.ts` is the analog of the
-desktop mousemove tracking. It reads `deviceorientation` and emits
-`CustomEvent('tilt:change', { detail: { x, y } })` (each in `[-1, 1]`), mirroring
-the `scroll:progress` contract so consumers stay decoupled from the sensor wiring.
-The mobile companion subscribes to nudge the panda's gaze. iOS 13+ requires
-`DeviceOrientationEvent.requestPermission()` from a user gesture, so `requestTilt()`
-is called from the **first tap on the panda**; unsupported/denied degrades silently
-and it is fully off under reduced motion.
+## Asset pipeline **(Phase 1)**
 
----
+`pnpm assets` (also run automatically by `predev` / `prebuild`) turns `art/` into
+`public/game/`. For each `art/manifest.json` entry it picks a source in this order:
 
-## Smooth scroll (ScrollSmoother) — sanctioned controller exception
+1. `art/raw/<id>.png` — Cristian's delivery;
+2. a reference slicing map (`art/reference/*.slices.json`) — interim panda frames;
+3. a generated **placeholder** in palette colors with the exact final geometry.
 
-The page is scrolled by **GSAP ScrollSmoother**, not the native scrollbar alone. This is the **one sanctioned edit to the controller core** (Golden Rule 3 protects scene-_adding_; smooth-scroll is engine infra, kept minimal and fenced in `controller.ts` under the "Smooth scroll" comment band).
+Processing (per source): remove background (existing alpha → keep; pure-green `#00FF00`
+chroma key in HSV with edge cleanup; black flood-fill for the reference sheet) → find
+connected components → group into frames/items (largest components ordered left→right, small
+satellites such as scarf tails or sparkles merged into the nearest frame) → trim → scale with
+**one factor per strip** (from the tallest frame to `targetHeight`; area resampling when the
+source is fake pixel art, no resampling when it is already at 1×) → **snap every pixel to
+`src/design/palette.json`** (nearest in OKLab, no dithering) → binarize alpha (≥ 50 %) →
+remove 1-px orphan islands → pack into the manifest cell, bottom-centre anchored on the
+baseline → for `layer`/`tile-strip`: fit to `size`, measure the left/right seam and warn (or
+auto-crop to the best loop point) → write indexed PNGs + `public/game/manifest.json` + a
+human-readable report (frame counts found vs expected, clipping, % pixels moved by palette
+snapping, seam error). Deterministic; cached by input hash.
 
-**DOM contract (`Layout.astro`):**
+Known source traits are logged in LESSONS.md (AI "fake pixel art": ~100 k colors, no grid,
+uneven frame sizes, baked shadows).
 
-```
-body
-├─ #scroll-stage        ← fixed parallax stage, SIBLING OUTSIDE the wrapper (stays truly fixed)
-├─ #panda-companion     ← fixed desktop companion shell (≥1024px); inner stage owns opacity/transform
-├─ #panda-companion-mobile ← fixed mobile companion shell (<1024px); same poses, corner-anchored
-└─ #smooth-wrapper      ← ScrollSmoother applies its styles here
-   └─ #smooth-content   ← ScrollSmoother transforms this; all page content lives inside
-      └─ main#scroll-content > <slot/>
-```
+## Testing strategy
 
-`#scroll-stage` and `#panda-companion` **must** stay outside `#smooth-wrapper` —
-otherwise the smoother's transform would drag the fixed layers with the content.
-The companion scene animates an inner `[data-companion-stage]` because the
-controller clears the global `[data-scene]` opacity guard on the outer shell.
+- **Unit (Vitest):** co-located `*.test.ts`. Required for every pure module (content, palette,
+  manifest, zoom math, quality decisions, input merge, player logic, layout validation,
+  travel planning, pipeline steps with small fixture images). Pure modules never import Phaser.
+- **E2E (Playwright, Phase 2+):** `tests/e2e/*.spec.ts` against `pnpm preview`, projects
+  `desktop` (1440×900) and `mobile` (390×844, touch). Baseline: page loads with no console
+  errors, canvas renders non-blank, HUD visible. Each phase adds specs for its behavior.
+- **Debug/test hook (Phase 2):** with `?debug` (or in dev), `window.__PORTFOLIO__` exposes
+  `getState()`, `teleport(x)`, `openStation(id)`, `setTier(t)`, plus an FPS/zoom/tier overlay.
+  E2E uses it instead of simulating long walks.
+- Visual checks: specs save screenshots to `test-results/`; review them before claiming a
+  visual acceptance criterion.
 
-**Controller wiring:** `gsap.registerPlugin(ScrollTrigger, ScrollSmoother)`, then `initSmoothScroll()` runs **before** scenes mount, calling `ScrollSmoother.create({ wrapper, content, smooth: 1.2, effects: true, smoothTouch: 0 })`. `effects: true` enables `data-speed` / `data-lag` for later phases. The global `scroll:progress` event and every scene ScrollTrigger work unchanged — they read the smoothed scroll position automatically (no `scrollerProxy` needed; ScrollSmoother is GSAP-native).
+## Performance budgets
 
-**Reduced motion:** `initSmoothScroll()` returns early — `ScrollSmoother.create()` is skipped entirely, leaving native scroll. CSS `scroll-behavior` is `auto` (never `smooth`) so it cannot fight the smoother.
+| Budget                              | Target                                   |
+| ----------------------------------- | ---------------------------------------- |
+| HTML + inline CSS (gzip)            | ≤ 60 KB                                  |
+| App JS excluding Phaser (gzip)      | ≤ 80 KB                                  |
+| Phaser chunk (gzip)                 | ~355 KB (custom build optional)          |
+| Game assets, high tier / low tier   | ≤ 1.2 MB / ≤ 0.7 MB                      |
+| Loading screen visible (mobile, 4G) | ≤ 1.5 s                                  |
+| Playable (mobile, 4G)               | ≤ 4 s                                    |
+| Frame rate                          | 60 fps desktop, ≥ 50 fps mid-range phone |
 
-## Liquid-glass material (v4)
+## SEO & sharing **(Phase 10/12)**
 
-A reusable refractive surface for copy that rides the backdrop art. Tokens live in
-`tokens.css` (`--glass-fill`, `--glass-fill-solid`, `--glass-rim`, `--glass-sheen`,
-`--glass-sheen-soft`, `--glass-blur`, `--glass-saturate`, `--glass-radius`); the
-`.liquid-glass` utility is in `global.css`, and `src/components/ui/GlassSurface.astro`
-wraps it for markup reuse (pass `class` for Tailwind padding/layout).
-
-- **Base** renders the opaque-ish `--glass-fill-solid` tint so text is AA-readable
-  even with no `backdrop-filter` (mobile / unsupported browsers — protects mobile LCP).
-- `::before` paints a static inner-top specular gradient (the "this is glass" cue);
-  `::after` is a decorative diagonal sheen sweep, disabled under reduced motion via the
-  global `animation-duration: 0.01ms` rule.
-- `@supports (backdrop-filter) + (min-width: 1024px)` upgrades the fill to the
-  translucent `--glass-fill` plus `blur()/saturate()` so the art shows through.
-
-Use it for over-backdrop copy (Skills intro; Hero block; Projects text columns). Never
-hardcode the material's colors — extend the tokens instead.
-
-**Magnifier loupe.** `src/scripts/glass-loupe.ts` (imported in `Layout.astro`) attaches a
-cursor-following circular lens to every `.liquid-glass` surface that magnifies the panel
-content beneath it, framed by scope-style corner brackets (`.glass-loupe` / `.glass-lens`
-in `global.css`). It clones the live panel content into the lens and drives the lens +
-clone from a single `requestAnimationFrame` lerp (transforms only). It is **desktop +
-fine-pointer only** and bails entirely under reduced motion / coarse pointer / `< 1024px`,
-so mobile and the LCP budget are untouched.
-
-## Companion route engine (v4)
-
-`scenes/companion.ts` is a fixed, desktop-only scene outside `#smooth-wrapper`. It no
-longer reads global page progress; instead it creates its **own per-section /
-per-item `ScrollTrigger.create()`** instances (scene-local — the controller core and
-its single registry line are untouched) so pose and position track the _visible_
-section even while a section is pinned.
-
-- **Route (zig-zag):** hero handoff → fade in LEFT (waving) · Projects → RIGHT margin,
-  builder pose, walking DOWN across the pinned reveal · Confidential → **per-card**: hop
-  to the side opposite each card and read as a redacted `brightness(0)` `panda-head`
-  silhouette · Skills → LEFT · Contact → CENTER waving, then drift to the bottom-right
-  corner while fading so it hands off to the in-section `panda-wave` watermark.
-- **Motion** eases via `gsap.quickTo` channels (x/y/scale/rotation/opacity); the pose
-  cross-fade is a gentle scale/slide turn. Cursor look-toward is on an inner
-  `[data-companion-look]` element (separate channel).
-- **Stays above content** (`--z-overlay`): Confidential (navy) and Contact (paper) have
-  opaque backgrounds, so it is kept non-interactive (`pointer-events:none`,
-  `aria-hidden`) and routed through the side margins rather than lowered in z. See
-  LESSONS 2026-06-21.
-- **Reduced motion:** `init()` returns before the `matchMedia` desktop branch — a single
-  static pose, no route, no triggers, no cursor tracking.
-
-## How to add a new section
-
-1. Create `src/components/sections/MySection.astro` with `data-scene="my-section"`.
-2. Import and place it in `src/pages/index.astro` at the correct narrative position.
-3. Add a scene (or reuse `revealPlaceholder`) per the Scene Pattern above.
-4. Add any new asset paths to `ASSETS.md` before using them.
-5. Add any new design token to `src/styles/tokens.css` before using it.
-6. Add a BACKLOG item for its animation choreography if not done immediately.
+Title/description from `src/content/profile.ts`, OG + Twitter card with a 1200×630 image
+captured from the game by a script, JSON-LD `Person`, `robots.txt`, favicon set generated
+from the idle frame. All panel content is in the static HTML.

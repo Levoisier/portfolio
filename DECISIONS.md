@@ -1,118 +1,132 @@
 # DECISIONS.md — Architecture Decision Records
 
-ADR-lite: one block per significant choice. Template:
+ADR-lite, newest last. Template:
 
 ```
 ## <decision>
-**Status:** Accepted / Superseded by [link]
-**Why:** The reason for this choice.
-**Trade-off:** What we give up or accept in exchange.
+**Status:** Accepted / Proposed / Superseded by <link>
+**Why:** the reason.
+**Trade-off:** what we give up.
 ```
 
----
-
-## Astro + vanilla GSAP over React islands
-
-**Status:** Accepted
-
-**Why:** A portfolio is a narrative document, not an application. Astro's static output ships zero JS by default; a single GSAP controller module is added explicitly. React islands would add ~40 KB of React runtime for animations that don't need component state. GSAP's imperative timeline API is a better fit for tightly sequenced, per-element choreography than declarative component lifecycle.
-
-**Trade-off:** No React ecosystem (hooks, context, component libraries) available in animation code. Accepted: UI is hand-crafted HTML/CSS; the only dynamic layer is GSAP.
+The previous scroll-narrative site's ADRs (Astro + GSAP ScrollSmoother, glass UI, companion
+panda) are superseded by this rebuild; read them in git history at `51bbf3c` if needed.
 
 ---
 
-## Periodic table rendered in code (SVG/CSS) not raster
+## Rebuild the portfolio as a game, from scratch
+
+**Status:** Accepted (2026-09-26)
+**Why:** The scroll site felt buggy and unsurprising; most bugs came from layered scroll
+choreography. Cristian chose a playable 2D pixel-art side-scroller. Only the content survives:
+projects, confidential work, stack and personal info (`src/content/`) plus the Fiora screenshots.
+**Trade-off:** Months of prior visual work are discarded; the site is a game-first experience.
+
+## No classic view — the recruiter path lives inside the game
 
 **Status:** Accepted
+**Why:** Cristian explicitly rejected a separate classic page. Instead, speed-to-content is
+designed into the game: scroll-to-walk, click-to-travel, a fast-travel menu, an always-visible
+Contact button, deep links (`/#fiora`), and all content as pre-rendered DOM panels.
+**Trade-off:** Visitors who dislike games still enter the world; mitigated by the ≤ 10 s
+recruiter test in Phase 7.
 
-**Why:** 30+ element tiles at various sizes need crisp rendering at every DPR (1x, 2x, 3x). A raster sprite would require a 3× export to look sharp on Retina, adding significant payload. CSS/SVG tiles are resolution-independent, infinitely scalable, and trivially themed via CSS custom properties.
-
-**Trade-off:** More complex Astro component markup. Accepted: the Skills component is self-contained and the visual output is better.
-
----
-
-## Font choice: DM Mono (display) + Inter (body)
-
-**Status:** Accepted
-
-**Why:**
-
-- DM Mono: monospaced, geometric, technical — reinforces the "developer precision + lab instrument" identity. Variable weight means one HTTP request for all weights.
-- Inter: the clearest neutral humanist sans for body text, battle-tested at small sizes, variable weight + optical size axis.
-- Both are SIL OFL licensed — freely self-hostable with no attribution requirements on the page.
-
-**Trade-off:** DM Mono is a monospace face; it reads slowly in long paragraphs. Accepted: it's used only for headings, labels, and the hero name — never for body copy.
-
----
-
-## Single CSS custom property file as design token source of truth
+## Side-scroller, not top-down
 
 **Status:** Accepted
+**Why:** A single left→right path mirrors a narrative page, maps to the scroll wheel and a
+two-button touch pad, and needs one walk direction of art (flipped), roughly half the sprite
+work of a 4-direction top-down game.
+**Trade-off:** Less free exploration.
 
-**Why:** Tailwind config references `var(--token)` values so that tokens are available both in utility classes and in arbitrary CSS/JS (`getComputedStyle`). A single `tokens.css` file means changing a brand colour is one edit, not a search-and-replace across Tailwind config + inline styles + CSS files.
-
-**Trade-off:** Tokens are not typed (no TypeScript-level enforcement). Mitigated by the Golden Rule in AGENTS.md: "never hardcode a colour outside tokens.css".
-
----
-
-## GSAP Scene registry pattern (extend without editing controller core)
+## Phaser 4 as the engine
 
 **Status:** Accepted
+**Why:** Mature, MIT, TypeScript types in the package; built-in arcade physics, animation,
+cameras, input (incl. multi-touch), loader, particles, and v4 Filters for the desktop
+ambience. A battle-tested engine reduces the "buggy" risk for an agent-built codebase, and the
+bundled types catch Phaser-3-only API use at compile time. 4.2.1 is the current stable
+(first v4 stable: April 2026).
+**Trade-off:** ~1.38 MB min / ~355 KB gzip, loaded lazily after first paint. A custom
+Canvas2D engine would be ~10× smaller but means writing physics/animation/input ourselves;
+KAPLAY is smaller but less proven. Revisit with a Phaser custom build in Phase 12.
 
-**Why:** The controller is stable infrastructure. Adding a new scene by editing the controller risks introducing a regression in all existing scenes. The registry pattern (import + one dictionary entry) isolates new work to the scene module and a single registry line, making diffs minimal and reviewable.
-
-**Trade-off:** Slightly more boilerplate per scene (must export a factory). Accepted: the Scene interface is small (5 methods) and `revealPlaceholder.ts` provides a copy-paste starting point.
-
----
-
-## Confidential section: no screenshots, no links, no client names
-
-**Status:** Accepted — enforced as a Golden Rule in AGENTS.md
-
-**Why:** NDA obligations. Even abstract screenshots could be reverse-engineered to identify clients. The "redacted blueprint" aesthetic transforms the constraint into a feature: the visual treatment communicates that the work exists and is significant without disclosing anything protected.
-
-**Trade-off:** The confidential section is less immediately impressive than a live-demo portfolio. Accepted: the industry/role/impact framing communicates competence without disclosure risk.
-
----
-
-## Easing: expo.out as the primary reveal easing
+## Astro static shell; canvas draws art, DOM holds text
 
 **Status:** Accepted
+**Why:** Astro renders the shell, meta and the content panels as static HTML (SEO, screen
+readers, instant language switch, crisp text at any DPR) and bundles TS. Phaser only paints the
+world. The two talk through one typed event bus.
+**Trade-off:** Two rendering layers to keep in sync (positions of prompts, pause state).
 
-**Why:** Exponential ease-out (`cubic-bezier(0.16, 1, 0.3, 1)`) reads as fast and snappy — it reaches near-final state quickly, then gently settles. This matches the precision/efficiency identity of the brand. Linear or sine easing feels sluggish; back/elastic easing feels playful in a way that doesn't match the technical aesthetic.
-
-**Trade-off:** `ease-spring` (`cubic-bezier(0.34, 1.56, 0.64, 1)`) is available for specific elastic moments (e.g., skill tile pop). Default to expo.out everywhere else.
-
----
-
-## Self-host Inter variable and DM Mono fallback source
+## Level as typed data; geometry from strips and props, no tilesets
 
 **Status:** Accepted
+**Why:** Agents can read, diff and validate a TypeScript layout; a map editor (Tiled/LDtk)
+needs a GUI. The world is mostly flat ground + a few platforms, so a seamless floor strip and
+standalone platform/prop sprites cover it — and AI image tools handle standalone props far
+better than seamless multi-tile tilesets.
+**Trade-off:** No visual level editor; complex terrain would be awkward (not needed).
 
-**Why:** Inter ships an official variable WOFF2 that can be self-hosted at the documented path. Google Fonts' upstream DM Mono family currently ships static TTF faces rather than a variable WOFF2, but the project contract already documents `/fonts/DMMono-VariableFont_wght.woff2` as the display font path.
-
-**Trade-off:** The DM Mono asset is placed at the documented path to keep the swap contract stable, but it is declared as its real static TrueType format so browsers can load it. Future typography work should replace it with a true DM Mono variable WOFF2 if upstream publishes one or if a licensed build artifact is supplied.
-
-## Responsive hero derivatives from canonical Panda source
-
-**Status:** Accepted
-
-**Why:** Lighthouse mobile LCP was decode-bound on the canonical transparent PNG even after fetch priority and lazy-loading non-critical media. Generated WebP derivatives keep `/media/panda/panda-hero.png` as the source-of-truth replacement path while giving browsers small responsive sources for the above-the-fold image.
-
-**Trade-off:** When Cristian replaces `/media/panda/panda-hero.png`, the generated `/media/panda/generated/panda-hero-*.webp` files must be regenerated from the new source. Accepted: the file names are documented in `ASSETS.md` and the original PNG remains the fallback.
-
-## Inline built stylesheets for the static portfolio page
+## Asset pipeline with global palette snapping
 
 **Status:** Accepted
+**Why:** AI-generated "pixel art" has no real grid, ~100 k colors, no alpha and inconsistent
+frame sizes. Normalizing everything at build time (chroma key → grid → one palette → baseline)
+makes art from different tools and sessions look like one game, and lets placeholders stand in
+with final geometry so media never blocks code.
+**Trade-off:** Pipeline complexity; some AI detail is lost in snapping.
 
-**Why:** The generated CSS is small, but as a separate render-blocking request it pushed mobile FCP/LCP beyond the performance budget under Lighthouse throttling. This is a single-page static portfolio, so inlining the built stylesheet removes a network dependency from the critical path without duplicating CSS across many routes.
-
-**Trade-off:** HTML size increases by the inlined stylesheet size and would be less efficient on a multi-page site. Accepted: the current site has one route, and the LCP improvement is material.
-
-## Defer GSAP controller until after the static hero can paint
+## One 29-color palette derived from the brand
 
 **Status:** Accepted
+**Why:** Brand anchors scarlet `#E11D2A`, navy `#0F2342`, ink `#0A0A0A`, paper `#F5F3EE` expanded
+into ink/navy/scarlet/paper/amber/dusk ramps for sprites, lights and the night→dawn sky. Green is
+excluded (reserved for the chroma key; it also caused the old site's clash).
+`src/design/palette.json` is canonical; `tokens.css` mirrors it; a test enforces both and bans
+color literals elsewhere.
+**Trade-off:** Art must live within 29 colors.
 
-**Why:** The portfolio's above-the-fold hero image is static HTML and does not require GSAP to become visible. Loading and evaluating the animation controller during the critical path delayed mobile LCP even with the selected WebP source already downloaded.
+## Pixel-perfect rendering via low-res canvas + integer device-pixel zoom
 
-**Trade-off:** Entrance choreography starts shortly after the browser reaches idle, or after the timeout fallback. Accepted: the hero LCP image remains visible immediately, and the scroll scenes still mount before normal interaction.
+**Status:** Accepted
+**Why:** Integer scaling in **device** pixels keeps every art pixel square on 1×, 2× and 3×
+screens; a low-resolution backing store is also cheap on phones. Target view height 360 (desktop)
+/ 240 (touch) with variable width shows more world on wider screens instead of stretching.
+**Trade-off:** Camera moves in whole art pixels (authentic, slightly steppier parallax).
+
+## Two quality tiers
+
+**Status:** Accepted
+**Why:** Cristian wants more ambience on desktop than on mobile. One module decides the tier
+(`high` / `low`) plus a runtime FPS downgrade, so no scene invents its own device checks.
+**Trade-off:** Two configurations to test.
+
+## Fonts: Pixelify Sans + Inter
+
+**Status:** Accepted (installation in Phase 2)
+**Why:** Pixelify Sans (OFL, Google Fonts, latin + latin-ext → Spanish accents) matches the
+pixel look for headings/UI; Inter (OFL) keeps long panel text readable.
+**Trade-off:** Two font families to load; subset both.
+
+## Languages: ES + EN, browser-detected
+
+**Status:** Accepted
+**Why:** Content already exists in both. Default from the stored choice, else `navigator.language`
+(`es*` → ES, otherwise EN) so international recruiters land in English; the toggle persists.
+**Trade-off:** Spanish-speaking visitors with an English browser see EN first (one tap away).
+
+## Testing: Vitest + Playwright 1.56.1
+
+**Status:** Accepted
+**Why:** Vitest for pure logic (fast, no browser). Playwright for the real canvas and DOM.
+`@playwright/test` is pinned to 1.56.1 because that matches the Chromium preinstalled in the
+cloud agent container (`/opt/pw-browsers`); locally run `pnpm exec playwright install chromium`.
+**Trade-off:** Upgrading Playwright requires matching browsers.
+
+## Audio off by default, procedural SFX
+
+**Status:** Proposed (decide in Phase 11)
+**Why:** Autoplaying sound on a portfolio is hostile; procedural SFX (e.g. ZzFX, ~1 KB) avoid
+shipping audio files.
+**Trade-off:** Most visitors never hear it.

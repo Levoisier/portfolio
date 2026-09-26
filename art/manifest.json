@@ -1,0 +1,298 @@
+{
+  "$comment": "Asset registry. Every media file the game uses has exactly one entry here and one row in ASSETS.md. Raw sources live in art/raw/<id>.png (user-provided); `pnpm assets` writes normalized output to public/game/ (generated, never committed). Sizes are in art pixels (the game's native resolution).",
+  "version": 1,
+  "grid": 16,
+  "assets": [
+    {
+      "id": "panda-idle",
+      "kind": "strip",
+      "wave": "A",
+      "required": true,
+      "tier": "all",
+      "cell": [64, 64],
+      "frames": 4,
+      "targetHeight": 48,
+      "fps": 6,
+      "loop": true
+    },
+    {
+      "id": "panda-walk",
+      "kind": "strip",
+      "wave": "A",
+      "required": true,
+      "tier": "all",
+      "cell": [64, 64],
+      "frames": 6,
+      "targetHeight": 48,
+      "fps": 10,
+      "loop": true
+    },
+    {
+      "id": "panda-air",
+      "kind": "strip",
+      "wave": "A",
+      "required": true,
+      "tier": "all",
+      "cell": [64, 64],
+      "frames": 6,
+      "targetHeight": 50,
+      "fps": 12,
+      "loop": false,
+      "frameNames": ["crouch", "takeoff", "rise", "apex", "fall", "land"]
+    },
+    {
+      "id": "panda-interact",
+      "kind": "strip",
+      "wave": "A",
+      "required": true,
+      "tier": "all",
+      "cell": [64, 64],
+      "frames": 4,
+      "targetHeight": 48,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "id": "panda-wave",
+      "kind": "strip",
+      "wave": "A",
+      "required": true,
+      "tier": "all",
+      "cell": [64, 64],
+      "frames": 4,
+      "targetHeight": 54,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "id": "panda-run",
+      "kind": "strip",
+      "wave": "A",
+      "required": false,
+      "tier": "all",
+      "cell": [64, 64],
+      "frames": 6,
+      "targetHeight": 46,
+      "fps": 14,
+      "loop": true
+    },
+    {
+      "id": "panda-celebrate",
+      "kind": "strip",
+      "wave": "D",
+      "required": false,
+      "tier": "all",
+      "cell": [64, 64],
+      "frames": 4,
+      "targetHeight": 56,
+      "fps": 8,
+      "loop": true
+    },
+    {
+      "id": "panda-sleep",
+      "kind": "strip",
+      "wave": "D",
+      "required": false,
+      "tier": "all",
+      "cell": [64, 64],
+      "frames": 2,
+      "targetHeight": 34,
+      "fps": 2,
+      "loop": true
+    },
+    {
+      "id": "floor-plant",
+      "kind": "tile-strip",
+      "wave": "B",
+      "required": true,
+      "tier": "all",
+      "size": [256, 32],
+      "seamless": "x"
+    },
+    {
+      "id": "platforms",
+      "kind": "set",
+      "wave": "B",
+      "required": true,
+      "tier": "all",
+      "items": [
+        { "name": "platform-s", "targetWidth": 48 },
+        { "name": "platform-m", "targetWidth": 80 },
+        { "name": "platform-l", "targetWidth": 128 }
+      ]
+    },
+    {
+      "id": "bg-far",
+      "kind": "layer",
+      "wave": "B",
+      "required": true,
+      "tier": "all",
+      "size": [640, 200],
+      "seamless": "x",
+      "scrollFactor": 0.15
+    },
+    {
+      "id": "bg-mid",
+      "kind": "layer",
+      "wave": "B",
+      "required": true,
+      "tier": "all",
+      "size": [640, 240],
+      "seamless": "x",
+      "scrollFactor": 0.4
+    },
+    {
+      "id": "bg-fore",
+      "kind": "layer",
+      "wave": "D",
+      "required": false,
+      "tier": "high",
+      "size": [640, 96],
+      "seamless": "x",
+      "scrollFactor": 1.25
+    },
+    {
+      "id": "station-spawn-gate",
+      "kind": "sprite",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "targetHeight": 160,
+      "maxSize": [224, 176]
+    },
+    {
+      "id": "station-fiora",
+      "kind": "sprite",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "targetHeight": 128,
+      "maxSize": [160, 160]
+    },
+    {
+      "id": "station-japaniracer",
+      "kind": "sprite",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "targetHeight": 128,
+      "maxSize": [176, 160]
+    },
+    {
+      "id": "station-le-parche",
+      "kind": "sprite",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "targetHeight": 128,
+      "maxSize": [160, 160]
+    },
+    {
+      "id": "station-maison-cielare",
+      "kind": "sprite",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "targetHeight": 128,
+      "maxSize": [160, 160]
+    },
+    {
+      "id": "station-orquestia",
+      "kind": "sprite",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "targetHeight": 136,
+      "maxSize": [176, 160]
+    },
+    {
+      "id": "confidential-vault",
+      "kind": "strip",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "cell": [160, 160],
+      "frames": 2,
+      "targetHeight": 144,
+      "fps": 0,
+      "loop": false,
+      "frameNames": ["closed", "open"]
+    },
+    {
+      "id": "confidential-dossier",
+      "kind": "sprite",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "targetHeight": 56,
+      "maxSize": [48, 64]
+    },
+    {
+      "id": "skill-block",
+      "kind": "strip",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "cell": [24, 24],
+      "frames": 3,
+      "targetHeight": 24,
+      "fps": 0,
+      "loop": false,
+      "frameNames": ["idle", "bump", "used"]
+    },
+    {
+      "id": "contact-post",
+      "kind": "strip",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "cell": [112, 128],
+      "frames": 2,
+      "targetHeight": 120,
+      "fps": 0,
+      "loop": false,
+      "frameNames": ["idle", "active"]
+    },
+    {
+      "id": "props-misc",
+      "kind": "set",
+      "wave": "D",
+      "required": true,
+      "tier": "all",
+      "items": [
+        { "name": "barrel", "targetHeight": 24 },
+        { "name": "crate", "targetHeight": 20 },
+        { "name": "cone", "targetHeight": 14 },
+        { "name": "valve-pipe", "targetHeight": 32 },
+        { "name": "lamp-post", "targetHeight": 72 },
+        { "name": "bench", "targetHeight": 18 },
+        { "name": "gas-cylinder", "targetHeight": 28 },
+        { "name": "toolbox", "targetHeight": 12 }
+      ]
+    },
+    {
+      "id": "flask-bubbling",
+      "kind": "strip",
+      "wave": "D",
+      "required": true,
+      "tier": "all",
+      "cell": [16, 24],
+      "frames": 4,
+      "targetHeight": 22,
+      "fps": 6,
+      "loop": true
+    },
+    {
+      "id": "flare-flame",
+      "kind": "strip",
+      "wave": "D",
+      "required": false,
+      "tier": "high",
+      "cell": [16, 32],
+      "frames": 4,
+      "targetHeight": 30,
+      "fps": 10,
+      "loop": true
+    }
+  ]
+}

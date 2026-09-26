@@ -1,246 +1,400 @@
-# BACKLOG.md
+# BACKLOG.md — Game rebuild roadmap
 
-Ordered build backlog for the loop agent. Work top-to-bottom — each item builds on the last and the build must never break mid-item.
+The ordered plan for building the game portfolio described in GAME_DESIGN.md. One phase = one
+agent session = one PR. Phases are sized so an agent can finish, test and verify one without
+guessing.
 
-**Before starting any item:** read AGENTS.md (Golden Rules + verify gate).
-**Before checking an item done:** run `pnpm verify` and confirm it exits 0.
+## How to work this backlog (agents)
 
----
+1. Pick the **first unchecked phase whose dependencies are checked** (see the graph). Phases on
+   the same row of the graph can run in parallel on separate branches.
+2. Read AGENTS.md → GAME_DESIGN.md → ARCHITECTURE.md → the phase below → any ASSETS.md rows it
+   names → LESSONS.md entries for the same area.
+3. Branch `feat/p<N>-<short-summary>` from the integration branch (`next` — see README →
+   _Branching & deploy_) unless the environment assigns a branch; open the PR into it.
+4. Implement **only** that phase. If you find a problem in another phase's code, fix it only if
+   it blocks you, and say so in the PR.
+5. Add the tests the phase lists. Run `pnpm verify` and `pnpm test:e2e`; both must pass.
+6. Check every acceptance criterion in a running `pnpm preview` at **desktop 1440×900** and
+   **mobile 390×844 (touch)**; attach or describe the screenshots.
+7. Update ARCHITECTURE.md if a contract changed, DECISIONS.md for any new dependency or
+   reversed decision, LESSONS.md for any gotcha, ASSETS.md statuses if media arrived. Check the
+   phase box. Commit per AGENTS.md.
 
-## Shipped — v1 (foundation)
+**Media never blocks a phase.** Missing art falls back to the interim panda
+(`art/reference`) or pipeline placeholders with final geometry. When real art lands, it must
+drop in with zero code changes.
 
-Phases 1–10. One-line orientation ledger only — **do not re-implement.**
+## Dependency graph
 
-- Self-hosted variable fonts (DM Mono + Inter).
-- Hero entrance choreography. **→ Superseded by v2/v3.**
-- Global 3-layer parallax backdrop stage (`scroll:progress`).
-- Skills periodic-table hover/tap + proficiency bars.
-- Projects scroll-reveal + hover. **→ Superseded by v2, then v3.**
-- Confidential redacted / scan-line / blueprint treatment.
-- Contact section animation + flourish.
-- Responsive passes (375px–2560px) + reduced-motion audit.
-- Lighthouse baseline: desktop 99 / mobile 88; A11y, Best Practices, SEO 100.
+```
+P0 foundation ✅
+ ├─ P1 asset pipeline ─┐
+ └─ P2 game shell ─────┴─ P3 panda controller ─ P4 world ─ P5 stations & panels ─┬─ P6 mobile
+                                                                                  ├─ P7 menu, HUD, a11y
+                                                                                  ├─ P8 classified wing
+                                                                                  ├─ P9 reagent lab
+                                                                                  └─ P10 gate & contact
+                                                              P4 + P8–P10 ─ P11 ambience & audio
+                                                                   everything ─ P12 launch
+```
 
----
+## Media schedule (Cristian)
 
-## Shipped — v2 (cinematic restructure)
-
-Phases 11–16. One-line orientation ledger only — **do not re-implement.** v3 (below) intentionally supersedes several; tags say which.
-
-- **ScrollSmoother** smooth-scroll foundation — the one sanctioned controller-core edit; `effects: true` enables `data-speed`/`data-lag`. Skipped under reduced motion. (ARCHITECTURE “Smooth scroll”.)
-- **Hero pinned depth scrub intro** — pinned ~140vh; `panda-hero`→`panda-wave` crossfade; atmosphere darkens/scales, particles push forward; depth runs on an inner `.stage-depth` channel so the backdrop parallax never fights it. **→ Reworked by v3 Phase 18 (story-open; crossfade dropped).**
-- **Backdrop stage** kept (atmosphere / mid-glass / particles), outer-layer parallax + inner depth channel.
-- **Skills reagent-shelf** — asymmetric vertical label + anchored grid + scrubbed tile assemble; hover/focus interaction preserved. **→ Moves below Confidential + refreshed by v3 Phase 22.**
-- **Projects horizontal pinned gallery** (classic cards). **→ Superseded by v3 Phase 19 (creative, card-less).**
-- **Lab-asset continuity thread** — built then **reverted** (poorly placed); lab `.webp`s kept on disk for deliberate re-placement in v3.
-
----
-
-## Shipped — v3 (narrative & character)
-
-Phases 17–24. One-line orientation ledger only — **do not re-implement.** v4 (below) refines several; tags say which.
-
-- **Reordered to work-first:** Hero → Projects → Confidential → Skills → Contact.
-- **Hero story-open** — premise kicker + a non-LCP flask reaction glow on the pinned depth scrub; the hero `panda-hero`→`panda-wave` crossfade was dropped. (LCP panda untouched.) **→ De-centered by v4 Phase 26.**
-- **Projects experiment-log** — card-less editorial entries, formula-style stack chips, live links, pinned reveal. **→ Refined by v4 Phase 27 (numbering, liquid-glass legibility, livelier reveal).**
-- **Panda companion** — fixed desktop companion, cursor-aware, pose cross-fade driven by **raw page progress**, parked on the right edge. **→ Reworked by v4 Phases 28–29 (per-section/per-item driver, right↔left route).**
-- **Confidential** — classified redacted-lab treatment (blueprint grid, scan-line, redaction bars).
-- **Skills (Stack)** — reagent periodic-table refreshed in its post-Confidential slot.
-- **Narrative connective copy** + subtle molecule through-line; Contact `panda-wave` + lightleak close.
-- **v3 audit** — reduced-motion / a11y / static-perf sweep (real Lighthouse/CLS left as a human-dev follow-up; see LESSONS 2026-06-21).
-
----
-
-## Shipped — v4 (liquid glass & the companion's journey)
-
-Phases 25–30. One-line orientation ledger only — **do not re-implement.** Full
-acceptance detail is retained under the `# v4` section below (all boxes checked).
-
-- **Liquid-glass primitive** — reusable `.liquid-glass` surface + `GlassSurface.astro`,
-  tokenized in `tokens.css`; translucent fill + bright rim + specular sheen, blur gated
-  behind `@supports` + desktop with a lean solid-tint mobile fallback; sheen drift
-  disabled under reduced motion. Proven on the Skills intro.
-- **Hero de-center** — desktop panda-left / text-right asymmetric split on the glass
-  surface; mobile keeps the centered stack; LCP panda + pinned depth scrub preserved
-  (pure-CSS layout, no GSAP move).
-- **Projects alive** — 01–03 index numerals, per-entry glass strips for legibility,
-  staggered reveal (numeral/rule draw-in → title → description → chips), `data-project-index`
-  anchors; scrub and hover kept on separate property channels.
-- **Companion route engine** — per-section/per-item `ScrollTrigger`s replace raw page
-  progress; eased `quickTo` zig-zag route (hero LEFT → Projects RIGHT → Confidential
-  per-card → Skills LEFT → Contact CENTER), gentle pose turns, more wave.
-- **Companion per-item + reactions** — walks the Projects entries; per-card hops + a
-  redacted `brightness(0)` `panda-head` silhouette in Confidential; Contact wave hands
-  off to the in-section watermark with no double panda.
-- **v4 audit** — reduced-motion / a11y / static-perf sweep; docs condensed. Real
-  Lighthouse/CLS/LCP remain a human-dev follow-up (browser tools disallowed this session;
-  see LESSONS 2026-06-21).
+| Wave | Assets (ASSETS.md)                                    | Wanted by  | If late                      |
+| ---- | ----------------------------------------------------- | ---------- | ---------------------------- |
+| A    | panda-idle, walk, air, interact, wave                 | P3         | interim panda from the sheet |
+| B    | floor-plant, platforms, bg-far, bg-mid                | P4         | placeholder skyline + floor  |
+| C    | 6 stations, vault, dossier, skill-block, contact-post | P5, P8–P10 | placeholder boxes, same size |
+| D    | props-misc, flask-bubbling (+ optional)               | P11        | ambience ships without them  |
 
 ---
 
-## Shipped — v5 (mobile experience parity)
+## Phase 0 — Foundation ✅
 
-One-line orientation ledger only — **do not re-implement.**
+### [x] chore: reset the repo for the game rebuild
 
-- **Mobile panda companion** — the signature panda now appears on phones (it was
-  `display:none` <1024px). New `companion-mobile` scene (one `SCENE_REGISTRY` line)
-  plus a `#panda-companion-mobile` corner shell (inverse visibility of the desktop
-  one), scoped via `gsap.matchMedia('(max-width:1023px)')`. Swaps pose per section
-  (hero/wave → coding → head silhouette → master → wave), gentle idle bob, hands
-  off to the Contact watermark. Reuses the five existing poses, lazy — no LCP cost.
-- **Touch-native interactions** — `touch-tilt.ts` turns `deviceorientation` into a
-  `tilt:change` event that nudges the panda's gaze (cursor-tracking analog); tap the
-  panda → wave + (first tap) iOS motion-permission grant. Off under reduced motion.
-  The desktop magnifier loupe stays desktop-only (not ported to touch).
-- **Liquid-glass on mobile** — opt-in `.liquid-glass--refractive-mobile` enables a
-  lighter `--glass-blur-mobile` refractive path on the below-the-fold Skills/Projects
-  surfaces; the Hero glass deliberately keeps the lean solid tint to protect mobile LCP.
-- **Verified** end-to-end on `pnpm preview` (Chromium/Playwright): per-section poses,
-  reduced-motion single static pose, no console errors, no horizontal overflow at 390px.
+Done: old scroll-site code and media removed (history kept in git at `51bbf3c`); content
+extracted to `src/content/` (typed, bilingual, tested); palette + CSS tokens; asset registry
+(`art/manifest.json`, `src/assets/registry.ts`); reference sheet + interim slicing map; Phaser
+4.2.1, Vitest and Playwright installed; `pnpm verify`, `pnpm test`, `pnpm test:e2e`; docs
+rewritten (AGENTS, GAME_DESIGN, ARCHITECTURE, ASSETS, DECISIONS, BACKLOG, LESSONS, README).
 
 ---
 
-## Carry-forward constraints (must not regress)
+## Phase 1 — Asset pipeline
 
-Live facts every v3 and v4 phase must respect.
+### [ ] feat(assets): `pnpm assets` — normalize art/raw into public/game
 
-- **LCP guard.** The hero panda (`panda-body`, `panda-hero.png`) is the LCP element. Never set startup opacity/transform on it; its frame at scroll progress `0` must equal the static painted state. Any hero change keeps this. (LESSONS 2026-06-20.)
-- **Mobile LCP is still open** (~3.2s vs ≤2.5s target). Do not make it worse — desktop-gate heavy effects (incl. `backdrop-filter`), keep mobile lean.
-- **Existing media only.** No new media can be generated right now. Build everything from the assets already in `/public/media` — the **five panda images** (`panda-hero`, `panda-head`, `panda-coding`, `panda-wave`, `panda-master`; `panda-head` is still unused), the backdrop layers, the lab `.webp`s, and the textures. Reuse poses creatively (CSS transforms, flip, crop, filters); never reference a media path that does not exist.
-- **Derivative regen.** When `/media/panda/panda-hero.png` is replaced, regenerate `panda-hero-{320,480,800}.webp`.
-- **Engine intact.** Smooth scroll + the `[data-scene]` → `SCENE_REGISTRY` pattern stay as-is; add scenes via one registry line, never edit the controller core (ScrollSmoother infra is the sole exception, already in place).
-- **Standing gate for every phase:** `pnpm verify` exits 0 · reduced-motion fallback correct (no pin/scrub/loops/cursor-tracking/route; instant reveal) · no hardcoded colors outside `tokens.css` · no horizontal scroll / no CLS at 375–2560px · Lighthouse stays ≥ desktop 90 / mobile 80 / A11y 95.
+**Goal:** any image Cristian drops in `art/raw/<id>.png` (Nano Banana green-screen or PixelLab
+transparent) becomes a clean, palette-snapped, correctly packed game asset — and every missing
+asset still yields a usable interim/placeholder file with the final geometry.
 
----
+**Depends on:** P0. **Media:** none (uses `art/reference/panda-sheet-v1.png`).
 
-# v4 — Liquid Glass & The Companion’s Journey
+**Acceptance criteria**
 
-**Vision:** take the finished v3 narrative and make it _impressive and effortless to read_. Three moves: (1) a reusable **liquid-glass** material so copy reads cleanly over the backdrop without muting the art; (2) a **de-centered hero** that plays with space; (3) a companion that actually **journeys** — a clear right↔left route across the page, moving per-item through the busy sections, with smoother pose/position transitions and more of the wave.
+- `scripts/assets/` Node CLI (TypeScript run via the repo toolchain, or `.mjs` with JSDoc
+  types), wired as `pnpm assets` and run automatically by `predev` and `prebuild`.
+- Implements the processing steps in ARCHITECTURE.md → _Asset pipeline_ for every manifest
+  kind (`strip`, `sprite`, `set`, `layer`, `tile-strip`) and the source order
+  raw → reference slices → placeholder.
+- Background removal: existing alpha kept; `#00FF00` chroma key in HSV with edge cleanup;
+  black flood-fill for the reference sheet (threshold in the slices file).
+- One scale factor per strip; palette snap in OKLab against `src/design/palette.json`; binary
+  alpha; orphan-pixel cleanup; bottom-centre packing on baseline `cellHeight − 4`.
+- Layers/tile-strips: measured seam error; warning above a threshold; best-effort loop-point crop.
+- Outputs `public/game/<id>.png` (+ `<id>@<item>.png` or an atlas for sets — document which),
+  `public/game/manifest.json` (per id: resolved frames, frame size, source, warnings), and a
+  console report table. `public/game/` stays gitignored.
+- Interim panda: `panda-idle`, `panda-walk`, `panda-run`, `panda-air` come out of the reference
+  sheet looking like the panda (not blobs); others are placeholders.
+- Deterministic (same input → byte-identical output) and cached by input hash.
 
-**Locked design decisions (from the v4 brainstorm):**
+**Tests:** unit tests with tiny fixture PNGs (generated in-test with sharp): chroma key,
+component grouping incl. satellite merge, scale-factor choice, palette snap, alpha binarize,
+packing/baseline, seam measurement, placeholder geometry, manifest output shape.
 
-- **Companion route:** _zig-zag_ at the section level (Hero handoff → **left**, Confidential → **right**, Skills → **left**, Contact → **center**, then waves) **plus per-element movement inside Projects and Confidential** — it tracks the active item, so it moves more where the items are many. Driven by **per-section / per-item ScrollTriggers**, never raw page progress.
-- **Hero (desktop):** **panda left, text right-aligned** asymmetric split; **mobile keeps the centered stack**; LCP panda + pinned depth scrub preserved.
-- **Readability:** a **reusable liquid-glass surface** — translucent, subtly refractive, tokenized — applied to over-backdrop copy (Hero, Projects, Skills). **Not** a flat frosted card; the backdrop art must stay visible.
+**Manual check:** run `pnpm assets`; open `public/game/panda-walk.png` scaled ×8 — frames
+aligned on one baseline, only palette colors, no green fringe. Paste the report in the PR.
 
-**Tooling (locked):** GSAP + ScrollSmoother only (no three.js / framer-motion / React). Heavy effects desktop-gated via `gsap.matchMedia()` / `@supports`; mobile stays lean. Existing media only. No new colors outside `tokens.css`.
-
-Each phase ends with a **Manual test (dev)** block — the exact things to check in a running `pnpm dev`. The build must pass `pnpm verify` and be committed before moving on. The **Standing gate** (carry-forward, above) applies to every phase.
-
----
-
-## Phase 25 — Liquid-glass readability primitive
-
-### [x] feat(ui): reusable liquid-glass surface + prove it on Skills
-
-**Acceptance criteria:**
-
-- Add **tokens** in `tokens.css` for the glass material (tint fill, light border/rim, specular-sheen color, blur radius, corner radius). No hardcoded colors anywhere.
-- Build a **reusable** surface — a `.liquid-glass` utility (and/or a small `src/components/ui/GlassSurface.astro` wrapper) — that renders a translucent, subtly refractive material: `backdrop-filter` blur + saturate, a soft inner-top **specular highlight**, a 1px bright rim, a low-tint fill. The backdrop art stays visible through and around it; text on top meets **AA contrast**.
-- **Not a flat frosted card:** include the liquid cues (a gradient sheen along the top edge, a slightly brighter rim) so it reads as glass — deliberate and light. Any sheen drift is decorative-only and **disabled under reduced motion**.
-- **Performance:** gate `backdrop-filter` behind `@supports` + desktop; provide a lean fallback (solid low-opacity tint, no blur) on mobile / unsupported browsers so mobile LCP isn’t hurt.
-- **Prove it on Skills:** wrap the Skills section heading/intro (the copy that currently rides the backdrop) in the glass surface so it reads cleanly. Tiles unchanged.
-- Reduced motion: material renders statically (no sheen animation); text fully readable.
-- `pnpm verify` passes.
-
-**Manual test (dev):** the Skills heading sits on a translucent glass panel you can still see the backdrop through; text is crisp; toggling reduced motion stops any sheen; mobile shows the lean no-blur fallback with the same readability; no overflow at any width.
-
-**Files:** `src/styles/tokens.css`, `src/styles/global.css`, optional `src/components/ui/GlassSurface.astro`, `src/components/sections/Skills.astro`, `ARCHITECTURE.md`
+**Files:** `scripts/assets/**`, `package.json`, `.gitignore`, `LESSONS.md`.
+**Out of scope:** using the assets in the game (P2+).
 
 ---
 
-## Phase 26 — Hero: de-center (panda left / text right)
+## Phase 2 — Game shell
 
-### [x] feat(hero): desktop asymmetric split + glass text block
+### [ ] feat(shell): page, loading screen, Phaser boot, pixel-perfect zoom, tiers, bus, i18n
 
-**Acceptance criteria:**
+**Goal:** a page that paints instantly, boots Phaser lazily into a pixel-perfect canvas at the
+right integer zoom for every screen, with the plumbing every later phase uses.
 
-- **Desktop:** a two-column asymmetric layout — panda anchored **left**, the premise / name / role block **right-aligned** in the right column, with deliberate negative space. **Mobile keeps the current centered stack.**
-- Wrap the hero copy in the **liquid-glass** surface from Phase 25 so it reads over the atmosphere.
-- **LCP guard (blocking):** `#panda-body` is still the LCP element — painted immediately, never given startup opacity/transform; its frame at scroll 0 equals the static painted state. The de-center is **pure CSS layout** (grid/flex placement), not a GSAP move. Reserve the panda box to avoid CLS.
-- Keep the **pinned depth scrub** (atmosphere darken/scale, particles push, `#hero-reaction-glow`) working after the relayout; the reaction glow stays positioned over the flask in its new spot.
-- Hero entrance choreography (premise → name chars → role → hint) still plays; reduced motion = instant, static, readable.
-- No horizontal scroll; no CLS.
-- `pnpm verify` passes.
+**Depends on:** P0 (uses P1 output if present; must also boot with an empty `public/game/`).
+**Media:** none.
 
-**Manual test (dev):** on desktop the hero is an editorial split — panda left, text right — over a readable glass block; the panda paints instantly and doesn’t jump at scroll 0; the pin/scrub still runs; on mobile it’s the centered stack; reduced motion is static and readable.
+**Acceptance criteria**
 
-**Files:** `src/components/sections/Hero.astro`, `src/scripts/scroll/scenes/hero.ts`, `src/styles/global.css`
+- `src/pages/index.astro` + `src/components/` shell per ARCHITECTURE.md → _Runtime overview_:
+  `#loading`, `#screen`, `#hud` (empty slots), `#panels`, `#menu`; `<html lang>` +
+  `data-lang` set before first paint.
+- Fonts via `@fontsource`: **Pixelify Sans** (display/UI) and **Inter** (panel body), subset to
+  latin + latin-ext; declared in `tokens.css`.
+- Loading screen (DOM/CSS only): the name, a pixel progress bar fed by `game:progress`, the
+  walking panda from `public/game/panda-walk.png` via CSS `steps()` (static fallback if absent).
+- `src/game/boot.ts` dynamic-imports Phaser after first paint; `BootScene` loads
+  `/game/manifest.json` and tier-appropriate assets; an empty `WorldScene` shows a solid
+  `navy-900` background and a centered interim panda idle loop.
+- `src/game/render/zoom.ts` (pure) implements the rendering contract; the canvas is crisp
+  (no smoothing) at 1280×720, 1440×900@1 and @2, 1920×1080, 2560×1440, 390×844@3, 844×390@3;
+  resize/orientation re-computes without reload.
+- Layout mode detection (`desktop | handheld | landscape-touch`) + `src/game/quality.ts`
+  (tiers, `?tier=` override, runtime FPS downgrade) + `src/shared/motion.ts`.
+- `src/shared/bus.ts` typed event bus; `src/i18n/lang.ts` + `src/i18n/ui.ts` per
+  ARCHITECTURE.md → _i18n_.
+- In-world pixel-text technique chosen, prototyped on one label, recorded in DECISIONS.md.
+- `?debug` overlay (fps, zoom, view size, tier, mode) + `window.__PORTFOLIO__` hook.
+- Pauses the game loop when the tab is hidden.
 
----
+**Tests:** unit — zoom math (every example in ARCHITECTURE.md), layout mode, tier decision,
+lang detection; e2e — no console errors, canvas non-blank, `#loading` disappears, canvas CSS
+size × dpr is an integer multiple of its backing size (desktop + mobile projects).
 
-## Phase 27 — Projects: alive & readable
+**Manual check:** screenshots at the sizes above; zoom a screenshot ×4 — pixels are square
+blocks, no blur.
 
-### [x] feat(projects): numbered entries, livelier reveal, glass legibility
-
-**Acceptance criteria:**
-
-- Add the **01–03 numbering** (oversized index numerals per entry) the experiment-log concept called for.
-- Put each entry’s copy on the **liquid-glass** surface (a glass strip behind the text column) so descriptions read cleanly over the backdrop — fixes the current low-contrast `color-mix` text.
-- Make the reveal **more alive:** stagger title → description → formula chips (not just a single opacity lift), with the index numeral / accent rule drawing in; keep it one cohesive pinned reveal under ScrollSmoother; **last entry never clipped**.
-- Add **per-entry scroll anchors** (e.g. `data-project-index` on each `[data-project-entry]`) so the companion can track them in Phase 29 — add them now so Phase 29 has stable hooks.
-- Preserve the existing hover/focus reaction; keep semantic headings + keyboard-reachable live links (`target="_blank"` + `rel="noopener noreferrer"`).
-- Mobile: lean vertical reveal. Reduced motion: static / instant / readable. No horizontal scroll; no CLS.
-- `pnpm verify` passes.
-
-**Manual test (dev):** Projects reads as a lively numbered experiment log with crisp text on glass; entries reveal with a staggered beat; live links work; per-entry anchors exist in the DOM; mobile stacks cleanly; reduced motion is instant.
-
-**Files:** `src/components/sections/Projects.astro`, `src/scripts/scroll/scenes/projects.ts`, `src/styles/global.css`
-
----
-
-## Phase 28 — Companion: real route engine
-
-### [x] refactor(companion): per-section driver + zig-zag route + smooth motion
-
-**Acceptance criteria:**
-
-- **Replace the raw-progress driver.** The companion no longer reads `documentProgress()`. Instead each section drives it via **per-section ScrollTriggers** (enter/leave/progress → an authored waypoint), so pose **and** position track the _visible_ section (fixes the pin-distortion misalignment). This stays scene-local — the controller core and its single registry line are untouched.
-- **Zig-zag route:** Hero handoff → fade in **left**; Confidential → **right**; Skills → **left**; Contact → **center**, then wave. The companion visibly travels right↔left and is **never parked on one edge**. (Projects & Confidential get per-item motion in Phase 29.)
-- **Smoother transitions:** ease position with lag / `gsap.quickTo` (not `gsap.set` every frame); make the pose cross-fade longer and gentler (a slight scale/slide alongside the opacity) so swaps feel like the panda _turning_, not popping.
-- **Pose per section + more wave:** sensible per-section mapping using existing poses; `panda-wave` used at the hero greeting/handoff **and** the contact goodbye (more than today’s last-10% cameo).
-- Stays a fixed scene outside `#smooth-wrapper`, behind content, `pointer-events:none`, `aria-hidden`; the cursor look-toward is preserved.
-- Mobile: no fixed companion. Reduced motion: a single static pose, no route, no cursor tracking, no cross-fade.
-- `pnpm verify` passes.
-
-**Manual test (dev):** scrolling desktop, the panda enters left at the hero, crosses to the right at Confidential, back left at Skills, and waves center at Contact — gliding smoothly and changing pose per section, never stuck on the right; mobile absent; reduced motion is one static pose.
-
-**Files:** `src/scripts/scroll/scenes/companion.ts`, section components (add `data-companion-stop` waypoints if needed), `ASSETS.md`, `LESSONS.md`
+**Files:** `src/pages/`, `src/components/`, `src/game/{boot,config,quality}.ts`,
+`src/game/render/`, `src/game/scenes/`, `src/shared/`, `src/i18n/`, `src/styles/tokens.css`,
+`tests/e2e/`, `DECISIONS.md`.
+**Out of scope:** movement, world, UI content.
 
 ---
 
-## Phase 29 — Companion: per-element tracking + arrival reactions
+## Phase 3 — Panda controller
 
-### [x] feat(companion): item-level motion in Projects/Confidential + reactions
+### [ ] feat(player): responsive platformer movement, animations, camera, keyboard + wheel
 
-**Acceptance criteria:**
+**Goal:** moving the panda feels great.
 
-- **Per-element movement** inside Projects and Confidential: as each project entry / confidential card becomes active, the companion moves to sit beside **that item** (vertical tracking + a small lateral offset to the side opposite the text), using the Phase-27 `data-project-index` anchors and the existing `[data-confidential-card]` / `data-index`. The panda visibly “walks the list” where items are many — the back half is no longer static.
-- **Arrival reactions** (the “more interactive” ask): a small beat when the companion reaches a stop — Confidential → swap to a **redacted `panda-head` peek** (brightness-0 silhouette) reading as a stealth panda guarding the files (finally uses the unused `head` pose); Contact → the companion’s wave **hands off** to the in-section `panda-wave` watermark with **no double panda / no overlap**.
-- Reactions are transforms/opacity only, desktop-gated, 60fps; no layout thrash; no new media.
-- Reduced motion: no per-item motion, no reactions — the single static pose from Phase 28.
-- `pnpm verify` passes.
+**Depends on:** P1, P2. **Media:** wave A (interim frames until then).
 
-**Manual test (dev):** scrolling Projects/Confidential on desktop, the panda moves down alongside each item and reacts on arrival (redacted peek in Confidential); at Contact the companion wave resolves into the section’s wave watermark with no overlap; mobile / reduced motion unaffected.
+**Acceptance criteria**
 
-**Files:** `src/scripts/scroll/scenes/companion.ts`, `src/components/sections/Projects.astro`, `src/components/sections/ConfidentialProjects.astro`, `src/components/sections/Contact.astro`, `ASSETS.md`
+- `player/logic.ts` pure state machine per ARCHITECTURE.md → _Player_; `PandaSprite` plays
+  `panda-idle | walk | run | air(frames by name) | interact | wave`, flips for left, never
+  changes collision box with frames. Missing `panda-run` → walk animation at run speed.
+- Constants in `config.ts`; coyote time, jump buffer, variable jump height (jump cut) all work.
+- Input: keyboard (← → A D, Shift, Space W ↑, E Enter, M Esc) and **wheel/trackpad → walk**
+  (deltaY maps to moveX with decay; a flick walks a few steps, not across the world).
+  Pure `input/merge.ts`.
+- Camera follow per the rendering contract (lerp + deadzone, bottom-anchored, world bounds).
+- A temporary flat ground (placeholder floor) and one test platform; landing plays the `land`
+  frame; no jitter between panda and ground at any zoom.
+
+**Tests:** unit — state transitions (idle→walk→run, jump from coyote window, buffered jump,
+jump cut, land), input merge incl. wheel decay; e2e — press → moves right, Space → leaves the
+ground and returns, wheel → walks.
+
+**Manual check:** 60 fps in the debug overlay while running back and forth; screenshots.
+
+**Files:** `src/game/player/`, `src/game/input/`, `src/game/config.ts`,
+`src/game/scenes/WorldScene.ts`, `tests/e2e/`.
+
+---
+
+## Phase 4 — World: layout, ground, sky, parallax
+
+### [ ] feat(world): the level from data — ground, platforms, night→dawn sky, parallax
+
+**Depends on:** P3. **Media:** wave B (placeholders until then).
+
+**Acceptance criteria**
+
+- `world/layout.ts` with every zone in GAME*DESIGN.md (x-ranges, station slots, platforms for
+  the Reagent lab, prop slots) + `world/validate.ts` (pure) per ARCHITECTURE.md → \_World model*.
+- Ground built from `floor-plant` tiles across the world; platforms from the `platforms` set
+  with arcade collision (one-way from below).
+- Sky drawn in code: gradient keyframes by player x (night → darkest night → pre-dawn →
+  sunrise) from palette colors only, stars that fade toward dawn, a moon. Smooth, no banding
+  jumps (step through palette colors deliberately — ordered dithering allowed).
+- Parallax: `bg-far`, `bg-mid` (+ `bg-fore` on high tier only when present), tiled
+  seamlessly, scroll factors from the manifest; reduced motion lowers the differential.
+- Zone ids are exposed in the debug overlay and on the bus (`zone:enter`).
+
+**Tests:** unit — layout validation (fails on a deliberately broken layout), sky interpolation;
+e2e — teleport to each zone via the hook, screenshot, zone event fires.
+
+**Files:** `src/game/world/`, `src/game/fx/{sky,parallax}.ts`, `WorldScene.ts`, `tests/e2e/`.
 
 ---
 
-## Phase 30 — v4 audit (motion · a11y · perf · docs)
+## Phase 5 — Stations & project panels
 
-### [x] chore(v4): full audit + condense docs
+### [ ] feat(stations): project stations, prompts, DOM panels, visited, deep links
 
-**Acceptance criteria:**
+**Depends on:** P4. **Media:** the 5 project stations of wave C (placeholders until then).
 
-- **Reduced-motion sweep** across every v4 change: liquid-glass static (no sheen), hero static split readable, projects instant, companion a single static pose with no route / tracking / reactions.
-- No horizontal scroll and no CLS at 375–2560px; the liquid-glass fallback verified on mobile / unsupported; **mobile LCP not worse than baseline**; LCP guard intact.
-- **Lighthouse:** desktop ≥90, mobile ≥80, A11y ≥95, Best Practices / SEO maintained — record the numbers in `LESSONS.md`.
-- Update `ARCHITECTURE.md` (liquid-glass primitive + companion route engine), `ASSETS.md` (`head` / `wave` usage), append `LESSONS.md` for anything non-obvious; condense v4 into a shipped ledger and check off Phases 25–30.
-- `pnpm verify` passes.
+**Acceptance criteria**
 
-**Manual test (dev):** toggle reduced motion and scroll end-to-end — glass static, companion a single pose, everything instant and readable; resize 375→2560 with no sideways scroll or jumps; the page reads as one impressive, legible story.
+- Station objects for the 5 projects at their layout slots; trigger zones; a prompt (pixel
+  text, localized: key / **B** / tap hint for the current input) appears on enter and hides on
+  leave.
+- Panels pre-rendered at build from `src/content/projects.ts`, both languages, per
+  ARCHITECTURE.md → _Stations & panels_: title, description, stack chips, platform note, live
+  link (`target="_blank" rel="noopener noreferrer"`), and for Fiora an accessible screenshot
+  gallery (thumbnails → full image, arrows, Esc).
+- Open via interact or clicking/tapping the prop (click far away → panda walks there, then
+  opens). While open: game input paused, panda plays `interact`, focus trapped, `Esc`/close
+  restores focus to the canvas. Closing never leaves the panda stuck in `interact`.
+- Visited marks persisted; `/#<id>` deep link spawns at the station and opens its panel;
+  closing updates the hash.
+- Panel visual style: pixel frame (CSS, palette tokens), Pixelify Sans headings, Inter body,
+  AA contrast.
 
-**Files:** various, `LESSONS.md`, `ARCHITECTURE.md`, `ASSETS.md`, `BACKLOG.md`
+**Tests:** unit — trigger enter/leave logic, hash parsing; e2e — walk/teleport to each station,
+open, check title text in ES and EN, close with Esc, deep link `/#japaniracer`, Fiora gallery.
+
+**Files:** `src/game/stations/`, `src/components/panels/`, `src/ui/panels.ts`, `tests/e2e/`.
 
 ---
+
+## Phase 6 — Mobile: handheld mode & touch
+
+### [ ] feat(mobile): handheld layout, touch pad, tap-to-interact
+
+**Depends on:** P5 (P3 minimum). **Media:** none (controls are CSS/SVG).
+
+**Acceptance criteria**
+
+- `handheld` (portrait touch): game screen on top, pad below — D-pad ◀ ▶, **A** (jump),
+  **B** (interact), START (menu) — styled as a pixel handheld with palette tokens; ≥ 48 px
+  targets; multi-touch (hold ▶ + tap A works).
+- `landscape-touch`: full-screen game with a translucent pad overlay; zoom recomputed.
+- Tap a station on screen → walk there + open (same as click).
+- No page scroll/zoom/pull-to-refresh/long-press menus inside the game area; safe-area insets
+  respected; optional `navigator.vibrate` tick on jump/interact (Android).
+- Low tier on phones; 50+ fps on a mid-range device profile (throttled Chromium ok).
+
+**Tests:** e2e (mobile project) — pad visible in portrait, touch ▶ moves, A jumps, B opens a
+station, rotate to landscape keeps playing, no horizontal page overflow.
+
+**Files:** `src/ui/pad.ts`, `src/components/Pad.astro`, `src/game/input/touch.ts`, `tests/e2e/`.
+
+---
+
+## Phase 7 — Menu, fast travel, HUD & accessibility
+
+### [ ] feat(ui): map/fast-travel menu, HUD, controls hint, keyboard/screen-reader path
+
+**Depends on:** P5.
+
+**Acceptance criteria**
+
+- Menu (M / Esc / HUD button / START): every stop in world order with visited ✓; choosing one
+  auto-runs the panda there (fade-teleport if > 1.5 screens away), then opens its panel.
+  Pure `travel/plan.ts`.
+- HUD per GAME_DESIGN.md: name badge, **Contact** (opens the contact panel from anywhere —
+  stub until P10), `ES · EN` toggle (instant, no reload, canvas text updates), sound toggle
+  (state only until P11), menu button.
+- First-visit controls hint (input-aware), hidden after first movement, remembered.
+- Keyboard-only: every panel reachable from the menu; visible focus rings; logical tab order;
+  panels are dialogs with labels; `prefers-reduced-motion` behavior per ARCHITECTURE.md.
+- Recruiter test: from page load, a project panel is open in ≤ 10 s using only the mouse
+  (click a station or the menu) and only the keyboard.
+
+**Tests:** unit — travel planner; e2e — menu → each stop opens its panel; language toggle
+switches panel + HUD text; keyboard-only run-through; axe-core scan (add `@axe-core/playwright`
+with an ADR) has no serious violations.
+
+**Files:** `src/ui/{menu,hud,hint}.ts`, `src/components/`, `src/game/travel/`, `src/i18n/ui.ts`.
+
+---
+
+## Phase 8 — Classified wing
+
+### [ ] feat(confidential): vault door, redacted dossiers, NDA-safe panels
+
+**Depends on:** P5. **Media:** confidential-vault, confidential-dossier (placeholders until then).
+
+**Acceptance criteria**
+
+- Fence + `CLASIFICADO / CLASSIFIED` sign (pixel text), vault `closed` → interact → `open`
+  (camera nudge off under reduced motion), wing light shifts toward scarlet.
+- Four dossier stations from `src/content/confidential.ts`; panels show exactly industry, role,
+  stack, impact, duration, team size, with a CSS redaction-bar reveal. **Golden Rule 3.**
+- Scanner light sweep on the high tier only.
+
+**Tests:** e2e — vault opens, each dossier panel renders only the allowed fields in both
+languages; the existing content test still guards the data.
+
+**Files:** `src/game/stations/`, `src/components/panels/`, `src/game/fx/`.
+
+---
+
+## Phase 9 — Reagent lab (stack)
+
+### [ ] feat(skills): element blocks, periodic board, stack panel
+
+**Depends on:** P5. **Media:** skill-block (placeholder until then).
+
+**Acceptance criteria**
+
+- 8 category blocks on the lab platforms, tinted with `SKILL_CATEGORY_COLOR`; bump from below
+  (head hits block) or interact → `bump` → `used`; the category's skills pop out as element
+  tiles (symbol + number in pixel text) and arc into a periodic board on the lab wall.
+- Board completion → small celebration + the Stack panel opens once (full accessible list:
+  symbol, name, category, proficiency); the panel is always reachable from the menu.
+- Progress persisted; blocks reset only via a "reset lab" control in the panel.
+
+**Tests:** unit — bump detection, board slot layout from skill numbers; e2e — bump all
+blocks via the hook, board complete, panel lists all 34 skills in ES and EN.
+
+**Files:** `src/game/stations/skills*.ts`, `src/components/panels/StackPanel.astro`.
+
+---
+
+## Phase 10 — Gate intro & sunrise contact
+
+### [ ] feat(story): gate intro, contact finale, meta/OG basics
+
+**Depends on:** P5. **Media:** station-spawn-gate, contact-post (+ optional panda-sleep,
+panda-celebrate).
+
+**Acceptance criteria**
+
+- Gate: signboard with the name + roles in pixel text (localized); intro beat — panda asleep
+  (`panda-sleep` or idle) → wakes → waves; skippable by any input; plays once per session.
+- Contact post at the lookout: `idle` → `active` on approach; panel with the call to action +
+  all `profile.contact` links; the HUD Contact button opens the same panel from anywhere.
+- Finale: arriving with every station visited → `panda-celebrate` (or wave) + "thanks"
+  line + fast travel back.
+- `<title>`, meta description, OG/Twitter tags, JSON-LD `Person` from `src/content/profile.ts`.
+
+**Tests:** e2e — intro skippable, contact links present with correct hrefs, HUD Contact works
+from the gate, meta tags present.
+
+**Files:** `src/game/stations/`, `src/components/panels/ContactPanel.astro`, `src/pages/`.
+
+---
+
+## Phase 11 — Ambience & audio
+
+### [ ] feat(fx): desktop diorama ambience, lean mobile, optional audio
+
+**Depends on:** P4, P8–P10. **Media:** wave D.
+
+**Acceptance criteria**
+
+- Tiered per GAME*DESIGN.md → \_Ambience tiers*: steam/ember/star particles, animated props
+  (flask, flare flame, blinking lights), Phaser 4 filters (glow/bloom) on lamps, screens and the
+  flare — **high tier only**; low tier stays within the mobile budget.
+- Props from `props-misc` placed via layout data.
+- Audio (ADR first): procedural SFX (jump, bump, open, close, vault) + optional ambient loop;
+  off by default, remembered, unlocked on first user gesture; never autoplays.
+- Runtime downgrade verified: forcing low fps on high tier switches to low.
+
+**Tests:** e2e — high vs low tier object counts via the hook; sound toggle persists; reduced
+motion disables shake/flash.
+
+**Files:** `src/game/fx/`, `src/game/audio/`, `DECISIONS.md`.
+
+---
+
+## Phase 12 — Launch
+
+### [ ] chore(launch): budgets, polish, share assets, cross-device QA, go live
+
+**Depends on:** everything.
+
+**Acceptance criteria**
+
+- Performance budgets in ARCHITECTURE.md met (report numbers in LESSONS.md); Lighthouse mobile
+  ≥ 80 performance, ≥ 95 accessibility, 100 SEO/best practices.
+- OG image captured from the game by a script; favicon set from `panda-idle` frame 0.
+- Cross-device QA list: Chrome/Safari/Firefox desktop, iOS Safari, Android Chrome; portrait +
+  landscape; 60 Hz + 120 Hz displays.
+- Optional: gamepad support; Phaser custom build if it saves ≥ 80 KB gzip.
+- Merge `next` into `main` → Vercel production. (Until this phase `main` keeps serving the
+  current site; see README → _Branching & deploy_.)
+
+**Files:** various.

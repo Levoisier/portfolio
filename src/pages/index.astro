@@ -1,16 +1,81 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Hero from '../components/sections/Hero.astro';
-import Skills from '../components/sections/Skills.astro';
-import Projects from '../components/sections/Projects.astro';
-import ConfidentialProjects from '../components/sections/ConfidentialProjects.astro';
-import Contact from '../components/sections/Contact.astro';
+/*
+ * Phase 0 placeholder. BACKLOG Phase 2 replaces this with the game shell (loading screen,
+ * canvas, HUD, pre-rendered panels, menu). It already reads everything from src/content so
+ * the page stays truthful if it is ever deployed before the game exists.
+ */
+import '../styles/tokens.css';
+import { profile } from '../content';
+
+const lang = 'es';
+const roles = profile.roles.map((r) => r[lang]).join(' · ');
 ---
 
-<Layout>
-  <Hero />
-  <Projects />
-  <ConfidentialProjects />
-  <Skills />
-  <Contact />
-</Layout>
+<!doctype html>
+<html lang="es-419">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={profile.summary[lang]} />
+    <title>{profile.name} — {roles}</title>
+  </head>
+  <body>
+    <main>
+      <h1>{profile.name}</h1>
+      <p>{roles}</p>
+      <p>Nuevo portafolio en construcción · New portfolio in development</p>
+      <ul>
+        {
+          profile.contact.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                aria-label={link.ariaLabel[lang]}
+                {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </main>
+  </body>
+</html>
+
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+  }
+
+  main {
+    padding: var(--space-8) var(--space-4);
+    text-align: center;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    color: var(--color-accent);
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  a {
+    color: var(--color-text);
+  }
+
+  a:focus-visible {
+    outline: var(--pixel-border) solid var(--color-focus);
+  }
+</style>
