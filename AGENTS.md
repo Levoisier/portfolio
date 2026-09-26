@@ -100,7 +100,9 @@ Breaking any of these is a blocking error. Revert and fix before committing.
     travel planning and the pipeline steps live in modules that do not import Phaser, with
     Vitest tests.
 11. **No new dependency without an ADR** in DECISIONS.md (bundle budget).
-12. **Append to LESSONS.md** whenever you hit a gotcha, a dead end, or a non-obvious fix.
+12. **Not installable.** No web app manifest, service worker, standalone-mode meta or install
+    prompt — the portfolio is deliberately not a PWA (tests enforce it). Favicons are fine.
+13. **Append to LESSONS.md** whenever you hit a gotcha, a dead end, or a non-obvious fix.
 
 ## Git and delivery
 

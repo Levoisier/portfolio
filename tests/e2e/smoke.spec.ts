@@ -19,3 +19,12 @@ test('no horizontal overflow', async ({ page }) => {
   );
   expect(overflow).toBe(false);
 });
+
+test('is not installable: no web app manifest, no service worker', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('link[rel="manifest"]')).toHaveCount(0);
+  const workers = await page.evaluate(async () =>
+    'serviceWorker' in navigator ? (await navigator.serviceWorker.getRegistrations()).length : 0
+  );
+  expect(workers).toBe(0);
+});

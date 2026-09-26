@@ -89,7 +89,7 @@ index.astro (static HTML)
 
 1. The HTML paints the loading screen immediately; `src/game/boot.ts` then dynamic-imports
    Phaser (~355 KB gzip) so the engine never blocks first paint.
-2. `BootScene` fetches `/game/manifest.json` (written by the pipeline: resolved frame counts,
+2. `BootScene` fetches `/game/assets.json` (written by the pipeline: resolved frame counts,
    sizes, and whether each asset came from `raw`, `reference` or `placeholder`), queues only
    the assets for the active quality tier, reports progress on the bus, then starts
    `WorldScene`.
@@ -224,7 +224,7 @@ source is fake pixel art, no resampling when it is already at 1×) → **snap ev
 `src/design/palette.json`** (nearest in OKLab, no dithering) → binarize alpha (≥ 50 %) →
 remove 1-px orphan islands → pack into the manifest cell, bottom-centre anchored on the
 baseline → for `layer`/`tile-strip`: fit to `size`, measure the left/right seam and warn (or
-auto-crop to the best loop point) → write indexed PNGs + `public/game/manifest.json` + a
+auto-crop to the best loop point) → write indexed PNGs + `public/game/assets.json` + a
 human-readable report (frame counts found vs expected, clipping, % pixels moved by palette
 snapping, seam error). Deterministic; cached by input hash.
 
@@ -262,3 +262,8 @@ uneven frame sizes, baked shadows).
 Title/description from `src/content/profile.ts`, OG + Twitter card with a 1200×630 image
 captured from the game by a script, JSON-LD `Person`, `robots.txt`, favicon set generated
 from `panda-portrait` (head crop). All panel content is in the static HTML.
+
+**Not installable.** The site is deliberately not a PWA: no web app manifest, no service worker,
+no `apple-mobile-web-app-capable` / `mobile-web-app-capable` meta, no install prompt. Favicons
+(`favicon.ico`, PNG sizes, `apple-touch-icon` as a bookmark icon) are fine. `src/policy/no-pwa.test.ts`
+and the e2e smoke test enforce this.

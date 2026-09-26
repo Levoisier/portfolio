@@ -124,6 +124,15 @@ pixel look for headings/UI; Inter (OFL) keeps long panel text readable.
 cloud agent container (`/opt/pw-browsers`); locally run `pnpm exec playwright install chromium`.
 **Trade-off:** Upgrading Playwright requires matching browsers.
 
+## Not installable — no PWA
+
+**Status:** Accepted (2026-09-26)
+**Why:** Cristian does not want the portfolio installable; an app install prompt makes no sense
+for a portfolio. The old site's `site.webmanifest` and Android install icons were removed in the
+reset. No web app manifest, no service worker, no standalone-mode meta tags, no install prompt.
+Favicons stay. `src/policy/no-pwa.test.ts` and the e2e smoke test fail if any of it returns.
+**Trade-off:** No offline play and no home-screen app; visitors can still bookmark the site.
+
 ## Audio off by default, procedural SFX
 
 **Status:** Proposed (decide in Phase 11)

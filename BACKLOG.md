@@ -87,7 +87,7 @@ asset still yields a usable interim/placeholder file with the final geometry.
   alpha; orphan-pixel cleanup; bottom-centre packing on baseline `cellHeight − 4`.
 - Layers/tile-strips: measured seam error; warning above a threshold; best-effort loop-point crop.
 - Outputs `public/game/<id>.png` (+ `<id>@<item>.png` or an atlas for sets — document which),
-  `public/game/manifest.json` (per id: resolved frames, frame size, source, warnings), and a
+  `public/game/assets.json` (per id: resolved frames, frame size, source, warnings), and a
   console report table. `public/game/` stays gitignored.
 - Interim panda: `panda-idle`, `panda-walk`, `panda-run`, `panda-air` come out of the reference
   sheet looking like the panda (not blobs); others are placeholders.
@@ -127,7 +127,7 @@ right integer zoom for every screen, with the plumbing every later phase uses.
   the walking panda from `public/game/panda-walk.png` via CSS `steps()` as the progress runner
   (static fallback if absent).
 - `src/game/boot.ts` dynamic-imports Phaser after first paint; `BootScene` loads
-  `/game/manifest.json` and tier-appropriate assets; an empty `WorldScene` shows a solid
+  `/game/assets.json` and tier-appropriate assets; an empty `WorldScene` shows a solid
   `navy-900` background and a centered interim panda idle loop.
 - `src/game/render/zoom.ts` (pure) implements the rendering contract; the canvas is crisp
   (no smoothing) at 1280×720, 1440×900@1 and @2, 1920×1080, 2560×1440, 390×844@3, 844×390@3;
@@ -395,7 +395,8 @@ motion disables shake/flash.
 - Performance budgets in ARCHITECTURE.md met (report numbers in LESSONS.md); Lighthouse mobile
   ≥ 80 performance, ≥ 95 accessibility, 100 SEO/best practices.
 - OG image captured from the game by a script (with `panda-portrait`); favicon set from the
-  `panda-portrait` head crop.
+  `panda-portrait` head crop (favicons only — **no web app manifest, no service worker**; the
+  site must not be installable, see DECISIONS.md).
 - Cross-device QA list: Chrome/Safari/Firefox desktop, iOS Safari, Android Chrome; portrait +
   landscape; 60 Hz + 120 Hz displays.
 - Optional: gamepad support; Phaser custom build if it saves ≥ 80 KB gzip.
