@@ -5,9 +5,9 @@ two in sync). Cristian produces the media; agents never edit `art/raw/`.
 
 ## TL;DR
 
-- **26 images total — 21 needed for launch, 5 optional.** Each image is **one generation**: a
-  horizontal strip of animation frames, or a set of separate props. You never deliver single
-  frames.
+- **27 images total — 22 needed for launch (1 already delivered: `panda-portrait`), 5
+  optional.** Each image is **one generation**: a horizontal strip of animation frames, or a set
+  of separate props. You never deliver single frames.
 - Save each file as **`art/raw/<id>.png`** (the ids are in the table at the bottom), then commit
   it or hand it to an agent. `pnpm assets` normalizes it automatically; the game picks it up.
 - **Pure green `#00FF00` background, no text, no ground shadows, character facing right.**
@@ -27,10 +27,15 @@ sheet has ~101 000 colors, no real pixel grid and frames of different sizes — 
 channel**. The pipeline repairs that (chroma key, grid snap, palette snap, baseline alignment),
 but a tool that draws on a real grid gives cleaner animation.
 
-**PixelLab route:** create the character from `art/reference/panda-sheet-v1.png` (side view,
-64×64 canvas), then generate each animation in wave A from that same character, and export
-each animation as one horizontal PNG strip with a transparent background. Transparent PNGs are
-accepted as-is (no green needed).
+**The character references:** `art/raw/panda-portrait.png` is the **design master** (front
+view, drawn at ~77×100 px — every detail of face, bandana, rim light and claws);
+`art/reference/panda-sheet-v1.png` shows the same character **in motion** (side views, poses).
+Attach both to every panda generation.
+
+**PixelLab route:** create the character from the two references (side view, 64×64 canvas),
+then generate each animation in wave A from that same character, and export each animation as
+one horizontal PNG strip with a transparent background. Transparent PNGs are accepted as-is
+(no green needed).
 
 ---
 
@@ -45,8 +50,9 @@ accepted as-is (no green needed).
 5. **Strips:** one horizontal row, left→right in playback order, same scale, facing **right**,
    full body visible, **feet on the same baseline in every frame** (the game moves the
    character — do not raise it for jumps). No baked ground shadow.
-6. **Consistency:** always attach `art/reference/panda-sheet-v1.png` for panda images; for
-   environment images attach the first approved environment image as a style reference.
+6. **Consistency:** always attach `art/raw/panda-portrait.png` (design master) **and**
+   `art/reference/panda-sheet-v1.png` (motion reference) for panda images; for environment
+   images attach the first approved environment image as a style reference.
 7. **Format:** PNG, largest size offered, wide aspect (16:9 or 21:9) for strips. Never JPEG,
    never resized or compressed.
 8. **Names:** exactly `<id>.png`. A new attempt simply replaces the old file (git keeps history).
@@ -74,7 +80,7 @@ CRITICAL: nothing in the artwork itself is green.
 ### Character block — add after the style block for every panda image
 
 ```
-Character: use the attached reference sheet as the exact design — a chubby, cute giant panda: black round ears, black eye patches with white eye highlights, cream-white face and belly (#F5F3EE, shaded #E4DCCB), black arms and legs (#16161C / #24242E, outline #0A0A0A), small pink cheeks (#F07A82), and a scarlet red scarf (#E11D2A, shaded #8C1420) whose two tails flutter behind. Same proportions, face and colors in every frame.
+Character: the attached front portrait is the exact design and the attached sheet shows the same character in motion. A chubby, friendly giant panda: black round ears with a thin scarlet rim light on their edges, black eye patches with white eye highlights, small black nose and a gentle smile, cream-white face and big round belly (#F5F3EE, shaded #E4DCCB), black arms and legs (#16161C / #24242E, outline #0A0A0A) with a thin scarlet rim light along the outer edges, small cream claws on the feet, and a scarlet bandana-style scarf (#E11D2A, shaded #8C1420) knotted at the panda's left shoulder with two short tails that flutter behind when it moves. Same proportions, face and colors in every frame.
 Sheet layout: all frames in ONE horizontal row, left to right in playback order, evenly spaced with wide green gaps between frames, every frame the same size and scale, facing RIGHT, full body visible (never crop the ears or scarf), feet resting on the same horizontal baseline in every frame. No ground shadow. Draw it as if the finished sprite is 48 pixels tall (big chunky pixels). Wide image, 21:9.
 ```
 
@@ -89,6 +95,8 @@ Setting: a chemical plant at night — steel, pipes, tanks, catwalks, rivets, wa
 ## Wave A — the panda (needed from Phase 3; interim frames cover development)
 
 Final geometry: 64×64 cell per frame, panda ≈ 48 px tall, feet on the cell baseline.
+`panda-portrait` is ✅ **delivered** (front view on pure black, keyed with a black flood-fill;
+used for the loading screen, favicon, social image and the HUD badge — not in-world).
 
 | id             | frames | prompt (after style + character blocks)                                                                                                                                                                                                                                                           |
 | -------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -142,34 +150,35 @@ The sky itself (night → sunrise gradient, stars, moon) is drawn in code — do
 
 Status: `needed` → `delivered` (file in `art/raw/`) → `approved` (Cristian signed off in-game).
 
-| id                       | wave | launch   | kind       | final geometry (art px)      | status |
-| ------------------------ | ---- | -------- | ---------- | ---------------------------- | ------ |
-| `panda-idle`             | A    | required | strip      | 4 × 64×64                    | needed |
-| `panda-walk`             | A    | required | strip      | 6 × 64×64                    | needed |
-| `panda-air`              | A    | required | strip      | 6 × 64×64                    | needed |
-| `panda-interact`         | A    | required | strip      | 4 × 64×64                    | needed |
-| `panda-wave`             | A    | required | strip      | 4 × 64×64                    | needed |
-| `panda-run`              | A    | optional | strip      | 6 × 64×64                    | needed |
-| `panda-celebrate`        | D    | optional | strip      | 4 × 64×64                    | needed |
-| `panda-sleep`            | D    | optional | strip      | 2 × 64×64                    | needed |
-| `floor-plant`            | B    | required | tile-strip | 256×32 seamless              | needed |
-| `platforms`              | B    | required | set        | 48×16 · 80×16 · 128×16       | needed |
-| `bg-far`                 | B    | required | layer      | 640×200 seamless             | needed |
-| `bg-mid`                 | B    | required | layer      | 640×240 seamless             | needed |
-| `bg-fore`                | D    | optional | layer      | 640×96 seamless (high tier)  | needed |
-| `station-spawn-gate`     | C    | required | sprite     | ≤ 224×176                    | needed |
-| `station-fiora`          | C    | required | sprite     | ≤ 160×160                    | needed |
-| `station-japaniracer`    | C    | required | sprite     | ≤ 176×160                    | needed |
-| `station-le-parche`      | C    | required | sprite     | ≤ 160×160                    | needed |
-| `station-maison-cielare` | C    | required | sprite     | ≤ 160×160                    | needed |
-| `station-orquestia`      | C    | required | sprite     | ≤ 176×160                    | needed |
-| `confidential-vault`     | C    | required | strip      | 2 × 160×160 (closed, open)   | needed |
-| `confidential-dossier`   | C    | required | sprite     | ≤ 48×64                      | needed |
-| `skill-block`            | C    | required | strip      | 3 × 24×24 (idle, bump, used) | needed |
-| `contact-post`           | C    | required | strip      | 2 × 112×128 (idle, active)   | needed |
-| `props-misc`             | D    | required | set        | 8 props                      | needed |
-| `flask-bubbling`         | D    | required | strip      | 4 × 16×24                    | needed |
-| `flare-flame`            | D    | optional | strip      | 4 × 16×32 (high tier)        | needed |
+| id                       | wave | launch   | kind       | final geometry (art px)      | status    |
+| ------------------------ | ---- | -------- | ---------- | ---------------------------- | --------- |
+| `panda-portrait`         | A    | required | sprite     | ≤ 80×104 (front, UI only)    | delivered |
+| `panda-idle`             | A    | required | strip      | 4 × 64×64                    | needed    |
+| `panda-walk`             | A    | required | strip      | 6 × 64×64                    | needed    |
+| `panda-air`              | A    | required | strip      | 6 × 64×64                    | needed    |
+| `panda-interact`         | A    | required | strip      | 4 × 64×64                    | needed    |
+| `panda-wave`             | A    | required | strip      | 4 × 64×64                    | needed    |
+| `panda-run`              | A    | optional | strip      | 6 × 64×64                    | needed    |
+| `panda-celebrate`        | D    | optional | strip      | 4 × 64×64                    | needed    |
+| `panda-sleep`            | D    | optional | strip      | 2 × 64×64                    | needed    |
+| `floor-plant`            | B    | required | tile-strip | 256×32 seamless              | needed    |
+| `platforms`              | B    | required | set        | 48×16 · 80×16 · 128×16       | needed    |
+| `bg-far`                 | B    | required | layer      | 640×200 seamless             | needed    |
+| `bg-mid`                 | B    | required | layer      | 640×240 seamless             | needed    |
+| `bg-fore`                | D    | optional | layer      | 640×96 seamless (high tier)  | needed    |
+| `station-spawn-gate`     | C    | required | sprite     | ≤ 224×176                    | needed    |
+| `station-fiora`          | C    | required | sprite     | ≤ 160×160                    | needed    |
+| `station-japaniracer`    | C    | required | sprite     | ≤ 176×160                    | needed    |
+| `station-le-parche`      | C    | required | sprite     | ≤ 160×160                    | needed    |
+| `station-maison-cielare` | C    | required | sprite     | ≤ 160×160                    | needed    |
+| `station-orquestia`      | C    | required | sprite     | ≤ 176×160                    | needed    |
+| `confidential-vault`     | C    | required | strip      | 2 × 160×160 (closed, open)   | needed    |
+| `confidential-dossier`   | C    | required | sprite     | ≤ 48×64                      | needed    |
+| `skill-block`            | C    | required | strip      | 3 × 24×24 (idle, bump, used) | needed    |
+| `contact-post`           | C    | required | strip      | 2 × 112×128 (idle, active)   | needed    |
+| `props-misc`             | D    | required | set        | 8 props                      | needed    |
+| `flask-bubbling`         | D    | required | strip      | 4 × 16×24                    | needed    |
+| `flare-flame`            | D    | optional | strip      | 4 × 16×32 (high tier)        | needed    |
 
 ## Content media (kept from the old site)
 
@@ -183,5 +192,5 @@ for their panels; an agent can capture them from the live URLs in Phase 5 if Cri
 ## Generated — never deliver, never commit
 
 - `public/game/**` — pipeline output (gitignored).
-- Favicon set, OG/social image (1200×630), loading-screen sprite — produced by scripts from the
-  panda strips and a game capture (Phases 2 and 12).
+- Favicon set and OG/social image (1200×630) — produced by scripts from `panda-portrait` and a
+  game capture (Phases 2 and 12).

@@ -80,7 +80,7 @@ Gamepad support is a nice-to-have (Phase 12), not required.
 
 ## HUD (DOM, always visible)
 
-- Top-left: tiny name badge (opens the intro panel).
+- Top-left: tiny name badge with the `panda-portrait` head (opens the intro panel).
 - Top-right: **Contact** (opens the contact panel from anywhere), language `ES · EN`, sound on/off,
   menu.
 - Bottom-centre: the interact prompt when near a station.

@@ -4,6 +4,15 @@
   "grid": 16,
   "assets": [
     {
+      "id": "panda-portrait",
+      "kind": "sprite",
+      "wave": "A",
+      "required": true,
+      "tier": "all",
+      "targetHeight": 100,
+      "maxSize": [80, 104]
+    },
+    {
       "id": "panda-idle",
       "kind": "strip",
       "wave": "A",

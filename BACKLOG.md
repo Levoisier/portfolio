@@ -79,8 +79,10 @@ asset still yields a usable interim/placeholder file with the final geometry.
 - Implements the processing steps in ARCHITECTURE.md → _Asset pipeline_ for every manifest
   kind (`strip`, `sprite`, `set`, `layer`, `tile-strip`) and the source order
   raw → reference slices → placeholder.
-- Background removal: existing alpha kept; `#00FF00` chroma key in HSV with edge cleanup;
-  black flood-fill for the reference sheet (threshold in the slices file).
+- Background removal auto-detected from the border: existing alpha kept; `#00FF00` chroma key
+  in HSV with edge cleanup; pure-black borders (reference sheet, `panda-portrait`) flood-filled
+  from the edges with a threshold just above the border's max channel (see LESSONS.md — a
+  threshold of 20 eats the portrait's legs, 6 is right).
 - One scale factor per strip; palette snap in OKLab against `src/design/palette.json`; binary
   alpha; orphan-pixel cleanup; bottom-centre packing on baseline `cellHeight − 4`.
 - Layers/tile-strips: measured seam error; warning above a threshold; best-effort loop-point crop.
@@ -120,8 +122,10 @@ right integer zoom for every screen, with the plumbing every later phase uses.
   `data-lang` set before first paint.
 - Fonts via `@fontsource`: **Pixelify Sans** (display/UI) and **Inter** (panel body), subset to
   latin + latin-ext; declared in `tokens.css`.
-- Loading screen (DOM/CSS only): the name, a pixel progress bar fed by `game:progress`, the
-  walking panda from `public/game/panda-walk.png` via CSS `steps()` (static fallback if absent).
+- Loading screen (DOM/CSS only): `panda-portrait` (the delivered front view, integer-scaled,
+  `image-rendering: pixelated`) with the name, a pixel progress bar fed by `game:progress`, and
+  the walking panda from `public/game/panda-walk.png` via CSS `steps()` as the progress runner
+  (static fallback if absent).
 - `src/game/boot.ts` dynamic-imports Phaser after first paint; `BootScene` loads
   `/game/manifest.json` and tier-appropriate assets; an empty `WorldScene` shows a solid
   `navy-900` background and a centered interim panda idle loop.
@@ -390,7 +394,8 @@ motion disables shake/flash.
 
 - Performance budgets in ARCHITECTURE.md met (report numbers in LESSONS.md); Lighthouse mobile
   ≥ 80 performance, ≥ 95 accessibility, 100 SEO/best practices.
-- OG image captured from the game by a script; favicon set from `panda-idle` frame 0.
+- OG image captured from the game by a script (with `panda-portrait`); favicon set from the
+  `panda-portrait` head crop.
 - Cross-device QA list: Chrome/Safari/Firefox desktop, iOS Safari, Android Chrome; portrait +
   landscape; 60 Hz + 120 Hz displays.
 - Optional: gamepad support; Phaser custom build if it saves ≥ 80 KB gzip.

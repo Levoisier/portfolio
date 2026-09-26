@@ -54,3 +54,16 @@ versions expect a newer browser build.
 **Fix / finding:** `@playwright/test` is pinned to 1.56.1, which uses that build. Local machines
 run `pnpm exec playwright install chromium` once.
 **Rule of thumb:** Upgrade Playwright only together with the browsers it expects.
+
+## 2026-09-26 — `panda-portrait` keys cleanly only with a tight black threshold
+
+**Context:** Converting Cristian's front-view portrait (`art/raw/panda-portrait.png`, 1254×1254,
+AI pixel-art style on black) into a true pixel sprite.
+**Problem:** With a flood-fill threshold of max(R,G,B) ≤ 20 the legs and arms came out hollow:
+the leg fur sits at 16–19 in places and is connected to the background along the silhouette.
+**Fix / finding:** The background is pure 0–3 and the fur never goes below 12, so a threshold of
+**6** keeps all the fur. The art was drawn at ~9.5 source px per "pixel", i.e. a native size of
+~77×100 px; downsampling to 100 px tall (lanczos) + OKLab palette snap + alpha ≥ 50 % recovers it
+almost losslessly, and 48 px tall still reads well in-game. 45 705 source colors → 29.
+**Rule of thumb:** Derive the black-key threshold from the border's own max channel (+3), never a
+fixed "dark enough" constant; measure fur darkness before choosing.

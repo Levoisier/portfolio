@@ -213,8 +213,10 @@ emits `lang:change` on the bus (canvas text re-renders). `src/i18n/ui.ts` holds 
 2. a reference slicing map (`art/reference/*.slices.json`) — interim panda frames;
 3. a generated **placeholder** in palette colors with the exact final geometry.
 
-Processing (per source): remove background (existing alpha → keep; pure-green `#00FF00`
-chroma key in HSV with edge cleanup; black flood-fill for the reference sheet) → find
+Processing (per source): remove background, auto-detected from the image border (existing
+alpha → keep; pure-green `#00FF00` border → HSV chroma key with edge cleanup; pure-black border,
+as in the reference sheet and `panda-portrait` → flood-fill from the borders with a threshold
+just above the border's own max channel — **never** a global black key, the fur is black too) → find
 connected components → group into frames/items (largest components ordered left→right, small
 satellites such as scarf tails or sparkles merged into the nearest frame) → trim → scale with
 **one factor per strip** (from the tallest frame to `targetHeight`; area resampling when the
@@ -259,4 +261,4 @@ uneven frame sizes, baked shadows).
 
 Title/description from `src/content/profile.ts`, OG + Twitter card with a 1200×630 image
 captured from the game by a script, JSON-LD `Person`, `robots.txt`, favicon set generated
-from the idle frame. All panel content is in the static HTML.
+from `panda-portrait` (head crop). All panel content is in the static HTML.
