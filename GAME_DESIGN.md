@@ -31,8 +31,8 @@ order; ASSETS.md says what art exists.
 - **Recruiters / hiring managers** — often mobile, from LinkedIn, ~30 s of attention.
 - **Founders / clients** — want proof of shipping + a way to contact.
 - **Engineers** — judge craft: smoothness, no bugs, sensible loading.
-- Languages: **ES + EN** — ES by default (as on the old site), toggle persisted; browser
-  detection is proposed in DECISIONS.md and pending Cristian's call.
+- Languages: **ES + EN** — ES by default (as on the old site), toggle persisted; no browser
+  detection.
 - Confidential work: industry, role, stack, abstracted impact, duration, team size **only**.
 
 ## The level (left → right)

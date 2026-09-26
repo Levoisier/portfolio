@@ -111,13 +111,10 @@ pixel look for headings/UI; Inter (OFL) keeps long panel text readable.
 
 ## Languages: ES + EN, Spanish by default
 
-**Status:** Accepted for ES default (as on the old site, `html lang="es-419"`); **Proposed —
-pending Cristian:** default from `navigator.language` (`es*` → ES, otherwise EN).
-**Why:** Content exists in both languages; the stored toggle always wins. Browser detection would
-land international recruiters in English, but it changes the product's locale, so it waits for
-Cristian's call.
-**Trade-off (if detection is adopted):** Spanish speakers with an English browser see EN first
-(one tap away).
+**Status:** Accepted (2026-09-26, confirmed by Cristian)
+**Why:** Content exists in both languages. Spanish is the default (as on the old site,
+`html lang="es-419"`); the stored `ES · EN` toggle always wins. No browser-language detection.
+**Trade-off:** International visitors land in Spanish and switch with one tap.
 
 ## Testing: Vitest + Playwright 1.56.1
 

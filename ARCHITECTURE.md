@@ -276,8 +276,8 @@ Every source writes into one per-frame `Intent` (`moveX ∈ [−1, 1]`, `run`, `
 
 ## i18n **(Phase 2)**
 
-`src/i18n/lang.ts`: initial language = stored choice → otherwise **ES** (as on the old site; see
-DECISIONS.md → _Languages_ — browser detection is proposed, pending Cristian). Setting a language
+`src/i18n/lang.ts`: initial language = stored choice → otherwise **ES** (no browser detection; see
+DECISIONS.md → _Languages_). Setting a language
 updates `html[lang]` (`es-419` or `en`), `html[data-lang]` (`es` or `en`), storage, and emits
 `lang:change` (canvas text re-renders). `src/i18n/ui.ts` holds UI strings (`Localized`); content
 strings stay in `src/content`.

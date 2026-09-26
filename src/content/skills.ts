@@ -18,7 +18,7 @@ export const skillCategoryLabels: Record<SkillCategory, Localized> = {
 
 /**
  * Two-letter symbols for the eight category element blocks in the Reagent lab (the block is
- * 24 px wide, so full labels don't fit). Proposed in Phase 0 — Cristian may rename them.
+ * 24 px wide, so full labels don't fit). Approved by Cristian.
  */
 export const skillCategorySymbols: Record<SkillCategory, string> = {
   languages: 'Lg',
