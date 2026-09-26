@@ -6,9 +6,10 @@
 import Phaser from 'phaser';
 import { num } from '../design/palette';
 import { DEFAULT_LANG } from '../i18n/lang';
-import { bus, type Tier } from '../shared/bus';
+import { bus, type EventName, type Events, type Tier } from '../shared/bus';
 import { readLayoutMode, targetViewHeight, watchLayoutMode } from '../shared/layout-mode';
 import type { BootOptions } from './boot';
+import { GRAVITY, LAYOUT_STEP_HZ } from './config';
 import { REGISTRY_KEY, type GameContext } from './context';
 import { detectTier } from './quality';
 import { watchScreen } from './render/viewport';
@@ -33,6 +34,9 @@ export function startGame({ parent, manifest, debug }: BootOptions): Phaser.Game
     paused: false,
     pixelFont: false,
     pandaTexture: '',
+    physicsHz: LAYOUT_STEP_HZ,
+    player: null,
+    camera: { scrollX: 0, scrollY: 0 },
   };
 
   const game = new Phaser.Game({
@@ -46,6 +50,7 @@ export function startGame({ parent, manifest, debug }: BootOptions): Phaser.Game
     banner: false,
     // The page never scrolls; the UI owns DOM focus, so Phaser must not grab keys globally.
     input: { keyboard: { capture: [] } },
+    physics: { default: 'arcade', arcade: { gravity: { x: 0, y: GRAVITY } } },
     scene: [BootScene, WorldScene],
   });
   game.registry.set(REGISTRY_KEY, ctx);
@@ -89,11 +94,18 @@ export function startGame({ parent, manifest, debug }: BootOptions): Phaser.Game
         lang: bus.last('lang:change')?.lang ?? DEFAULT_LANG,
         pixelFont: ctx.pixelFont,
         pandaTexture: ctx.pandaTexture,
+        player: ctx.player,
+        camera: ctx.camera,
+        physicsHz: ctx.physicsHz,
       }),
       setTier: (tier: Tier) => {
         ctx.tier = tier;
         ctx.tierPinned = true;
         bus.emit('tier:change', { tier });
+      },
+      teleport: (x: number) => ctx.teleport?.(x),
+      emit<K extends EventName>(event: K, payload: Events[K]) {
+        bus.emit(event, payload);
       },
     };
   }

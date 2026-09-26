@@ -1,5 +1,6 @@
 /** Session state shared by main.ts and the scenes (no Phaser import). */
 import type { RuntimeManifest } from '../assets/runtime';
+import type { PlayerDebugState } from '../shared/debug';
 import type { Tier } from '../shared/bus';
 import type { LayoutMode } from '../shared/layout-mode';
 import type { Viewport } from './render/zoom';
@@ -17,6 +18,13 @@ export interface GameContext {
   paused: boolean;
   pixelFont: boolean;
   pandaTexture: string;
+  /** The measured display refresh Arcade steps at; `LAYOUT_STEP_HZ` until `WorldScene` measures it. */
+  physicsHz: number;
+  /** Kept for the debug hook's `getState()` (Phase 3 — ARCHITECTURE.md → Player). */
+  player: PlayerDebugState | null;
+  camera: { scrollX: number; scrollY: number };
+  /** Set by `WorldScene.create()`; the debug hook's `teleport(x)` calls through it. */
+  teleport?: (x: number) => void;
 }
 
 export const REGISTRY_KEY = 'ctx';

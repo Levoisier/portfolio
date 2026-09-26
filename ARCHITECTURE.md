@@ -164,12 +164,24 @@ and the manifest as arguments; it never queries the DOM. `main.ts` may style its
   when the object's matrix is a pure translation). A flip counts as a −1 scale, so call
   `setVertexRoundMode('full')` on the panda and every sprite that flips. Never `setScale` art;
   squash and stretch come from frames.
-- **Camera:** follow is ours, not Phaser's: `render/follow.ts` (pure) takes the panda x, dt,
-  deadzone and view width and returns an **integer** `scrollX` (dt-based smoothing
-  `1 − exp(−dt / τ)`, then `Math.round`), clamped to `[0, WORLD_W − viewW]`; the scene applies it
-  in `POST_UPDATE`. Do not use `camera.startFollow()` (it resets the camera's `roundPixels` to
-  false and scrolls fractionally, per rendered frame). **Vertically bottom-anchored:** on every
-  resize call `cam.setBounds(0, WORLD_H − viewH, WORLD_W, viewH)` so `scrollY = WORLD_H − viewH`
+- **Camera:** follow is ours, not Phaser's: `render/follow.ts` (pure) threads a `FollowState`
+  (`{ exact, scrollX, screenX }`) across frames — `exact` is a dt-based smoothed chase
+  (`1 − exp(−dt / τ)`) of a deadzone target, and `scrollX` is its **integer** projection, clamped
+  to `[0, WORLD_W − viewW]`. Deriving `scrollX` from `exact` alone (`Math.round(exact)`) shimmers:
+  it snaps on its own schedule while the panda is drawn at `Math.round(x)`, so the two disagree by
+  a pixel on some frames. Instead `scrollX` rides the panda's own integer step — the panda's
+  on-screen x (`screenX`) holds still — and only deviates once that would drift more than 1 px
+  from `exact`, and never against the direction of travel. `snapFollow()` (no easing) seeds this
+  state on spawn, teleport and fast-travel. `dtMs` is physics time (steps taken this frame × the
+  fixed step), so a frame with no physics step leaves the camera untouched instead of sliding under
+  a frozen panda; the scene applies the result in `POST_UPDATE`, after Arcade has synced the
+  panda's sprite position from its body (registering the scene's own `POST_UPDATE` listener in
+  `create()` runs it after the physics plugin's, which subscribes when the scene boots). Do not use
+  `camera.startFollow()` (it resets the camera's `roundPixels` to false and scrolls fractionally,
+  per rendered frame). **Refresh:** `render/refresh.ts`'s `RefreshMeter` (fed `game.loop.rawDelta`)
+  reports the measured display refresh once; the scene calls `this.physics.world.setFPS(hz)` with
+  it so Arcade steps once per rendered frame at 120/144 Hz too. **Vertically bottom-anchored:** on
+  every resize call `cam.setBounds(0, WORLD_H − viewH, WORLD_W, viewH)` so `scrollY = WORLD_H − viewH`
   (may be negative) — with bounds of height 480 alone, Phaser pins a taller view to the top. View
   height is usually ≤ 719 art px on desktop and 240–479 on touch, but can be larger when the 200 px
   width rule lowers zoom (390×1000@1 → 390×1000): screen-space layers size to the actual view,
@@ -242,46 +254,75 @@ bodyH + apex − 4 (≈ 97 px — the head reaches it) above the surface beneath
 `PANDA_ART_H = 48`. One-way platforms: static bodies with
 `checkCollision.down = left = right = false`.
 
-## Player **(Phase 3)**
+## Player
 
 - `player/logic.ts` — a **pure**
   `step(prev: PlayerState, intent: Intent, dt: number, body: { grounded: boolean; vy: number; blockedUp: boolean })`
   returning `{ state: PlayerState; vx: number; vy: number | null /* null = leave to physics */; anim: string; frame?: string; flipX: boolean }`;
   `PlayerState` carries the state name (`idle | walk | run | air | land | interact | wave`) and the
-  coyote/buffer/land timers. Unit-tested without Phaser.
+  coyote/buffer/land timers. Unit-tested without Phaser. `grounded` is
+  `body.blocked.down && body.vy >= 0` (not `blocked.down` alone): on a frame where Arcade runs no
+  physics step right after a jump fires, `blocked.down` still reads the previous step's `true`
+  while `vy` is already the launch speed, and would otherwise wipe out the jump.
 - Constants (`config.ts`, tune by feel): gravity 900 px/s², walk 90, run 150, jump velocity −330,
   coyote 90 ms, jump buffer 120 ms, jump-cut ×0.5 on early release. Arcade integrates
   semi-implicitly at a fixed step, so the real apex at 60 Hz is **57.75 px** (not v²/2g = 60.5);
-  `logic.ts` exports `jumpApex(gravity, v0, stepHz)` and layout validation uses it at 60 Hz. Set
-  the arcade `fps` to the measured display refresh (`world.setFPS`) so 120/144 Hz screens don't
-  move the body only on alternate frames.
-- Body: fixed box `PLAYER_BODY = { w: 20, h: 44 }` (`config.ts`), bottom-centre on the cell
-  baseline (offset (22, 16) in the 64×64 cell), so frames never change collision.
+  `logic.ts` exports `jumpApex(gravity, v0, stepHz)` and layout validation uses it at 60 Hz. Arcade
+  physics is configured in `main.ts` (`default: 'arcade'`, `gravity: { x: 0, y: GRAVITY }`); the
+  scene sets the arcade `fps` to the measured display refresh (`world.setFPS`, via
+  `render/refresh.ts`) so 120/144 Hz screens don't move the body only on alternate frames.
+- `player/PandaSprite.ts` is the Phaser adapter: it builds animations only from the resolved
+  runtime manifest (`ctx.manifest`, never `art/manifest.json`), reads `BodyReport` from the Arcade
+  body each frame, calls `logic.ts`'s `step()`, and copies its output back onto the body/sprite
+  (`body.velocity.x` always, `body.velocity.y` only when not `null`, the anim/frame, `setFlipX`).
+  Body: fixed box `PLAYER_BODY = { w: 20, h: 44 }` (`config.ts`), bottom-centre on the cell
+  baseline (offset (22, 16) in the 64×64 cell); every strip's frame is the same 64×64 cell, so
+  `setFrame`/`setTexture` never resizes the body, but `PandaSprite` still reasserts
+  `body.setSize`/`setOffset` every frame as a guard. `setVertexRoundMode('full')` (a flipped sprite
+  is not vertex-rounded under the default `safeAuto`).
 - Animations are built from the resolved `frames` in `assets.json`, never from
-  `art/manifest.json`. `panda-air` frames are chosen by state, not played by fps: `takeoff` for
-  60 ms after a jump, `rise` while vy < −60, `apex` while |vy| ≤ 60, `fall` while vy > 60, `land`
-  for 80 ms after touchdown (cancelled by input); `crouch` is unused (no pre-jump delay). If
-  `panda-run` resolves to `missing`, the walk animation plays at run speed.
+  `art/manifest.json`. `panda-air` is never played by fps: it is `setFrame()`'d to the index
+  `frameNames` (resolved manifest) gives the state's name (`takeoff`/`rise`/`apex`/`fall`/`land`;
+  `crouch` is unused), falling back to indices 1..5 clamped to `frames − 1` when the strip has no
+  (or an incomplete) `frameNames`. `takeoff` shows for 60 ms after a jump, `rise` while vy < −60,
+  `apex` while |vy| ≤ 60, `fall` while vy > 60, `land` for 80 ms after touchdown (cancelled by
+  input). If `panda-run` is `missing` or its texture is absent, `panda-walk` plays instead at
+  `timeScale = RUN_SPEED / WALK_SPEED`. A strip whose texture is absent because there is no
+  manifest at all falls back to a code-drawn 64×64 placeholder, with no animation.
+- **Spawn / teleport:** Arcade reports `blocked.down = false` before its first physics step, which
+  would otherwise show one stray air frame. `PandaSprite` forces `grounded = true` on the update
+  right after construction and after `teleportTo()` (the debug hook's `teleport(x)`), which also
+  zeroes velocity and resets the state machine.
 
-## Input **(Phase 3 / 5 / 6 / 7)**
+## Input **(Phase 5 / 6 / 7)**
 
 Every source writes into one per-frame `Intent` (`moveX ∈ [−1, 1]`, `run`, `jumpPressed`,
 `jumpHeld`, `interactPressed`, `menuPressed`); merging is pure (`input/merge.ts`) and unit-tested.
 
-- **Keyboard (P3):** register keys with `addKey(code, false)` — **no capture**. Phaser's default
-  capture calls `preventDefault` globally on `window` and breaks DOM focus/activation.
+- **Keyboard (done):** register keys with `addKey(code, false)` — **no capture** (also
+  `input: { keyboard: { capture: [] } }` in `main.ts`'s game config). Phaser's default capture
+  calls `preventDefault` globally on `window` and breaks DOM focus/activation. `input/keyboard.ts`
+  (adapter) feeds the pure `input/keyboard-state.ts` from Phaser's `Key` down/up events.
 - **Modal gating:** while the UI reports `ui:modal { open: true }` (a panel or the menu is open)
   the game ignores keyboard and wheel intents, so Enter/Space/Esc keep their DOM meaning. Gating is
-  decided when the key event is **dispatched**, not when Phaser processes it (Phaser queues window
-  keydowns until its next step): the UI handles Esc/Enter/Space inside an open panel or the menu on
-  keydown and calls `event.stopPropagation()`, and on `ui:modal { open: false }` the game calls
-  `this.input.keyboard.resetKeys()` and drops keys pressed before the close — one Esc press never
-  both closes a panel and opens the menu.
+  decided when the key event is **dispatched**, not when Phaser processes it: in Phaser 4.2.1,
+  `KeyboardManager`'s `window` listener pushes straight into its `Key` objects and emits
+  synchronously (it does not queue until the next step — LESSONS.md has the details, including why
+  a replayed event can resurrect an old press). The UI handles Esc/Enter/Space inside an open panel
+  or the menu on keydown and calls `event.stopPropagation()`; on `ui:modal { open: false }` the game
+  calls `this.input.keyboard.resetKeys()` and `KeyboardState` drops every key event stamped at or
+  before that close (`timeStamp <= cutoff`, not `<`) — one Esc press never both closes a panel and
+  opens the menu, and a key still held through the close needs a fresh `down` (its next
+  auto-repeat) before it counts again.
 - **Esc precedence:** Esc (and **B** on the pad) closes the topmost open panel or the menu. Only
   when nothing is open do Esc/M/START open the menu and B/E/Enter interact.
-- **Wheel (P3):** `deltaY > 0` (scroll down) walks right, `deltaX` walks too (horizontal swipes),
-  normalized for `deltaMode` (lines × 16 px), with a short decay so a flick walks a few steps. HUD
-  and letterbox wheel events are forwarded on the bus (`input:wheel`).
+- **Wheel (done):** `deltaY > 0` (scroll down) walks right, `deltaX` walks too (horizontal swipes),
+  normalized for `deltaMode` (lines × 16 px), with a short decay (`input/wheel.ts`'s `WheelWalker`)
+  so a flick walks a few steps. `src/ui/wheel.ts` is the **single** wheel path: one passive
+  `window` listener forwards every wheel event on the bus (`input:wheel`), canvas included, skipping
+  only `#panels`/`#menu` (scrollable DOM) and `Ctrl`+wheel (browser/trackpad zoom). The game never
+  listens to Phaser's own wheel events (Arcade's `MouseManager` still adds a non-passive canvas
+  listener and calls `preventDefault` on it, but does not stop propagation, so ours still fires).
 - **Pointer / tap (P5):** click or tap a station → the panda walks to it, then opens it (basic
   walk-to-x). **Travel (P7)** adds menu fast-travel and fade-teleport, overriding other sources
   while active.
@@ -430,10 +471,14 @@ frame sizes, baked shadows, black-on-black fur).
   multiple of the backing size. Each phase adds specs; move the mouse onto the canvas before
   `page.mouse.wheel`.
 - **Debug/test hook:** with `?debug` (or in dev), `window.__PORTFOLIO__` exposes `getState()`
-  (ready, paused, tier, mode, zoom, dpr, backing size, fps, lang, pixelFont, pandaTexture) and
-  `setTier(t)`, plus an FPS/zoom/tier/mode overlay (`debug:stats` on the bus); Phase 3 adds
-  `teleport(x)`, Phase 5 `openStation(id)` (types in `src/shared/debug.ts`).
-  E2E uses it instead of simulating long walks.
+  (ready, paused, tier, mode, zoom, dpr, backing size, fps, lang, pixelFont, pandaTexture, and —
+  Phase 3 — `player` (x, y, vx, vy, state, anim, frame, flipX, grounded), `camera` (scrollX,
+  scrollY), `physicsHz`), `setTier(t)`, `teleport(x)` (places the panda on the ground at `x`, zero
+  velocity, camera snapped — `GameContext.teleport` is set by `WorldScene.create()` and called
+  through it) and `emit(event, payload)` (a typed passthrough onto the bus, e.g.
+  `emit('ui:modal', { open: true })`, so e2e can simulate a panel/menu opening without building
+  one), plus an FPS/zoom/tier/mode overlay (`debug:stats` on the bus); Phase 5 adds
+  `openStation(id)` (types in `src/shared/debug.ts`). E2E uses it instead of simulating long walks.
 - Visual checks: specs save screenshots to `test-results/`; review them before claiming a visual
   acceptance criterion.
 

@@ -169,9 +169,9 @@ integer multiple of the backing size (desktop + mobile).
 
 ---
 
-## Phase 3 — Panda controller
+## Phase 3 — Panda controller ✅
 
-### [ ] feat(player): responsive platformer movement, animations, camera, keyboard + wheel
+### [x] feat(player): responsive platformer movement, animations, camera, keyboard + wheel
 
 **Goal:** moving the panda feels great and never jitters.
 

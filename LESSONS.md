@@ -133,3 +133,80 @@ dither: 0` round-tripped exactly — verify by reading the file back.
   the replay runs synchronously before `off` exists (TDZ error).
   **Rule of thumb:** Verify DPR-dependent code at a real emulated DPR, not only at @1, and check
   `hidden` elements are actually invisible in a screenshot.
+
+## 2026-09-26 — Phaser 4.2.1 does not queue window keydowns until its next step
+
+**Context:** Building `input/keyboard-state.ts` / `input/keyboard.ts` (modal gating: a key event
+stamped before `ui:modal { open: false }` closes must not fire after the close).
+**Problem:** ARCHITECTURE.md's Input → Modal gating section used to say "Phaser queues window
+keydowns until its next step", implying a `resetKeys()` call made during the same tick as a closing
+keydown would always win the race. Reading `KeyboardManager`'s source (Phaser 4.2.1) shows the
+opposite: its `window` keydown/keyup listener pushes the event and synchronously emits
+`MANAGER_PROCESS` — a `Key`'s `down`/`up` fire during DOM dispatch, not on the engine's next step.
+Worse, each later key event in the same frame **replays the whole queue**, which is only cleared at
+`POST_STEP`; a key released and then pressed again in the same frame gets a second `down`/`up` from
+the replay.
+**Fix / finding:** A timestamp cutoff is required, not just a safety net: `KeyboardState.reset()`
+records the closing event's `timeStamp`, and every key event stamped at or before it
+(`timeStamp <= cutoff`, not `<` — browsers coarsen timestamps, and an event stamped in the same
+millisecond as the close belonged to the UI) is ignored, including ones replayed later in the same
+frame. Two more edge cases fall out of the same replay behavior: a key **held through** the reset
+needs its next auto-repeat (`event.repeat`) to count as a fresh press, or "held through close needs
+a fresh down" silently breaks after ~500 ms (the OS repeat delay); and a Ctrl/Meta/Alt chord
+(`modified`) must be ignored outright, because macOS drops the `keyup` of a key pressed with Meta
+held, which would otherwise leave an input source stuck reporting that key as down forever.
+**Rule of thumb:** Never assume an input library batches or queues browser events for you — read
+its source for the version you actually depend on, and gate on wall-clock timestamps when the
+question is "did this happen before or after the close," not on delivery order.
+
+## 2026-09-26 — Phase 3 integration: scene step order decides who reads what, when
+
+**Context:** Wiring `player/logic.ts` + `PandaSprite` + `render/follow.ts` into `WorldScene`, per
+ARCHITECTURE.md's rule that the camera applies in `POST_UPDATE`, after Arcade has synced the
+sprite.
+**Problem:** Phaser's `Scene.Systems#step` fires, in order, `PRE_UPDATE`, `UPDATE` (the Arcade
+plugin's own listener runs `world.update()` here — the physics step for the frame), _then_ the
+scene's own `update()` method, _then_ `POST_UPDATE` (Arcade's own listener there runs
+`world.postUpdate()`, which copies each body's position onto its Game Object). So inside the
+scene's own `update()`, `sprite.x` is still last frame's value — read it there for the camera and
+the follow lags by one frame, which reads as stutter under fast motion. Also,
+`world.stepsLastFrame` (needed for `follow()`'s physics-time `dtMs`) is reset to 0 inside
+`world.postUpdate()`, i.e. _before_ a listener on the scene's own `POST_UPDATE` gets to read it.
+**Fix / finding:** Read/act on `sprite.x` only from a `POST_UPDATE` listener registered in
+`create()` (the physics plugin subscribes when the scene boots, so ours, registered later, fires
+after it — `EventEmitter` calls listeners in registration order). Snapshot `world.stepsLastFrame`
+at the end of the scene's own `update()`, before `postUpdate()` clears it, and use that stored
+value in the `POST_UPDATE` handler.
+**Rule of thumb:** Know exactly which scene-loop phase you're in before reading a synced transform
+or a step count: `update()` sees last frame's transform and this frame's still-unconsumed step
+count; `POST_UPDATE` sees the opposite.
+
+## 2026-09-26 — A visual/e2e check must wait for the loading screen too, not just `ready`
+
+**Context:** Writing a Playwright script to screenshot the panda for the Phase 3 manual check.
+**Problem:** `getState().ready === true` flips as soon as `WorldScene.create()` returns, but
+`#loading` (portrait + walking-runner + progress bar) is a separate DOM overlay that fades out on
+its own schedule and can still be on top of the canvas at that moment. A screenshot taken right
+after `waitForGame()` showed what looked like a second, floating panda in the sky — actually the
+loading screen's own portrait/runner, composited into the shot because `locator.screenshot()`
+captures whatever is visually on top of that element's box, not an isolated render of the canvas's
+own draw buffer.
+**Fix / finding:** Also `await page.locator('#loading').waitFor({ state: 'hidden' })` (as
+`shell.spec.ts`'s first test already does) before taking any screenshot meant to show only the
+game.
+**Rule of thumb:** `ready` means the scene finished `create()`, not that the loading screen is
+gone — wait for both before trusting a screenshot.
+
+## 2026-09-26 — Re-wire every field the old code set when replacing it with an adapter
+
+**Context:** Replacing `WorldScene`'s inline "pick the panda texture" helper with `PandaSprite`.
+**Problem:** The old helper's last line was `this.ctx.pandaTexture = …`, read by
+`window.__PORTFOLIO__.getState()` and asserted by `shell.spec.ts`'s "boots the game" test. Moving
+texture selection into `PandaSprite`'s constructor dropped that assignment entirely; `pnpm verify`
+and the unit tests stayed green (nothing there touches `ctx.pandaTexture`), and the regression only
+showed up in `pnpm test:e2e`.
+**Fix / finding:** Added a `textureKey` getter to `PandaSprite` and set `ctx.pandaTexture` from it
+in `WorldScene.create()`.
+**Rule of thumb:** When deleting a scene method that sets shared/debug state, grep for every reader
+of that state (`ctx.*`, the debug hook, e2e specs) first, not just its callers — a unit-tested pure
+module regressing here would still pass `pnpm verify` and only fail e2e.

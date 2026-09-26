@@ -11,6 +11,7 @@ import { watchLayoutMode } from '../shared/layout-mode';
 import { mountDebugOverlay } from './debug-overlay';
 import { loadFonts } from './fonts';
 import { mountLoading } from './loading';
+import { forwardWheel } from './wheel';
 
 function readManifest(): RuntimeManifest | null {
   try {
@@ -32,5 +33,6 @@ watchLayoutMode((mode) => (html.dataset.mode = mode));
 bus.emit('lang:change', { lang: getLang() });
 if (loading) mountLoading(loading);
 if (debug) mountDebugOverlay(document.getElementById('hud') ?? document.body);
+forwardWheel();
 void loadFonts();
 if (screen) void boot({ parent: screen, manifest: readManifest(), debug });

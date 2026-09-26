@@ -1,26 +1,50 @@
 /**
- * Phase 2: an empty world — navy-900, the panda's idle loop (or a code-drawn placeholder when
- * there is no manifest) and one in-world pixel-text label. Phase 3+ builds the level here.
+ * Phase 3: the panda controller end to end — a temporary flat ground and one test platform
+ * (Phase 4 replaces both with `world/layout.ts`), keyboard + wheel input, and the integer
+ * camera follow. Phase 2's empty world lived here before; see LESSONS.md for what changed.
  */
 import Phaser from 'phaser';
 import { profile } from '../../content';
 import { num } from '../../design/palette';
 import { bus } from '../../shared/bus';
-import { CELL, CELL_BASELINE, DEBUG_STATS_MS, PANDA_ART_H } from '../config';
+import { DEBUG_STATS_MS, GROUND_Y, LAYOUT_STEP_HZ, PANDA_ART_H, WORLD_H, WORLD_W } from '../config';
 import { REGISTRY_KEY, type GameContext } from '../context';
+import { KeyboardSource } from '../input/keyboard';
+import { mergeIntents } from '../input/merge';
+import { WheelWalker } from '../input/wheel';
+import { PandaSprite } from '../player/PandaSprite';
 import { FpsGuard } from '../quality';
+import { follow, snapFollow, type FollowState } from '../render/follow';
+import { RefreshMeter } from '../render/refresh';
 import { PIXEL_FONT, PIXEL_FONT_SIZE, registerPixelFont } from '../text/bitmap-font';
 
-const PANDA_IDLE = 'panda-idle';
-const PANDA_PLACEHOLDER = 'panda-placeholder';
+const SPAWN_X = 160;
+const FLOOR_ID = 'floor-plant';
+const FLOOR_PLACEHOLDER = 'floor-placeholder';
+const FLOOR_HEIGHT = 32;
+const PLATFORMS_ID = 'platforms';
+const PLATFORM_FRAME = 'platform-m';
+const PLATFORM_PLACEHOLDER = 'platform-placeholder';
+/** Test platform (Phase 4 makes this data-driven): its top must clear `jumpApex() − 4`. */
+const PLATFORM_X = 560;
+const PLATFORM_DROP = 48;
+const PLATFORM_FALLBACK_SIZE = { w: 80, h: 16 };
 
 export class WorldScene extends Phaser.Scene {
   private ctx!: GameContext;
-  private panda!: Phaser.GameObjects.Sprite;
+  private panda!: PandaSprite;
   private label: Phaser.GameObjects.BitmapText | null = null;
   private fpsGuard = new FpsGuard();
+  private refreshMeter = new RefreshMeter();
+  private keyboard!: KeyboardSource;
+  private wheel = new WheelWalker();
+  private modalOpen = false;
+  private followState: FollowState = { exact: 0, scrollX: 0, screenX: 0 };
+  /** Physics steps taken this frame (`world.stepsLastFrame`), read before `postUpdate` clears it. */
+  private stepsThisFrame = 0;
   private statsIn = 0;
   private cleanup: (() => void)[] = [];
+  private groundBody!: Phaser.Physics.Arcade.StaticBody;
 
   constructor() {
     super('world');
@@ -29,21 +53,46 @@ export class WorldScene extends Phaser.Scene {
   create() {
     this.ctx = this.registry.get(REGISTRY_KEY) as GameContext;
     this.cameras.main.setBackgroundColor(num('navy-900'));
+    this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
 
-    this.panda = this.add.sprite(0, 0, this.pandaTexture());
-    this.panda.setOrigin(0.5, CELL_BASELINE / CELL).setVertexRoundMode('full');
-    if (this.anims.exists(PANDA_IDLE)) this.panda.play(PANDA_IDLE);
+    this.buildGround();
+    const platform = this.buildPlatform();
 
+    this.panda = new PandaSprite(this, SPAWN_X, GROUND_Y, this.ctx.manifest);
+    this.ctx.pandaTexture = this.panda.textureKey;
+    this.physics.add.collider(this.panda.sprite, this.groundBody);
+    this.physics.add.collider(this.panda.sprite, platform);
+
+    this.keyboard = new KeyboardSource(this);
     this.cleanup.push(
+      bus.on(
+        'ui:modal',
+        ({ open }) => {
+          this.modalOpen = open;
+          this.keyboard.setModal(open);
+          this.wheel.reset();
+        },
+        { replay: true }
+      ),
+      bus.on('input:wheel', ({ deltaX, deltaY, deltaMode }) => {
+        if (!this.modalOpen) this.wheel.push(deltaX, deltaY, deltaMode);
+      }),
       bus.on('fonts:ready', () => this.addLabel(), { replay: true }),
-      bus.on('tier:change', ({ tier }) => (this.ctx.tier = tier))
+      bus.on('tier:change', ({ tier }) => (this.ctx.tier = tier)),
+      () => this.keyboard.destroy()
     );
+
+    this.ctx.teleport = (x: number) => this.teleport(x);
+
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
+    this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.onPostUpdate, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this);
+      this.events.off(Phaser.Scenes.Events.POST_UPDATE, this.onPostUpdate, this);
       for (const off of this.cleanup) off();
     });
     this.layout();
+    this.updateDebugState();
 
     this.ctx.ready = true;
     bus.emit('game:ready', {});
@@ -54,6 +103,28 @@ export class WorldScene extends Phaser.Scene {
       this.ctx.tier = 'low';
       bus.emit('tier:change', { tier: 'low' });
     }
+
+    // Step Arcade at the real display refresh (ARCHITECTURE.md → Player) so 120/144 Hz screens
+    // move the body every rendered frame instead of on alternate ones.
+    const hz = this.refreshMeter.feed(this.game.loop.rawDelta);
+    if (hz !== null) {
+      this.physics.world.setFPS(hz);
+      this.ctx.physicsHz = hz;
+    }
+
+    const intent = mergeIntents(
+      [
+        { source: 'keyboard', intent: this.keyboard.read() },
+        { source: 'wheel', intent: { moveX: this.wheel.update(delta) } },
+      ],
+      { modalOpen: this.modalOpen }
+    );
+    if (intent.menuPressed) bus.emit('menu:open', {});
+
+    this.panda.update(intent, delta, null);
+    // Snapshot now: `world.postUpdate()` (already queued for this frame) resets it to 0.
+    this.stepsThisFrame = this.physics.world.stepsLastFrame;
+
     if (this.ctx.debug && (this.statsIn -= delta) <= 0) {
       this.statsIn = DEBUG_STATS_MS;
       const v = this.ctx.viewport;
@@ -69,49 +140,150 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** The interim/real idle strip when loaded, else a 64×64 box drawn in code. */
-  private pandaTexture(): string {
-    const strip = this.ctx.manifest?.assets[PANDA_IDLE];
-    if (strip?.kind === 'strip' && strip.source !== 'missing' && this.textures.exists(PANDA_IDLE)) {
-      if (!this.anims.exists(PANDA_IDLE))
-        this.anims.create({
-          key: PANDA_IDLE,
-          frames: this.anims.generateFrameNumbers(PANDA_IDLE, { start: 0, end: strip.frames - 1 }),
-          frameRate: strip.fps,
-          repeat: strip.loop ? -1 : 0,
-        });
-      return (this.ctx.pandaTexture = PANDA_IDLE);
-    }
-    if (!this.textures.exists(PANDA_PLACEHOLDER)) {
-      const w = Math.round(PANDA_ART_H * 0.7);
-      const x = (CELL - w) / 2;
-      const y = CELL_BASELINE - PANDA_ART_H;
-      const g = this.make.graphics({}, false);
-      g.fillStyle(num('ink-900')).fillRect(x, y, w, PANDA_ART_H);
-      g.fillStyle(num('ink-700')).fillRect(x + 1, y + 1, w - 2, PANDA_ART_H - 2);
-      g.fillStyle(num('scarlet-500')).fillRect(x + 2, y + 2, 2, 2);
-      g.generateTexture(PANDA_PLACEHOLDER, CELL, CELL);
-      g.destroy();
-    }
-    return (this.ctx.pandaTexture = PANDA_PLACEHOLDER);
+  /** Runs after Arcade has synced the panda's sprite position from its body (POST_UPDATE fires
+   * after the physics plugin's own listener, registered when the scene booted, ahead of ours). */
+  private onPostUpdate() {
+    const stepMs = 1000 / (this.ctx.physicsHz || LAYOUT_STEP_HZ);
+    this.followState = follow(this.followState, {
+      targetX: this.panda.sprite.x,
+      facing: this.panda.facing,
+      viewW: this.scale.width,
+      worldW: WORLD_W,
+      dtMs: this.stepsThisFrame * stepMs,
+    });
+    this.applyCamera();
+    if (this.ctx.debug) this.updateDebugState();
   }
 
-  private addLabel() {
+  /** Debug hook only (`window.__PORTFOLIO__.teleport`): feet on the ground, camera snapped. */
+  private teleport(x: number): void {
+    this.panda.teleportTo(x, GROUND_Y);
+    this.followState = snapFollow({
+      targetX: x,
+      facing: this.panda.facing,
+      viewW: this.scale.width,
+      worldW: WORLD_W,
+    });
+    this.applyCamera();
+    this.updateDebugState();
+  }
+
+  private applyCamera(): void {
+    this.cameras.main.scrollX = this.followState.scrollX;
+    this.ctx.camera = { scrollX: this.cameras.main.scrollX, scrollY: this.cameras.main.scrollY };
+  }
+
+  private updateDebugState(): void {
+    const body = this.panda.sprite.body;
+    this.ctx.player = {
+      x: this.panda.sprite.x,
+      y: this.panda.sprite.y,
+      vx: body.velocity.x,
+      vy: body.velocity.y,
+      state: this.panda.stateName,
+      anim: this.panda.animKey,
+      frame: this.panda.frameName,
+      flipX: this.panda.sprite.flipX,
+      grounded: body.blocked.down || body.touching.down,
+    };
+  }
+
+  /** Ground: a `floor-plant` strip tiled across the world, `ink-900` filling the rest, one solid
+   * collider (Phase 4 replaces this with `world/layout.ts`). */
+  private buildGround(): void {
+    const key = this.textures.exists(FLOOR_ID) ? FLOOR_ID : ensureFloorPlaceholder(this);
+    this.add.tileSprite(0, GROUND_Y, WORLD_W, FLOOR_HEIGHT, key).setOrigin(0, 0);
+    this.add
+      .rectangle(
+        0,
+        GROUND_Y + FLOOR_HEIGHT,
+        WORLD_W,
+        WORLD_H - (GROUND_Y + FLOOR_HEIGHT),
+        num('ink-900')
+      )
+      .setOrigin(0, 0);
+    this.groundBody = this.physics.add.staticBody(0, GROUND_Y, WORLD_W, WORLD_H - GROUND_Y);
+  }
+
+  /** One one-way test platform: only its top face collides. */
+  private buildPlatform(): Phaser.Physics.Arcade.StaticBody {
+    const size = this.platformSize();
+    const topY = GROUND_Y - PLATFORM_DROP;
+    const platform = this.textures.exists(PLATFORMS_ID)
+      ? this.physics.add
+          .staticImage(PLATFORM_X, topY, PLATFORMS_ID, PLATFORM_FRAME)
+          .setOrigin(0.5, 0)
+          .refreshBody()
+      : this.physics.add
+          .staticImage(PLATFORM_X, topY, ensurePlatformPlaceholder(this, size))
+          .setOrigin(0.5, 0)
+          .refreshBody();
+    const body = platform.body;
+    body.setSize(size.w, size.h, false);
+    body.checkCollision.down = false;
+    body.checkCollision.left = false;
+    body.checkCollision.right = false;
+    return body;
+  }
+
+  private platformSize(): { w: number; h: number } {
+    const asset = this.ctx.manifest?.assets[PLATFORMS_ID];
+    const item =
+      asset && asset.source !== 'missing' && asset.kind === 'set'
+        ? asset.items[PLATFORM_FRAME]
+        : undefined;
+    return item ?? PLATFORM_FALLBACK_SIZE;
+  }
+
+  private addLabel(): void {
     if (this.label || !registerPixelFont(this)) return;
     this.label = this.add
-      .bitmapText(0, 0, PIXEL_FONT, profile.name, PIXEL_FONT_SIZE)
+      .bitmapText(0, GROUND_Y - PANDA_ART_H - 24, PIXEL_FONT, profile.name, PIXEL_FONT_SIZE)
       .setTint(num('paper-100'));
+    this.label.setX(Math.floor(SPAWN_X - this.label.width / 2));
     this.ctx.pixelFont = true;
-    this.layout();
   }
 
-  /** Integer positions only: the panda stands at 3/4 of the view, the label above it. */
-  private layout() {
+  /** Integer positions only: camera size + bottom anchoring (ARCHITECTURE.md → Camera). */
+  private layout(): void {
     const { width, height } = this.scale;
-    this.cameras.main.setSize(width, height);
-    const x = Math.floor(width / 2);
-    const feet = Math.floor(height * 0.75);
-    this.panda.setPosition(x, feet);
-    this.label?.setPosition(Math.floor(x - this.label.width / 2), feet - PANDA_ART_H - 24);
+    const cam = this.cameras.main;
+    cam.setSize(width, height);
+    cam.setBounds(0, WORLD_H - height, WORLD_W, height);
+    cam.scrollY = WORLD_H - height;
+    if (this.panda) {
+      this.followState = snapFollow({
+        targetX: this.panda.sprite.x,
+        facing: this.panda.facing,
+        viewW: width,
+        worldW: WORLD_W,
+      });
+      this.applyCamera();
+    }
   }
+}
+
+/** `floor-plant`'s documented placeholder (ARCHITECTURE.md → Asset pipeline): `ink-700` with a
+ * 2-px `paper-500` top edge, tiled the same as the real strip. */
+function ensureFloorPlaceholder(scene: Phaser.Scene): string {
+  if (!scene.textures.exists(FLOOR_PLACEHOLDER)) {
+    const g = scene.make.graphics({}, false);
+    g.fillStyle(num('ink-700')).fillRect(0, 0, 256, FLOOR_HEIGHT);
+    g.fillStyle(num('paper-500')).fillRect(0, 0, 256, 2);
+    g.generateTexture(FLOOR_PLACEHOLDER, 256, FLOOR_HEIGHT);
+    g.destroy();
+  }
+  return FLOOR_PLACEHOLDER;
+}
+
+/** A set item's documented placeholder: its `size` box in `navy-700` with a `navy-400` outline. */
+function ensurePlatformPlaceholder(scene: Phaser.Scene, size: { w: number; h: number }): string {
+  if (!scene.textures.exists(PLATFORM_PLACEHOLDER)) {
+    const g = scene.make.graphics({}, false);
+    g.fillStyle(num('navy-700')).fillRect(0, 0, size.w, size.h);
+    g.lineStyle(1, num('navy-400')).strokeRect(0.5, 0.5, size.w - 1, size.h - 1);
+    g.generateTexture(PLATFORM_PLACEHOLDER, size.w, size.h);
+    g.destroy();
+  }
+  return PLATFORM_PLACEHOLDER;
 }

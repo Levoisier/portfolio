@@ -34,7 +34,8 @@ export interface Events {
   'travel:arrived': { id: string };
   'lang:change': { lang: Lang };
   'sound:toggle': { on: boolean };
-  /** Wheel over the HUD or letterbox, forwarded so it still walks the panda. */
+  /** Every wheel event on the page (canvas, HUD, letterbox alike — `src/ui/wheel.ts` is the
+   * single path), forwarded so it still walks the panda. */
   'input:wheel': { deltaX: number; deltaY: number; deltaMode: number };
   'fonts:ready': Record<string, never>;
   'tier:change': { tier: Tier };
