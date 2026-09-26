@@ -109,12 +109,15 @@ screens; a low-resolution backing store is also cheap on phones. Target view hei
 pixel look for headings/UI; Inter (OFL) keeps long panel text readable.
 **Trade-off:** Two font families to load; subset both.
 
-## Languages: ES + EN, browser-detected
+## Languages: ES + EN, Spanish by default
 
-**Status:** Accepted
-**Why:** Content already exists in both. Default from the stored choice, else `navigator.language`
-(`es*` → ES, otherwise EN) so international recruiters land in English; the toggle persists.
-**Trade-off:** Spanish-speaking visitors with an English browser see EN first (one tap away).
+**Status:** Accepted for ES default (as on the old site, `html lang="es-419"`); **Proposed —
+pending Cristian:** default from `navigator.language` (`es*` → ES, otherwise EN).
+**Why:** Content exists in both languages; the stored toggle always wins. Browser detection would
+land international recruiters in English, but it changes the product's locale, so it waits for
+Cristian's call.
+**Trade-off (if detection is adopted):** Spanish speakers with an English browser see EN first
+(one tap away).
 
 ## Testing: Vitest + Playwright 1.56.1
 
@@ -122,6 +125,8 @@ pixel look for headings/UI; Inter (OFL) keeps long panel text readable.
 **Why:** Vitest for pure logic (fast, no browser). Playwright for the real canvas and DOM.
 `@playwright/test` is pinned to 1.56.1 because that matches the Chromium preinstalled in the
 cloud agent container (`/opt/pw-browsers`); locally run `pnpm exec playwright install chromium`.
+`pnpm test:e2e` builds and serves its own preview on port 4323 and never reuses a running server,
+so it can't silently test a dev server or a stale build.
 **Trade-off:** Upgrading Playwright requires matching browsers.
 
 ## Not installable — no PWA
@@ -130,7 +135,8 @@ cloud agent container (`/opt/pw-browsers`); locally run `pnpm exec playwright in
 **Why:** Cristian does not want the portfolio installable; an app install prompt makes no sense
 for a portfolio. The old site's `site.webmanifest` and Android install icons were removed in the
 reset. No web app manifest, no service worker, no standalone-mode meta tags, no install prompt.
-Favicons stay. `src/policy/no-pwa.test.ts` and the e2e smoke test fail if any of it returns.
+Favicons are allowed; the old ones were removed in the reset and Phase 12 regenerates them from
+`panda-portrait`. `src/policy/no-pwa.test.ts` and the e2e smoke test fail if any of it returns.
 **Trade-off:** No offline play and no home-screen app; visitors can still bookmark the site.
 
 ## Audio off by default, procedural SFX

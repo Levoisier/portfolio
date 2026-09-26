@@ -1,9 +1,16 @@
 {
-  "$comment": "Interim slicing map for art/reference/panda-sheet-v1.png (Cristian's approved character concept sheet, 1536x1024, flat black background, AI 'fake' pixel art). Boxes are [x, y, w, h] in sheet pixels, measured by flood-filling the background (max RGB channel <= 14) from the borders and taking connected components. Pad each box by 6px before keying. The asset pipeline uses these frames ONLY when art/raw/<id>.png does not exist, so development has a real-looking panda before the final strips arrive. They include baked ground shadows and vary in size; the pipeline must key, trim and bottom-center align them.",
+  "$comment": "Interim slicing map for art/reference/panda-sheet-v1.png (Cristian's character concept sheet, 1536x1024, flat black background, AI 'fake' pixel art). Boxes are [x, y, w, h] in sheet pixels and are the UNION bbox of each frame's components (body + detached paws), measured by flood-filling the background (max RGB channel <= backgroundThreshold) from the sheet borders and labelling 8-connected components. Do not pad. Assign every component of >= 20 px to the box it intersects; drop flat blobs (h <= 10, w > 3h, top at or below body bottom - 12): detached ground shadows. Frames keep ARRAY order (panda-air is deliberately not left-to-right). One scale factor for the whole sheet (`scale`, = 48 / the idle frames' 113 px height). The pipeline uses these frames ONLY when art/raw/<id>.png does not exist.",
   "source": "panda-sheet-v1.png",
   "background": "black-floodfill",
   "backgroundThreshold": 14,
-  "pad": 6,
+  "pad": 0,
+  "scale": 0.4248,
+  "shadow": {
+    "bandRows": 10,
+    "minMax": 34,
+    "maxMax": 110,
+    "maxChroma": 24
+  },
   "strips": {
     "panda-idle": [
       [35, 112, 84, 113],
@@ -18,19 +25,25 @@
       [855, 112, 94, 108]
     ],
     "panda-run": [
-      [1007, 116, 100, 109],
-      [1132, 116, 102, 109],
-      [1261, 117, 102, 103],
-      [1387, 116, 105, 109]
+      [1007, 116, 107, 109],
+      [1132, 116, 109, 109],
+      [1261, 117, 109, 103],
+      [1387, 116, 112, 109]
     ],
     "panda-air": [
       [31, 363, 92, 106],
-      [142, 314, 84, 112],
-      [259, 325, 96, 112],
+      [142, 314, 101, 112],
+      [259, 325, 104, 112],
       [539, 356, 99, 114],
-      [650, 374, 83, 113],
-      [377, 362, 93, 101]
+      [650, 374, 98, 113],
+      [377, 362, 97, 104]
     ]
   },
-  "unusedRows": "attack (potion), hurt, die, special/power-up, directional front/back/left/right, map-icon sizes and extras are not used by the side-scroller; the special/power-up pose is the style reference for panda-celebrate."
+  "sprites": {
+    "panda-right": {
+      "box": [457, 820, 80, 119],
+      "backgroundThreshold": 8
+    }
+  },
+  "unusedRows": "attack (potion), hurt, die, special/power-up, directional front/back/left, map-icon sizes and extras are not used by the side-scroller; the special/power-up pose is the style reference for panda-celebrate; `sprites.panda-right` (the RIGHT directional sprite) seeds art/reference/panda-right-64.png, the PixelLab reference."
 }

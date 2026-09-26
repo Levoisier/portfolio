@@ -48,8 +48,9 @@ pnpm install          # first, in a fresh checkout
 pnpm dev              # http://localhost:4321
 pnpm test             # Vitest unit tests (watch: pnpm test:watch)
 pnpm verify           # THE GATE: prettier --check → eslint → astro check → vitest → astro build
-pnpm test:e2e         # Playwright against a production preview (desktop + mobile projects)
-pnpm assets           # asset pipeline (exists from BACKLOG Phase 1)
+pnpm test:e2e         # builds and serves its own preview on :4323 (desktop + mobile projects)
+pnpm references       # regenerate the helper images in art/reference/
+pnpm assets           # asset pipeline (BACKLOG Phase 1; dev/build chain it explicitly)
 ```
 
 `scripts/verify.sh` is the gate; it must exit 0 before every commit. Playwright in the cloud
@@ -83,22 +84,28 @@ Breaking any of these is a blocking error. Revert and fix before committing.
 4. **Colors come only from the palette.** `src/design/palette.json` (canvas, pipeline) and its
    mirror `src/styles/tokens.css` (`var(--c-*)`). Use `hex()`/`num()`/`cssVar()` from
    `src/design/palette.ts`. A new color = a palette entry first (and an ADR if it changes the look).
-5. **Assets go through the registry.** Every media file has an entry in `art/manifest.json` and
-   a row in ASSETS.md. Game code references assets by id only. `art/raw/` is Cristian's — never
-   edit, rename or delete his files. `public/game/` is generated — never hand-edit or commit it.
+   The only non-palette color is the `#00FF00` chroma key, and only inside `scripts/`.
+5. **Assets go through the registry.** Every game media file (sources under `art/`) has an entry
+   in `art/manifest.json` and a row in ASSETS.md; game code references it by id only and reads
+   resolved geometry (frames, anchors) from `public/game/assets.json`. Content media under
+   `public/media/` is owned by `src/content/` and listed in ASSETS.md → _Content media_.
+   `art/raw/` is Cristian's — never edit, rename or delete his files. `public/game/` is generated —
+   never hand-edit or commit it.
 6. **Pixel-perfect or nothing.** Integer zoom in device pixels, nearest-neighbor, integer
    positions (`roundPixels`), no CSS smoothing, no non-integer scaling of art (ARCHITECTURE.md →
    _Rendering contract_).
 7. **Game and UI meet only at the bus.** Phaser code never builds or queries DOM; UI code never
    touches Phaser objects. They communicate through the typed events in `src/shared/bus.ts`.
-8. **Ambience goes through the tier.** Only `src/game/quality.ts` decides device/tier; no ad-hoc
-   `innerWidth`/user-agent checks. Mobile stays within the budgets in ARCHITECTURE.md.
+8. **Device checks have two homes.** Only `src/game/quality.ts` (tier) and
+   `src/shared/layout-mode.ts` (desktop / handheld / landscape-touch) inspect the device; no ad-hoc
+   `innerWidth`/user-agent checks elsewhere. Mobile stays within the budgets in ARCHITECTURE.md.
 9. **Everyone can reach everything.** Every station and panel is reachable by keyboard, touch,
    mouse and the menu; panels are real DOM dialogs with focus management;
    `prefers-reduced-motion` is honored (no shake, no flashes, reduced parallax/particles).
-10. **Pure logic stays pure and tested.** Movement, input merging, zoom math, layout validation,
-    travel planning and the pipeline steps live in modules that do not import Phaser, with
-    Vitest tests.
+10. **Pure logic stays pure and tested.** Movement, input merging, zoom math, camera follow,
+    layout validation, travel planning and the pipeline steps live in modules that do not import
+    Phaser, with Vitest tests. Only the modules listed in ARCHITECTURE.md → _Testing strategy_ may
+    import `phaser` at runtime (ESLint enforces it).
 11. **No new dependency without an ADR** in DECISIONS.md (bundle budget).
 12. **Not installable.** No web app manifest, service worker, standalone-mode meta or install
     prompt — the portfolio is deliberately not a PWA (tests enforce it). Favicons are fine.

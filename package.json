@@ -3,18 +3,22 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
-    "lint": "eslint src tests --max-warnings 0",
+    "lint": "eslint src tests scripts --max-warnings 0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "references": "node scripts/make-references.ts",
     "verify": "bash scripts/verify.sh"
   },
   "dependencies": {

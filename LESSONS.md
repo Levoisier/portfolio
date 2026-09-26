@@ -65,5 +65,31 @@ the leg fur sits at 16–19 in places and is connected to the background along t
 **6** keeps all the fur. The art was drawn at ~9.5 source px per "pixel", i.e. a native size of
 ~77×100 px; downsampling to 100 px tall (lanczos) + OKLab palette snap + alpha ≥ 50 % recovers it
 almost losslessly, and 48 px tall still reads well in-game. 45 705 source colors → 29.
-**Rule of thumb:** Derive the black-key threshold from the border's own max channel (+3), never a
-fixed "dark enough" constant; measure fur darkness before choosing.
+**Rule of thumb:** Derive the black-key threshold from the border's own max channel (+4), unless
+the source declares a `backgroundThreshold`; never a fixed "dark enough" constant — measure fur
+darkness before choosing. (The ~110/255 alpha cut above was a prototype value; the spec is ≥ 50 %.)
+
+## 2026-09-26 — Foundation review: traps an implementer would have hit
+
+**Context:** Four agents dry-ran Phases 1–3 and the media spec against the installed tools.
+**Problem / finding (all verified in the container):**
+
+- Phaser 4.2.1: `Scale.zoom` is CSS px per game px and ignores DPR; `resize()` then `setZoom()` —
+  the reverse order leaves a stale CSS size. `camera.startFollow()` resets the camera's
+  `roundPixels` to false and scrolls fractionally. A flipped sprite is not vertex-rounded under
+  the default `safeAuto` (use `setVertexRoundMode('full')`). `addKey()` captures keys on `window`
+  and `preventDefault`s them (use `addKey(code, false)`). A view taller than the camera bounds is
+  pinned to the top (use `setBounds(0, WORLD_H − viewH, …)`). Importing `phaser` in Node throws
+  `window is not defined`. Arcade's real jump apex at 60 Hz is 57.75 px for v0 = 330, g = 900.
+- sharp `png({ palette: true })` re-quantizes with libimagequant: with `colours ≤ 32` or
+  `effort < 10` it writes off-palette colors. Only `colours: 256, quality: 100, effort: 10,
+dither: 0` round-tripped exactly — verify by reading the file back.
+- Node 22.22 runs `.ts` natively, but JSON imports need `with { type: 'json' }`.
+- pnpm pre/post scripts ran in this container but depend on version/config
+  (`enable-pre-post-scripts`); chain `pnpm assets && …` explicitly instead.
+- Nano Banana copies the aspect ratio of the last attached image; PixelLab animation canvases are
+  64×64 with references ≤ 256×256.
+- The sheet's RIGHT directional sprite needs `backgroundThreshold` 8 (14 punches holes in its
+  darker back fur); it is recorded per sprite in the slices file.
+  **Rule of thumb:** Read ARCHITECTURE.md's Phaser recipe before writing any scene code; verify
+  image output by reading it back, not by trusting encoder options.

@@ -7,8 +7,12 @@ const slices = JSON.parse(
   readFileSync(new URL('../../art/reference/panda-sheet-v1.slices.json', import.meta.url), 'utf8')
 ) as { strips: Record<string, number[][]> };
 
-/** Ids in the first column of every ASSETS.md table row written as `| \`id\` |`. */
-const documentedIds = [...assetsDoc.matchAll(/^\|\s*`([a-z0-9-]+)`\s*\|/gm)].map((m) => m[1]);
+/** Registry rows of ASSETS.md: `| \`id\` | wave | launch | kind | geometry | status |`. */
+const registryRows = [
+  ...assetsDoc.matchAll(
+    /^\|\s*`([a-z0-9-]+)`\s*\|\s*([A-D])\s*\|\s*(required|optional)\s*\|\s*([a-z-]+)\s*\|/gm
+  ),
+].map(([, id, wave, launch, kind]) => ({ id: id!, wave, required: launch === 'required', kind }));
 
 describe('art/manifest.json', () => {
   it('parses', () => {
@@ -19,9 +23,12 @@ describe('art/manifest.json', () => {
     expect(() => parseManifest({ version: 1, grid: 16, assets: [{ id: 'Bad Id' }] })).toThrow();
   });
 
-  it('is documented one-to-one in ASSETS.md', () => {
-    const ids = ASSET_MANIFEST.assets.map((a) => a.id).sort();
-    expect([...new Set(documentedIds)].sort()).toEqual(ids);
+  it('is documented one-to-one in the ASSETS.md registry (id, wave, launch, kind)', () => {
+    const fromManifest = ASSET_MANIFEST.assets
+      .map(({ id, wave, required, kind }) => ({ id, wave, required, kind }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const fromDoc = [...registryRows].sort((a, b) => a.id.localeCompare(b.id));
+    expect(fromDoc).toEqual(fromManifest);
   });
 
   it('interim reference slices only target existing strips and never exceed their frame count', () => {

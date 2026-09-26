@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4321;
+// Own port + never reuse: e2e must test a fresh production build, not a dev or stale preview server.
+const PORT = 4323;
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -31,7 +32,7 @@ export default defineConfig({
   webServer: {
     command: `pnpm build && pnpm preview --host 127.0.0.1 --port ${PORT}`,
     url: `http://127.0.0.1:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 180_000,
   },
 });

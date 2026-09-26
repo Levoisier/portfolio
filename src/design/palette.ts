@@ -3,7 +3,7 @@
  * (the asset pipeline snaps every sprite to it); `src/styles/tokens.css` mirrors it
  * as `--c-<name>` custom properties for the DOM (a test keeps them in sync).
  */
-import raw from './palette.json';
+import raw from './palette.json' with { type: 'json' };
 import type { SkillCategory } from '../content/types';
 
 export type PaletteName = keyof typeof raw;

@@ -23,7 +23,8 @@ pnpm test:e2e     # browser tests (local machines: pnpm exec playwright install 
 ## Media workflow (Cristian)
 
 1. Pick the next wave in [ASSETS.md](./ASSETS.md) and generate each image with the prompt given
-   there (PixelLab recommended for the panda animations, Nano Banana fine for the rest).
+   there — PixelLab for the panda animations (reference `art/reference/panda-right-64.png`), Nano
+   Banana for the rest (attach the references listed in ASSETS.md, the canvas image last).
 2. Save it as `art/raw/<id>.png` — the exact id from the ASSETS.md registry table.
 3. Commit it (or hand it to an agent). `pnpm assets` normalizes it on the next dev/build run and
    the game uses it automatically; placeholders fill anything not delivered yet.
@@ -31,21 +32,21 @@ pnpm test:e2e     # browser tests (local machines: pnpm exec playwright install 
 
 ## Working with agents
 
-Point an agent at the repo and say: _"Implement the next phase in BACKLOG.md."_ AGENTS.md tells
-it how to read the docs, what the gate is and what "done" means. One phase per PR.
+Point an agent at the repo (on `next`) and say: _"Implement the next phase in BACKLOG.md, then
+commit it and open a PR into `next`."_ AGENTS.md tells it how to read the docs, what the gate is
+and what "done" means. One phase per PR; P1 and P2 can run in parallel, as can P6/P7 and P8–P10.
 
 ## Branching & deploy
 
-`main` deploys to production on Vercel. **The live site should not switch to the game until
-Phase 12.** Recommended setup:
+`main` deploys to production on Vercel and keeps serving the old site until launch.
 
-1. Create an integration branch `next` from this foundation.
-2. Every phase branches from `next` and opens its PR into `next` (Vercel builds preview URLs for
-   each PR and for `next`).
+**Required before Phase 1:** `next` is the integration branch and should be the repository's
+default branch, so new agent sessions start on the rebuild instead of the old site.
+
+1. Create it once from this foundation (`git push origin claude/portfolio-improvements-3vykmc:next`)
+   and set it as the default branch in GitHub → Settings → General.
+2. Every phase branches from `next` and opens its PR into `next`; Vercel builds a preview for each.
 3. At launch (Phase 12), merge `next` into `main`.
-
-If you prefer to keep everything on `main`, the production site will show the in-progress build
-from the moment this foundation is merged.
 
 ## Documentation
 

@@ -6,7 +6,9 @@ import {
   confidentialProjects,
   profile,
   projects,
+  sectionCopy,
   skillCategoryLabels,
+  skillCategorySymbols,
   skills,
   skillsIntro,
 } from './index';
@@ -24,7 +26,14 @@ function localizedNodes(node: unknown, path = '$'): [string, Record<string, unkn
 }
 
 describe('content: bilingual completeness', () => {
-  const all = { profile, projects, confidentialProjects, skillCategoryLabels, skillsIntro };
+  const all = {
+    profile,
+    projects,
+    confidentialProjects,
+    skillCategoryLabels,
+    skillsIntro,
+    sectionCopy,
+  };
   it.each(localizedNodes(all))('%s has non-empty es + en', (_path, value) => {
     for (const lang of LANGS) {
       expect(typeof value[lang]).toBe('string');
@@ -105,6 +114,7 @@ describe('content: skills', () => {
     }
     for (const cat of SKILL_CATEGORIES) {
       expect(skillCategoryLabels[cat]).toBeDefined();
+      expect(skillCategorySymbols[cat]).toMatch(/^[A-Z][a-z]$/);
       expect(
         skills.some((s) => s.category === cat),
         cat

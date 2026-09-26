@@ -3,7 +3,7 @@
  * pipeline, the game loader and the docs (ASSETS.md must list the same ids).
  * Game code references media ONLY by these ids, never by file path.
  */
-import manifestJson from '../../art/manifest.json';
+import manifestJson from '../../art/manifest.json' with { type: 'json' };
 
 export const ASSET_KINDS = ['strip', 'sprite', 'set', 'layer', 'tile-strip'] as const;
 export type AssetKind = (typeof ASSET_KINDS)[number];
@@ -11,23 +11,36 @@ export type Wave = 'A' | 'B' | 'C' | 'D';
 /** `high` assets load only on the high quality tier (desktop ambience). */
 export type AssetTier = 'all' | 'high';
 export type Size = readonly [width: number, height: number];
+/** `[x, y, w, h]` in final art px; `w = h = 0` marks a point. */
+export type Rect = readonly [x: number, y: number, w: number, h: number];
 
 interface AssetBase {
   id: string;
   kind: AssetKind;
   /** Media delivery wave (see ASSETS.md). */
   wave: Wave;
-  /** Needed for launch; optional assets degrade gracefully when absent. */
+  /** Needed for launch; optional assets get no placeholder and the game falls back. */
   required: boolean;
   tier: AssetTier;
+  /**
+   * Where the game draws on the art (sign text, screen content, block window, flame).
+   * Values are the placeholder geometry; the pipeline re-detects them on delivered art
+   * and the game reads the resolved values from `public/game/assets.json`.
+   */
+  anchors?: Record<string, Rect>;
 }
 
 export interface StripAsset extends AssetBase {
   kind: 'strip';
   /** Fixed frame cell every frame is packed into. */
   cell: Size;
+  /** Animation frames (the ruler frame of green-screen deliveries is not counted). */
   frames: number;
-  /** Opaque height of the tallest frame after normalization. */
+  /** y of the line the art stands on; the lowest opaque row is `baseline − 1`. */
+  baseline: number;
+  /** Green-screen deliveries carry one leftmost size-reference frame (dropped after scaling). */
+  ruler?: boolean;
+  /** Clip guard: maximum opaque height of any frame after normalization. */
   targetHeight: number;
   /** 0 = frames are states, not an auto-playing animation. */
   fps: number;
@@ -37,19 +50,20 @@ export interface StripAsset extends AssetBase {
 
 export interface SpriteAsset extends AssetBase {
   kind: 'sprite';
+  /** Maximum height; the sprite is fitted inside `maxSize` preserving aspect. */
   targetHeight: number;
   maxSize: Size;
 }
 
 export interface SetItem {
   name: string;
-  targetHeight?: number;
-  targetWidth?: number;
+  /** Final box the item is fitted into (preserving aspect, bottom-centred). */
+  size: Size;
 }
 
 export interface SetAsset extends AssetBase {
   kind: 'set';
-  /** Separate props in one source image, ordered left→right, top→bottom. */
+  /** Separate props in one source image, in reading order (rows top→bottom, left→right). */
   items: SetItem[];
 }
 
@@ -81,6 +95,17 @@ const fail = (msg: string): never => {
 const isSize = (v: unknown): v is Size =>
   Array.isArray(v) && v.length === 2 && v.every((n) => Number.isInteger(n) && n > 0);
 
+const isRect = (v: unknown): v is Rect =>
+  Array.isArray(v) && v.length === 4 && v.every((n) => Number.isInteger(n) && n >= 0);
+
+/** The box anchors must fit in: the cell, the max sprite size, or the layer size. */
+function geometryOf(a: Record<string, unknown>): Size | undefined {
+  if (a.kind === 'strip') return a.cell as Size;
+  if (a.kind === 'sprite') return a.maxSize as Size;
+  if (a.kind === 'layer' || a.kind === 'tile-strip') return a.size as Size;
+  return undefined;
+}
+
 /** Validates the raw JSON shape; throws with a readable message on the first problem. */
 export function parseManifest(json: unknown): AssetManifest {
   if (typeof json !== 'object' || json === null) return fail('not an object');
@@ -105,9 +130,13 @@ export function parseManifest(json: unknown): AssetManifest {
         if (!isSize(a.cell)) fail(`${id}: cell must be [w, h]`);
         const [, cellH] = a.cell as Size;
         if (!Number.isInteger(a.frames) || (a.frames as number) < 1) fail(`${id}: frames`);
-        if (typeof a.targetHeight !== 'number' || a.targetHeight > cellH)
-          fail(`${id}: targetHeight must fit the cell`);
+        const { baseline, targetHeight } = a as { baseline: unknown; targetHeight: unknown };
+        if (!Number.isInteger(baseline) || (baseline as number) > cellH)
+          fail(`${id}: baseline must be an integer ≤ the cell height`);
+        if (typeof targetHeight !== 'number' || targetHeight > (baseline as number))
+          fail(`${id}: targetHeight must fit above the baseline`);
         if (typeof a.fps !== 'number' || typeof a.loop !== 'boolean') fail(`${id}: fps/loop`);
+        if (a.ruler !== undefined && typeof a.ruler !== 'boolean') fail(`${id}: ruler`);
         if (a.frameNames !== undefined) {
           if (!Array.isArray(a.frameNames) || a.frameNames.length !== a.frames)
             fail(`${id}: frameNames must have one name per frame`);
@@ -117,12 +146,14 @@ export function parseManifest(json: unknown): AssetManifest {
       case 'sprite':
         if (typeof a.targetHeight !== 'number') fail(`${id}: targetHeight`);
         if (!isSize(a.maxSize)) fail(`${id}: maxSize must be [w, h]`);
+        if ((a.targetHeight as number) > (a.maxSize as Size)[1])
+          fail(`${id}: targetHeight must fit in maxSize`);
         break;
       case 'set':
         if (!Array.isArray(a.items) || a.items.length === 0) fail(`${id}: items`);
-        for (const item of a.items as SetItem[]) {
-          if (!item.name || (item.targetHeight === undefined && item.targetWidth === undefined))
-            fail(`${id}: every item needs a name and targetHeight or targetWidth`);
+        for (const item of a.items as Record<string, unknown>[]) {
+          if (typeof item.name !== 'string' || !isSize(item.size))
+            fail(`${id}: every item needs a name and a size [w, h]`);
         }
         break;
       case 'layer':
@@ -132,6 +163,17 @@ export function parseManifest(json: unknown): AssetManifest {
         if (a.seamless !== 'x') fail(`${id}: seamless must be "x"`);
         if (a.kind === 'layer' && typeof a.scrollFactor !== 'number') fail(`${id}: scrollFactor`);
         break;
+    }
+
+    if (a.anchors !== undefined) {
+      const box = geometryOf(a);
+      if (!box) fail(`${id}: anchors are only supported on strips, sprites and layers`);
+      for (const [name, rect] of Object.entries(a.anchors as Record<string, unknown>)) {
+        if (!isRect(rect)) fail(`${id}: anchor "${name}" must be [x, y, w, h]`);
+        const [x, y, w, h] = rect as Rect;
+        if (box && (x + w > box[0] || y + h > box[1]))
+          fail(`${id}: anchor "${name}" out of bounds`);
+      }
     }
   }
   return json as AssetManifest;

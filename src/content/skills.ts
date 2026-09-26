@@ -16,6 +16,21 @@ export const skillCategoryLabels: Record<SkillCategory, Localized> = {
   testing: { es: 'Testing', en: 'Testing' },
 };
 
+/**
+ * Two-letter symbols for the eight category element blocks in the Reagent lab (the block is
+ * 24 px wide, so full labels don't fit). Proposed in Phase 0 — Cristian may rename them.
+ */
+export const skillCategorySymbols: Record<SkillCategory, string> = {
+  languages: 'Lg',
+  frontend: 'Fe',
+  backend: 'Be',
+  'data-auth': 'Da',
+  devops: 'Do',
+  ai: 'Ai',
+  enterprise: 'En',
+  testing: 'Te',
+};
+
 /** Ordered by `number` (the periodic-board position). */
 export const skills: Skill[] = [
   { symbol: 'Ts', name: 'TypeScript', number: 1, category: 'languages', proficiency: 94 },

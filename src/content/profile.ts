@@ -6,6 +6,10 @@ export const profile: Profile = {
     { es: 'Full Stack Developer', en: 'Full Stack Developer' },
     { es: 'Ingeniero Químico', en: 'Chemical Engineer' },
   ],
+  tagline: {
+    es: 'Conoce un poco de mi trabajo',
+    en: 'A little glance at my work',
+  },
   summary: {
     es: 'Full Stack Developer e Ingeniero Químico. Construyo interfaces de precisión fusionadas con pensamiento científico.',
     en: 'Full Stack Developer & Chemical Engineer. Building precision interfaces fused with scientific thinking.',

@@ -25,6 +25,8 @@ export interface Profile {
   name: string;
   /** Ordered role lines, e.g. "Full Stack Developer" + "Chemical Engineer". */
   roles: Localized[];
+  /** Short kicker from the old hero ("A little glance at my work"). */
+  tagline: Localized;
   /** One-sentence positioning, used for meta description and the intro. */
   summary: Localized;
   /** Closing call to action shown at the contact station. */

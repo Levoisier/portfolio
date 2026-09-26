@@ -1,5 +1,5 @@
 {
-  "$comment": "Asset registry. Every media file the game uses has exactly one entry here and one row in ASSETS.md. Raw sources live in art/raw/<id>.png (user-provided); `pnpm assets` writes normalized output to public/game/ (generated, never committed). Sizes are in art pixels (the game's native resolution).",
+  "$comment": "Asset registry. Every game media file has exactly one entry here and one row in ASSETS.md. Raw sources live in art/raw/<id>.png (user-provided); `pnpm assets` writes normalized output + public/game/assets.json (generated, never committed). All sizes are final art pixels. Strips: `baseline` = y of the line the art stands on (lowest opaque row = baseline - 1); `ruler: true` = green-screen deliveries carry one extra size-reference frame on the far left. Sets: items in reading order (rows top→bottom, left→right), each fitted into its `size`. `anchors` = [x, y, w, h] rects (w = h = 0 for a point) where the game draws on the art; values here are the placeholder geometry, the pipeline re-detects them on delivered art.",
   "version": 1,
   "grid": 16,
   "assets": [
@@ -20,6 +20,8 @@
       "tier": "all",
       "cell": [64, 64],
       "frames": 4,
+      "baseline": 60,
+      "ruler": true,
       "targetHeight": 48,
       "fps": 6,
       "loop": true
@@ -32,6 +34,8 @@
       "tier": "all",
       "cell": [64, 64],
       "frames": 6,
+      "baseline": 60,
+      "ruler": true,
       "targetHeight": 48,
       "fps": 10,
       "loop": true
@@ -44,6 +48,8 @@
       "tier": "all",
       "cell": [64, 64],
       "frames": 6,
+      "baseline": 60,
+      "ruler": true,
       "targetHeight": 50,
       "fps": 12,
       "loop": false,
@@ -57,6 +63,8 @@
       "tier": "all",
       "cell": [64, 64],
       "frames": 4,
+      "baseline": 60,
+      "ruler": true,
       "targetHeight": 48,
       "fps": 8,
       "loop": true
@@ -69,6 +77,8 @@
       "tier": "all",
       "cell": [64, 64],
       "frames": 4,
+      "baseline": 60,
+      "ruler": true,
       "targetHeight": 54,
       "fps": 8,
       "loop": true
@@ -81,6 +91,8 @@
       "tier": "all",
       "cell": [64, 64],
       "frames": 6,
+      "baseline": 60,
+      "ruler": true,
       "targetHeight": 46,
       "fps": 14,
       "loop": true
@@ -88,11 +100,13 @@
     {
       "id": "panda-celebrate",
       "kind": "strip",
-      "wave": "D",
+      "wave": "C",
       "required": false,
       "tier": "all",
       "cell": [64, 64],
       "frames": 4,
+      "baseline": 60,
+      "ruler": true,
       "targetHeight": 56,
       "fps": 8,
       "loop": true
@@ -100,11 +114,13 @@
     {
       "id": "panda-sleep",
       "kind": "strip",
-      "wave": "D",
+      "wave": "C",
       "required": false,
       "tier": "all",
       "cell": [64, 64],
       "frames": 2,
+      "baseline": 60,
+      "ruler": true,
       "targetHeight": 34,
       "fps": 2,
       "loop": true
@@ -125,9 +141,18 @@
       "required": true,
       "tier": "all",
       "items": [
-        { "name": "platform-s", "targetWidth": 48 },
-        { "name": "platform-m", "targetWidth": 80 },
-        { "name": "platform-l", "targetWidth": 128 }
+        {
+          "name": "platform-s",
+          "size": [48, 16]
+        },
+        {
+          "name": "platform-m",
+          "size": [80, 16]
+        },
+        {
+          "name": "platform-l",
+          "size": [128, 16]
+        }
       ]
     },
     {
@@ -136,9 +161,12 @@
       "wave": "B",
       "required": true,
       "tier": "all",
-      "size": [640, 200],
+      "size": [640, 160],
       "seamless": "x",
-      "scrollFactor": 0.15
+      "scrollFactor": 0.15,
+      "anchors": {
+        "flare": [400, 18, 0, 0]
+      }
     },
     {
       "id": "bg-mid",
@@ -146,7 +174,7 @@
       "wave": "B",
       "required": true,
       "tier": "all",
-      "size": [640, 240],
+      "size": [640, 128],
       "seamless": "x",
       "scrollFactor": 0.4
     },
@@ -156,7 +184,7 @@
       "wave": "D",
       "required": false,
       "tier": "high",
-      "size": [640, 96],
+      "size": [640, 64],
       "seamless": "x",
       "scrollFactor": 1.25
     },
@@ -167,7 +195,10 @@
       "required": true,
       "tier": "all",
       "targetHeight": 160,
-      "maxSize": [224, 176]
+      "maxSize": [224, 176],
+      "anchors": {
+        "sign": [24, 8, 176, 40]
+      }
     },
     {
       "id": "station-fiora",
@@ -176,7 +207,10 @@
       "required": true,
       "tier": "all",
       "targetHeight": 128,
-      "maxSize": [160, 160]
+      "maxSize": [160, 160],
+      "anchors": {
+        "screen": [60, 16, 40, 64]
+      }
     },
     {
       "id": "station-japaniracer",
@@ -212,20 +246,27 @@
       "required": true,
       "tier": "all",
       "targetHeight": 136,
-      "maxSize": [176, 160]
+      "maxSize": [176, 160],
+      "anchors": {
+        "screen": [48, 12, 80, 44]
+      }
     },
     {
       "id": "confidential-vault",
-      "kind": "strip",
+      "kind": "set",
       "wave": "C",
       "required": true,
       "tier": "all",
-      "cell": [160, 160],
-      "frames": 2,
-      "targetHeight": 144,
-      "fps": 0,
-      "loop": false,
-      "frameNames": ["closed", "open"]
+      "items": [
+        {
+          "name": "wall",
+          "size": [160, 144]
+        },
+        {
+          "name": "door",
+          "size": [96, 96]
+        }
+      ]
     },
     {
       "id": "confidential-dossier",
@@ -244,10 +285,14 @@
       "tier": "all",
       "cell": [24, 24],
       "frames": 3,
+      "baseline": 24,
       "targetHeight": 24,
       "fps": 0,
       "loop": false,
-      "frameNames": ["idle", "bump", "used"]
+      "frameNames": ["idle", "bump", "used"],
+      "anchors": {
+        "window": [5, 5, 14, 14]
+      }
     },
     {
       "id": "contact-post",
@@ -257,10 +302,36 @@
       "tier": "all",
       "cell": [112, 128],
       "frames": 2,
+      "baseline": 128,
       "targetHeight": 120,
       "fps": 0,
       "loop": false,
       "frameNames": ["idle", "active"]
+    },
+    {
+      "id": "props-zones",
+      "kind": "set",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "items": [
+        {
+          "name": "fence",
+          "size": [48, 40]
+        },
+        {
+          "name": "beacon",
+          "size": [12, 12]
+        },
+        {
+          "name": "fume-hood",
+          "size": [40, 64]
+        },
+        {
+          "name": "lab-shelf",
+          "size": [48, 48]
+        }
+      ]
     },
     {
       "id": "props-misc",
@@ -269,14 +340,38 @@
       "required": true,
       "tier": "all",
       "items": [
-        { "name": "barrel", "targetHeight": 24 },
-        { "name": "crate", "targetHeight": 20 },
-        { "name": "cone", "targetHeight": 14 },
-        { "name": "valve-pipe", "targetHeight": 32 },
-        { "name": "lamp-post", "targetHeight": 72 },
-        { "name": "bench", "targetHeight": 18 },
-        { "name": "gas-cylinder", "targetHeight": 28 },
-        { "name": "toolbox", "targetHeight": 12 }
+        {
+          "name": "barrel",
+          "size": [16, 24]
+        },
+        {
+          "name": "crate",
+          "size": [20, 20]
+        },
+        {
+          "name": "cone",
+          "size": [12, 14]
+        },
+        {
+          "name": "valve-pipe",
+          "size": [24, 32]
+        },
+        {
+          "name": "lamp-post",
+          "size": [16, 72]
+        },
+        {
+          "name": "bench",
+          "size": [32, 18]
+        },
+        {
+          "name": "gas-cylinder",
+          "size": [12, 28]
+        },
+        {
+          "name": "toolbox",
+          "size": [16, 12]
+        }
       ]
     },
     {
@@ -287,6 +382,7 @@
       "tier": "all",
       "cell": [16, 24],
       "frames": 4,
+      "baseline": 24,
       "targetHeight": 22,
       "fps": 6,
       "loop": true
@@ -299,6 +395,7 @@
       "tier": "high",
       "cell": [16, 32],
       "frames": 4,
+      "baseline": 32,
       "targetHeight": 30,
       "fps": 10,
       "loop": true
