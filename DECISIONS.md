@@ -163,3 +163,18 @@ Favicons are allowed; the old ones were removed in the reset and Phase 12 regene
 **Why:** Autoplaying sound on a portfolio is hostile; procedural SFX (e.g. ZzFX, ~1 KB) avoid
 shipping audio files.
 **Trade-off:** Most visitors never hear it.
+
+## Panel links: Space activates them too, not just Enter
+
+**Status:** Accepted (2026-09-26)
+**Why:** BACKLOG.md Phase 5 asks that Enter _and_ Space activate the controls inside an open
+panel. A real `<a href>` only answers to Enter by default (Space is a button-only convention);
+every other control in a panel (close, gallery thumbnails, gallery nav) is a real `<button>`, so
+without this a project's live link would be the one control in the panel that behaves
+differently. `src/ui/panels.ts`'s single keydown listener adds `e.preventDefault()` +
+`el.click()` for Space on any `a[href]` inside the open panel — a normal, transient-activation
+safe pattern (the synthetic click still runs inside the trusted keydown handler), so `target=
+"_blank"` still opens a new tab under a popup blocker.
+**Trade-off:** A screen reader that already announces "link" for that control now also responds
+to a key screen-reader users don't expect a link to answer to; scoped to panel content only
+(`section.contains(link)`), so it never changes how links behave anywhere else on the page.

@@ -47,13 +47,16 @@ export interface GameState {
 
 /**
  * `window.__PORTFOLIO__` (debug only) — e2e drives the game through it instead of simulating
- * long walks. Phase 5 adds `openStation(id)`.
+ * long walks.
  */
 export interface PortfolioHook {
   getState(): GameState;
   setTier(tier: Tier): void;
   /** Places the panda on the ground at `x`, zero velocity, camera snapped. */
   teleport(x: number): void;
+  /** Teleports to `id`'s station (a no-op for an unknown id) and opens it the same way
+   * interacting would — a no-op UI-side for a station with no panel yet (Phase 5). */
+  openStation(id: string): void;
   /** Passthrough onto the bus (e.g. `emit('ui:modal', { open: true })`) so e2e can simulate a
    * panel/menu opening without building one. */
   emit<K extends EventName>(event: K, payload: Events[K]): void;

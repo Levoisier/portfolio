@@ -13,6 +13,7 @@ import { DEBUG_STATS_MS, GROUND_Y, LAYOUT_STEP_HZ, PANDA_ART_H, WORLD_H, WORLD_W
 import { REGISTRY_KEY, type GameContext } from '../context';
 import { applyParallaxMotion, buildParallax, type ParallaxHandle } from '../fx/parallax';
 import { SkyRenderer } from '../fx/sky';
+import type { SourcedIntent } from '../input/intent';
 import { KeyboardSource } from '../input/keyboard';
 import { mergeIntents } from '../input/merge';
 import { WheelWalker } from '../input/wheel';
@@ -20,8 +21,16 @@ import { PandaSprite } from '../player/PandaSprite';
 import { FpsGuard, tierFlags } from '../quality';
 import { follow, snapFollow, type FollowState } from '../render/follow';
 import { RefreshMeter } from '../render/refresh';
+import { Stations } from '../stations/Stations';
+import { stationAt } from '../stations/trigger';
 import { PIXEL_FONT, PIXEL_FONT_SIZE, registerPixelFont } from '../text/bitmap-font';
-import { WORLD_LAYOUT, zoneAt, type PlatformSize } from '../world/layout';
+import { parseDeepLink } from '../travel/deep-link';
+import { autoWalkStep, planWalk, type TravelPlan } from '../travel/plan';
+import { WORLD_LAYOUT, zoneAt, type PlatformSize, type Station } from '../world/layout';
+
+/** The 6 project stations only (BACKLOG.md Phase 5); the gate/vault/dossiers/blocks/contact
+ * kinds have no panel yet — later phases build those without touching this filter. */
+const PROJECT_STATIONS: Station[] = WORLD_LAYOUT.stations.filter((s) => s.kind === 'project');
 
 const SPAWN_X = 160;
 const FLOOR_ID = 'floor-plant';
@@ -60,6 +69,11 @@ export class WorldScene extends Phaser.Scene {
   private stepsThisFrame = 0;
   private statsIn = 0;
   private zoneId = '';
+  private stations!: Stations;
+  private stationId: string | null = null;
+  /** Click/tap-to-open (ARCHITECTURE.md → Input → Pointer/tap): a plain walk toward the clicked
+   * station, cleared on arrival (then opened) or by any manual movement/jump/interact. */
+  private travel: { plan: TravelPlan; stationId: string } | null = null;
   private cleanup: (() => void)[] = [];
   private groundBody!: Phaser.Physics.Arcade.StaticBody;
 
@@ -74,8 +88,23 @@ export class WorldScene extends Phaser.Scene {
 
     this.buildGround();
     const platforms = this.buildPlatforms();
+    this.stations = new Stations(this, PROJECT_STATIONS, this.ctx.manifest, GROUND_Y, (station) =>
+      this.handleStationClick(station)
+    );
 
-    this.panda = new PandaSprite(this, SPAWN_X, GROUND_Y, this.ctx.manifest);
+    // Deep link (GAME_DESIGN.md → Deep links): `/#<id>` spawns at that station's x. An id with
+    // no panel yet (gate/vault/dossier/block/contact) still resolves — `station:open` below is a
+    // no-op until its phase adds the panel.
+    const deepLink = parseDeepLink(
+      location.hash,
+      WORLD_LAYOUT.stations.map((s) => s.id)
+    );
+    const spawnStation = deepLink
+      ? WORLD_LAYOUT.stations.find((s) => s.id === deepLink)
+      : undefined;
+    const spawnX = spawnStation?.x ?? SPAWN_X;
+
+    this.panda = new PandaSprite(this, spawnX, GROUND_Y, this.ctx.manifest);
     this.ctx.pandaTexture = this.panda.textureKey;
     this.physics.add.collider(this.panda.sprite, this.groundBody);
     this.physics.add.collider(this.panda.sprite, platforms);
@@ -111,6 +140,12 @@ export class WorldScene extends Phaser.Scene {
     );
 
     this.ctx.teleport = (x: number) => this.teleport(x);
+    this.ctx.openStation = (id: string) => {
+      const station = WORLD_LAYOUT.stations.find((s) => s.id === id);
+      if (!station) return;
+      this.teleport(station.x);
+      this.openStation(id);
+    };
 
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
     this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.onPostUpdate, this);
@@ -121,11 +156,13 @@ export class WorldScene extends Phaser.Scene {
     });
     this.layout();
     this.setZone(zoneAt(this.panda.sprite.x).id);
+    this.setStation(stationAt(this.panda.sprite.x, PROJECT_STATIONS));
     this.sky.update(this.panda.sprite.x);
     this.updateDebugState();
 
     this.ctx.ready = true;
     bus.emit('game:ready', {});
+    if (deepLink) this.openStation(deepLink);
   }
 
   update(_time: number, delta: number) {
@@ -142,16 +179,39 @@ export class WorldScene extends Phaser.Scene {
       this.ctx.physicsHz = hz;
     }
 
-    const intent = mergeIntents(
-      [
-        { source: 'keyboard', intent: this.keyboard.read() },
-        { source: 'wheel', intent: { moveX: this.wheel.update(delta) } },
-      ],
-      { modalOpen: this.modalOpen }
-    );
-    if (intent.menuPressed) bus.emit('menu:open', {});
+    const keyboardIntent = this.keyboard.read();
+    const wheelMoveX = this.wheel.update(delta);
+    // Any manual input cancels an in-flight click-to-open walk (ARCHITECTURE.md → Input →
+    // Pointer/tap): the player took over.
+    if (
+      this.travel &&
+      (keyboardIntent.moveX !== 0 ||
+        keyboardIntent.jumpPressed ||
+        keyboardIntent.interactPressed ||
+        wheelMoveX !== 0)
+    ) {
+      this.travel = null;
+    }
 
-    this.panda.update(intent, delta, null);
+    const sources: SourcedIntent[] = [
+      { source: 'keyboard', intent: keyboardIntent },
+      { source: 'wheel', intent: { moveX: wheelMoveX } },
+    ];
+    if (this.travel) {
+      const step = autoWalkStep(this.panda.sprite.x, this.travel.plan);
+      if (step) sources.push({ source: 'pointer', intent: step });
+      else {
+        const { stationId } = this.travel;
+        this.travel = null;
+        this.openStation(stationId);
+      }
+    }
+
+    const intent = mergeIntents(sources, { modalOpen: this.modalOpen });
+    if (intent.menuPressed) bus.emit('menu:open', {});
+    if (intent.interactPressed && this.stationId) this.openStation(this.stationId);
+
+    this.panda.update(intent, delta, this.modalOpen ? 'interact' : null);
     // Snapshot now: `world.postUpdate()` (already queued for this frame) resets it to 0.
     this.stepsThisFrame = this.physics.world.stepsLastFrame;
 
@@ -184,12 +244,33 @@ export class WorldScene extends Phaser.Scene {
     });
     this.applyCamera();
     this.setZone(zoneAt(this.panda.sprite.x).id);
+    this.setStation(stationAt(this.panda.sprite.x, PROJECT_STATIONS));
     this.sky.update(this.panda.sprite.x);
     if (this.ctx.debug) this.updateDebugState();
   }
 
-  /** Debug hook only (`window.__PORTFOLIO__.teleport`): feet on the ground, camera snapped. */
+  /** Click/tap the prop (ARCHITECTURE.md → Input → Pointer/tap): open now if already in its
+   * trigger, else start a basic walk-to-x that opens it on arrival (`update()` drives the plan). */
+  private handleStationClick(station: Station): void {
+    if (this.modalOpen) return;
+    if (this.stationId === station.id) {
+      this.openStation(station.id);
+      return;
+    }
+    this.travel = { plan: planWalk(this.panda.sprite.x, station.x), stationId: station.id };
+  }
+
+  /** Only the bus knows what happens next (AGENTS.md Golden Rule 7): the UI opens the matching
+   * DOM panel (if one exists yet) and flips `ui:modal`, which is what actually pauses input and
+   * poses the panda — this is a no-op here for a station id with no panel (Phase 7–10 add more). */
+  private openStation(id: string): void {
+    bus.emit('station:open', { id });
+  }
+
+  /** Debug hook only (`window.__PORTFOLIO__.teleport`, also used by `openStation`): feet on the
+   * ground, camera snapped, any pending click-to-open walk cancelled. */
   private teleport(x: number): void {
+    this.travel = null;
     this.panda.teleportTo(x, GROUND_Y);
     this.followState = snapFollow({
       targetX: x,
@@ -199,6 +280,7 @@ export class WorldScene extends Phaser.Scene {
     });
     this.applyCamera();
     this.setZone(zoneAt(x).id);
+    this.setStation(stationAt(x, PROJECT_STATIONS));
     this.sky.update(x);
     this.updateDebugState();
   }
@@ -215,6 +297,18 @@ export class WorldScene extends Phaser.Scene {
     this.zoneId = id;
     this.ctx.zone = id;
     bus.emit('zone:enter', { id });
+  }
+
+  /** Emits `station:enter`/`station:leave` only on an actual change (ARCHITECTURE.md → Stations
+   * & panels) and keeps the canvas glyph in sync — hidden while a panel/menu is open, since the
+   * prompt no longer applies once the player has already opened it. */
+  private setStation(id: string | null): void {
+    if (id !== this.stationId) {
+      if (this.stationId) bus.emit('station:leave', { id: this.stationId });
+      this.stationId = id;
+      if (id) bus.emit('station:enter', { id });
+    }
+    this.stations.setActive(this.modalOpen ? null : this.stationId);
   }
 
   private starCount(): number {

@@ -68,11 +68,12 @@ src/
     player/                   ← logic.ts (pure state machine) + PandaSprite.ts
     input/                    ← intent sources: keyboard, wheel, pointer, touch pad, travel; merge.ts (pure)
     world/                    ← layout.ts (data) + validate.ts (pure) + builders
-    stations/                 ← station objects, triggers, prompts
+    stations/                 ← trigger.ts (pure) + Stations.ts (prop sprites, glyph, click)
     fx/                       ← sky, parallax, particles, filters (tiered)
-    travel/                   ← plan.ts (pure) + auto-walk (Phase 5/7)
-  ui/                         ← DOM: main.ts (page entry), loading, fonts, debug overlay; later HUD, panels, menu, pad
-  components/                 ← Astro components: Loading, Hud (exists); pre-rendered panels (Phase 5+)
+    travel/                   ← plan.ts (pure walk-to-x) + deep-link.ts (pure hash parsing); menu
+                                fast-travel/fade-teleport (Phase 7) add to the same folder
+  ui/                         ← DOM: main.ts (page entry), loading, fonts, debug overlay, panels; later menu, pad
+  components/                 ← Astro components: Loading, Hud, panels/Panels.astro (exist)
   pages/index.astro           ← the single page
 public/
   media/projects/…            ← content media (Fiora screenshots) — referenced from src/content
@@ -353,7 +354,7 @@ sunrise`); `sky.ts`'s `MOODS` maps each to a 4-color top→horizon ramp, a star 
   right after construction and after `teleportTo()` (the debug hook's `teleport(x)`), which also
   zeroes velocity and resets the state machine.
 
-## Input **(Phase 5 / 6 / 7)**
+## Input **(Phase 6 / 7)**
 
 Every source writes into one per-frame `Intent` (`moveX ∈ [−1, 1]`, `run`, `jumpPressed`,
 `jumpHeld`, `interactPressed`, `menuPressed`); merging is pure (`input/merge.ts`) and unit-tested.
@@ -367,12 +368,14 @@ Every source writes into one per-frame `Intent` (`moveX ∈ [−1, 1]`, `run`, `
   decided when the key event is **dispatched**, not when Phaser processes it: in Phaser 4.2.1,
   `KeyboardManager`'s `window` listener pushes straight into its `Key` objects and emits
   synchronously (it does not queue until the next step — LESSONS.md has the details, including why
-  a replayed event can resurrect an old press). The UI handles Esc/Enter/Space inside an open panel
-  or the menu on keydown and calls `event.stopPropagation()`; on `ui:modal { open: false }` the game
-  calls `this.input.keyboard.resetKeys()` and `KeyboardState` drops every key event stamped at or
-  before that close (`timeStamp <= cutoff`, not `<`) — one Esc press never both closes a panel and
-  opens the menu, and a key still held through the close needs a fresh `down` (its next
-  auto-repeat) before it counts again.
+  a replayed event can resurrect an old press). `src/ui/panels.ts` handles Esc (close the topmost
+  panel or its gallery lightbox), Tab (focus trap) and Space-on-a-link (button parity) with one
+  `document`-level keydown listener — it never needs `stopPropagation()`: on `ui:modal { open:
+false }` the game calls `this.input.keyboard.resetKeys()` and `KeyboardState` drops every key
+  event stamped at or before that close (`timeStamp <= cutoff`, not `<`), so the very same Esc that
+  closed a panel is ignored when Phaser's own `window` listener (later in the bubble phase) reports
+  it a moment later — one Esc press never both closes a panel and opens the menu, and a key still
+  held through the close needs a fresh `down` (its next auto-repeat) before it counts again.
 - **Esc precedence:** Esc (and **B** on the pad) closes the topmost open panel or the menu. Only
   when nothing is open do Esc/M/START open the menu and B/E/Enter interact.
 - **Wheel (done):** `deltaY > 0` (scroll down) walks right, `deltaX` walks too (horizontal swipes),
@@ -382,23 +385,58 @@ Every source writes into one per-frame `Intent` (`moveX ∈ [−1, 1]`, `run`, `
   only `#panels`/`#menu` (scrollable DOM) and `Ctrl`+wheel (browser/trackpad zoom). The game never
   listens to Phaser's own wheel events (Arcade's `MouseManager` still adds a non-passive canvas
   listener and calls `preventDefault` on it, but does not stop propagation, so ours still fires).
-- **Pointer / tap (P5):** click or tap a station → the panda walks to it, then opens it (basic
-  walk-to-x). **Travel (P7)** adds menu fast-travel and fade-teleport, overriding other sources
-  while active.
+- **Pointer / tap:** click or tap a station's prop → already inside its trigger opens it right
+  away; otherwise `game/travel/plan.ts`'s `planWalk`/`autoWalkStep` (pure) drive a plain walk
+  toward it as an ordinary `pointer`-sourced intent (`WorldScene.update()`), opening it on arrival;
+  any manual move/jump/interact cancels the plan. **Travel (P7)** adds menu fast-travel and
+  fade-teleport, overriding other sources while active.
 - **Touch pad (P6):** DOM D-pad ◀ ▶, A (jump), B (interact), START (menu); double-tap-hold ◀/▶ runs.
 
-## Stations & panels **(Phase 5)**
+## Stations & panels
 
-- A station = layout entry (`id`, `kind`, `x`, `asset`, `trigger` width) + a panel id.
-- **Prompt:** entering a trigger shows a small pixel key glyph above the prop (canvas, no words)
-  and the localized prompt bottom-centre in `#hud` (DOM, `aria-live="polite"`, e.g. `E — Fiora`,
-  `B — Fiora`, `Toca — Fiora`).
-- **Panels** are Astro components rendered at build time from `src/content`, once per language
-  (`<div lang="es-419">` / `<div lang="en">`, visibility from `html[data-lang]`), inside
-  `<section data-panel="<id>" hidden>`. The UI un-hides, traps focus, emits `ui:modal`, handles
-  `Esc`/close, restores focus and emits `panel:closed`. Search engines and screen readers get all
-  content as plain HTML.
-- Visited state + language + sound live in `localStorage` (wrapped in try/catch).
+- A station = layout entry (`id`, `kind`, `x`, `asset`, `trigger` width) + (for a `kind` with a
+  panel) a matching `data-panel` id. So far only the 6 `project` stations have one; `gate` /
+  `vault` / `dossier` / `block` / `contact` resolve through the same mechanism once Phase 7–10 add
+  their panels — nothing here is project-specific.
+- **Trigger tracking:** `game/stations/trigger.ts`'s `stationAt(x, stations)` is pure (unit-tested)
+  and only considers stations with a filter the caller applies (`WorldScene` currently passes the 6
+  project stations); it is called from the same `POST_UPDATE`/teleport step that tracks the zone,
+  emitting `station:enter`/`station:leave` only on a change.
+- **Prompt:** entering a trigger shows a small pixel "interact here" badge above the prop
+  (`game/stations/Stations.ts`: flat `ink-900`/`amber-400` rects, no words, no rotation — crisp at
+  any zoom) and the localized prompt bottom-centre in `#hud` (DOM, `aria-live="polite"`, e.g.
+  `E — Fiora` on desktop, `Toca — Fiora` on a touch layout mode — read from `html[data-mode]`, set
+  by `shared/layout-mode.ts`, never inspected ad hoc). Both hide while a panel is open.
+- **Opening:** interacting (`E`/Enter while inside a trigger) or clicking/tapping the station's
+  prop (Pointer / tap, above) makes the game emit `station:open { id }` on the bus — nothing else;
+  the UI (`src/ui/panels.ts`) decides whether a panel exists for that id and, if so, un-hides its
+  `<section data-panel>`, traps focus and emits `ui:modal { open: true }`, which is what actually
+  pauses game input and poses the panda (`WorldScene` passes `pose: 'interact'` to `panda.update()`
+  exactly while `modalOpen`). An id with no panel yet is a silent no-op — Golden Rule 7: the game
+  never knows which ids have DOM content.
+- **Panels** are Astro components (`src/components/panels/Panels.astro`) rendered at build time
+  from `src/content/projects.ts`, both languages always in the DOM inside one
+  `<section data-panel="<id>" hidden>`: a `<div lang="es-419">`/`<div lang="en">` pair, each its own
+  `role="dialog" aria-modal="true" aria-labelledby aria-modal tabindex="-1"`; `shell.css`'s existing
+  `html[data-lang]` rule shows only the active one — panels never re-implement language visibility.
+  A project with an empty `stack` (Transcolombia, until Cristian sends it) renders no stack heading
+  or list at all. Fiora's screenshots become an accessible gallery: a thumbnail grid of `<button>`s
+  opens a lightbox (arrows, a focus trap of its own via `inert` on the grid while it is open); Esc
+  closes the lightbox first and only closes the panel on a second press.
+- **Focus:** opening focuses the visible language `<div>` (its `aria-labelledby` announces the
+  title immediately); Tab traps inside it (`focusablesIn` skips anything hidden or under
+  `[inert]`); closing restores focus to the canvas (`tabIndex = -1`, focusable without joining the
+  tab order) or, failing that, whatever had focus before opening. A real `<a href>` only activates
+  on Enter by default; the same keydown listener also triggers it on Space (`e.preventDefault()` +
+  `.click()`, a normal, transient-activation-safe pattern) so every panel control answers to both
+  keys the same way.
+- **Deep links:** `game/travel/deep-link.ts`'s `parseDeepLink(hash, validIds)` is pure; `WorldScene`
+  reads `location.hash` once at `create()` to pick the spawn station (falling back to the usual
+  spawn) and emits `station:open` for it after `game:ready`. Opening a panel (by any route) also
+  sets `location.hash` to its id (`history.replaceState`, no navigation); closing clears it.
+- Visited marks (`shared/visited.ts`, closing a panel marks its id), language and sound live in
+  `localStorage` (wrapped in try/catch, same pattern as `i18n/lang.ts`'s `initialLang`/`persistLang`
+  — pure functions over an injected store, so they are unit-tested without a real browser).
 
 ## i18n
 
@@ -536,8 +574,9 @@ frame sizes, baked shadows, black-on-black fur).
   velocity, camera snapped — `GameContext.teleport` is set by `WorldScene.create()` and called
   through it) and `emit(event, payload)` (a typed passthrough onto the bus, e.g.
   `emit('ui:modal', { open: true })`, so e2e can simulate a panel/menu opening without building
-  one), plus an FPS/zoom/tier/mode overlay (`debug:stats` on the bus); Phase 5 adds
-  `openStation(id)` (types in `src/shared/debug.ts`). E2E uses it instead of simulating long walks.
+  one), `openStation(id)` (teleports to that station and opens it the same way interacting would —
+  a no-op UI-side for an id with no panel yet), plus an FPS/zoom/tier/mode overlay (`debug:stats` on
+  the bus; types in `src/shared/debug.ts`). E2E uses it instead of simulating long walks.
 - Visual checks: specs save screenshots to `test-results/`; review them before claiming a visual
   acceptance criterion.
 

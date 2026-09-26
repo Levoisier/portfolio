@@ -106,6 +106,7 @@ export function startGame({ parent, manifest, debug }: BootOptions): Phaser.Game
         bus.emit('tier:change', { tier });
       },
       teleport: (x: number) => ctx.teleport?.(x),
+      openStation: (id: string) => ctx.openStation?.(id),
       emit<K extends EventName>(event: K, payload: Events[K]) {
         bus.emit(event, payload);
       },

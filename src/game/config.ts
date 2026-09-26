@@ -51,6 +51,10 @@ export const CAMERA_TAU_MS = 90;
 /** How far ahead of the panda (art px, in its facing direction) the camera aims. */
 export const CAMERA_LOOKAHEAD = 24;
 
+// ─── Stations (Phase 5) ───────────────────────────────────────────────────────
+/** Gap (art px) between a station's top edge and the interact-prompt glyph above it. */
+export const STATION_GLYPH_GAP = 6;
+
 // ─── Wheel / trackpad walking ────────────────────────────────────────────────
 /** Pixels per line for `deltaMode === 1`, and per page for `deltaMode === 2`. */
 export const WHEEL_LINE_PX = 16;

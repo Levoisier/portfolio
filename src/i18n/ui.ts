@@ -15,6 +15,17 @@ export const ui = {
     es: 'Este portafolio es un juego y necesita JavaScript.',
     en: 'This portfolio is a game and needs JavaScript.',
   },
+  // ─── Stations & panels (Phase 5) ─────────────────────────────────────────
+  close: { es: 'Cerrar', en: 'Close' },
+  stackHeading: { es: 'Stack', en: 'Stack' },
+  viewLive: { es: 'Ver sitio en vivo', en: 'View live site' },
+  galleryPrev: { es: 'Anterior', en: 'Previous' },
+  galleryNext: { es: 'Siguiente', en: 'Next' },
+  galleryClose: { es: 'Cerrar galería', en: 'Close gallery' },
+  /** `{title}` is replaced with the station's title; kept as plain templates (not functions) so
+   * every `ui` entry stays a `Localized<string>`. */
+  stationPromptKey: { es: 'E — {title}', en: 'E — {title}' },
+  stationPromptTouch: { es: 'Toca — {title}', en: 'Toca — {title}' },
 } satisfies Record<string, Localized>;
 
 export type UiKey = keyof typeof ui;

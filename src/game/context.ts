@@ -27,6 +27,9 @@ export interface GameContext {
   zone: string;
   /** Set by `WorldScene.create()`; the debug hook's `teleport(x)` calls through it. */
   teleport?: (x: number) => void;
+  /** Set by `WorldScene.create()`; the debug hook's `openStation(id)` calls through it —
+   * teleports to the station then emits `station:open` (Phase 5). */
+  openStation?: (id: string) => void;
 }
 
 export const REGISTRY_KEY = 'ctx';

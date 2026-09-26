@@ -35,7 +35,9 @@ export function persistLang(store: KeyValueStore | null, lang: Lang): void {
   }
 }
 
-function safeLocalStorage(): KeyValueStore | null {
+/** Exported for other stores that persist through `localStorage` (e.g. `shared/visited.ts`),
+ * wrapped the same way: private mode / blocked storage falls back to session-only state. */
+export function safeLocalStorage(): KeyValueStore | null {
   try {
     return localStorage;
   } catch {

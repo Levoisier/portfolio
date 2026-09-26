@@ -11,6 +11,7 @@ import { watchLayoutMode } from '../shared/layout-mode';
 import { mountDebugOverlay } from './debug-overlay';
 import { loadFonts } from './fonts';
 import { mountLoading } from './loading';
+import { mountPanels } from './panels';
 import { forwardWheel } from './wheel';
 
 function readManifest(): RuntimeManifest | null {
@@ -26,13 +27,16 @@ function readManifest(): RuntimeManifest | null {
 const html = document.documentElement;
 const screen = document.getElementById('screen');
 const loading = document.getElementById('loading');
+const panels = document.getElementById('panels');
+const hud = document.getElementById('hud');
 const debug = isDebug();
 
 watchLayoutMode((mode) => (html.dataset.mode = mode));
 // The pre-paint script already applied the language; announce it for canvas text.
 bus.emit('lang:change', { lang: getLang() });
 if (loading) mountLoading(loading);
-if (debug) mountDebugOverlay(document.getElementById('hud') ?? document.body);
+if (panels && hud) mountPanels(panels, hud);
+if (debug) mountDebugOverlay(hud ?? document.body);
 forwardWheel();
 void loadFonts();
 if (screen) void boot({ parent: screen, manifest: readManifest(), debug });

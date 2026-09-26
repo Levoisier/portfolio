@@ -236,9 +236,9 @@ each zone via the hook, screenshot, `zone:enter` fires.
 
 ---
 
-## Phase 5 — Stations & project panels
+## Phase 5 — Stations & project panels ✅
 
-### [ ] feat(stations): project stations, prompts, DOM panels, visited, deep links
+### [x] feat(stations): project stations, prompts, DOM panels, visited, deep links
 
 **Depends on:** P4. **Media:** the 6 project stations of wave C (placeholders until then).
 

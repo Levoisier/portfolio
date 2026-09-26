@@ -8,6 +8,7 @@ import '../styles/tokens.css';
 import '../styles/shell.css';
 import Hud from '../components/Hud.astro';
 import Loading from '../components/Loading.astro';
+import Panels from '../components/panels/Panels.astro';
 import { inlineJson, readRuntimeManifest } from '../assets/inline';
 import { profile } from '../content';
 import { DEFAULT_LANG, HTML_LANG, LANG_STORAGE_KEY } from '../i18n/lang';
@@ -47,7 +48,9 @@ const roles = (lang: 'es' | 'en') => profile.roles.map((r) => r[lang]).join(' ·
     <Loading manifest={manifest} />
     <div id="screen"></div>
     <Hud />
-    <div id="panels"></div>
+    <div id="panels">
+      <Panels />
+    </div>
     <div id="menu" hidden></div>
     <noscript>
       <p class="noscript">

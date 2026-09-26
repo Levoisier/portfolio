@@ -248,3 +248,52 @@ behind entirely correct interpolation code.
   imports those constants back from `config.ts` — it declares them itself. The data owner must
   never import from a module that only re-exports it; a `const` read across a real cycle risks a
   TDZ error depending on which module happens to load first.
+
+## 2026-09-26 — Phase 5: a `rgba()` backdrop trips `no hardcoded colors` even off the palette
+
+**Context:** Styling the panel/lightbox dimmed backdrop in `components/panels/Panels.astro`.
+**Problem:** `background: rgb(7 15 31 / 0.72)` (navy-950 with alpha) failed `palette.test.ts`'s
+scan — the regex flags any `rgba?(`/`hsla?(` call, full stop, regardless of whether the numbers
+inside happen to match a palette entry. There is no "translucent palette color" primitive.
+**Fix / finding:** `color-mix(in srgb, var(--c-navy-950) 72%, transparent)` — a real CSS function
+name the scanner does not match, reading the color from the token and mixing in the alpha.
+**Rule of thumb:** Need a palette color at partial opacity in CSS? Reach for `color-mix()` over
+`var(--c-x)` — never re-derive the color's numbers as a literal, even inside `rgb()`.
+
+## 2026-09-26 — Phase 5: closing a modal via a real Esc keypress needs no `stopPropagation()`
+
+**Context:** `src/ui/panels.ts`'s Esc handler closing an open panel; ARCHITECTURE.md's Input
+section (written ahead of this phase) said the UI would call `event.stopPropagation()`.
+**Problem:** It doesn't need to, and testing that assumption first would have wasted the effort.
+Phaser's `KeyboardManager` listens on `window`, one step later than `document` in the bubble
+phase; the fix that already existed for this (Phase 3 — `KeyboardState`'s wall-clock `cutoff`,
+see the entry above from 2026-09-26) does not care whether the event still reaches `window` at
+all, because it re-checks `this.modal` and the timestamp at the moment Phaser's listener actually
+runs — by which point the `document`-level handler that closed the panel (earlier in the same
+bubble phase) has already flipped `ui:modal` to `false` and recorded the cutoff.
+**Fix / finding:** Left `stopPropagation()` out; `tests/e2e/stations.spec.ts`'s "Esc closes … and
+the game does not react to that same key press" (a real `page.keyboard.press('Escape')`, not the
+debug hook's `emit`) passes without it. Corrected ARCHITECTURE.md's Input section to match.
+**Rule of thumb:** Before adding `stopPropagation()`/`preventDefault()` to satisfy an existing
+doc's description, write the test the doc implies first — an already-solved race (bubble order +
+a wall-clock cutoff, here) can make the "obvious" extra call redundant.
+
+## 2026-09-26 — Phase 5: a click-to-world-x test needs the real zoom/camera math, not a guess
+
+**Context:** Manually verifying click/tap-to-open (walk-to-x then open) against the running
+preview with a throwaway Playwright script, converting a station's world (art-px) x/y into a CSS
+click position.
+**Problem:** First attempt used `canvasBox.x + (worldX - scrollX) * zoom / dpr` for x (correct)
+but guessed the y as a flat fraction of the canvas's CSS height (`0.55`), and picked a `worldX`
+900+ art px from the current camera position. Both silently missed the target: (1) the visible
+viewport is only `backingW` **art px** wide (e.g. 720 at zoom 2 on a 1440-wide desktop) — a world
+x more than half that away from `camera.scrollX` is off-screen, so the computed CSS x lands
+outside the canvas or on the wrong object entirely; (2) `GROUND_Y` (432) sits near the **bottom**
+of the view, not its middle — `computeViewport`'s `backingH = floor(heightDev / zoom)` and
+`scrollY = WORLD_H - backingH` place the ground line at art-y `GROUND_Y - scrollY` from the top of
+the view, e.g. 402 of 450, so a fraction like `0.55` clicks the empty sky above the prop.
+**Fix / finding:** Teleport near the target first (a few hundred art px away, not across zones),
+and compute the y from the same `GROUND_Y - scrollY` art-y (minus a margin for the prop's height),
+not a guessed fraction.
+**Rule of thumb:** A click-by-world-coordinate test/tool must replicate `render/zoom.ts`'s actual
+formulas (`computeViewport`) for both axes — "it's roughly centered" is not true of either one.
