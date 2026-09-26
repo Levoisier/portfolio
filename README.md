@@ -1,4 +1,4 @@
-# Cristian Zapata Cartagena — Portfolio (the game)
+# Cristian Cartagena — Portfolio (the game)
 
 A 2D pixel-art side-scroller: play the panda through a chemical plant at night and discover
 each project on the way to a sunrise contact lookout. Full Stack Developer & Chemical Engineer.

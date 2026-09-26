@@ -37,7 +37,7 @@ order; ASSETS.md says what art exists.
 
 ## The level (left → right)
 
-World ≈ 4 300 art px wide (~7 screens at 640 px). Walk ≈ 45 s end to end, run ≈ 28 s.
+World ≈ 4 620 art px wide (~7 screens at 640 px). Walk ≈ 51 s end to end, run ≈ 31 s.
 Zone widths are starting values; the layout lives in data (`src/game/world/layout.ts`).
 
 | #   | Zone                          | x (art px) | Sky           | What happens                                                                                                                                                                                                                                                       |
@@ -48,9 +48,10 @@ Zone widths are starting values; the layout lives in data (`src/game/world/layou
 | 3   | **Le Parché** station         | 1120–1440  | night         | Restaurant food stall with lantern + pot (steam drawn in code). Panel + live link.                                                                                                                                                                                 |
 | 4   | **Maison Cielare** station    | 1440–1760  | night         | Sleepwear boutique window, moon & stars. Panel + live link.                                                                                                                                                                                                        |
 | 5   | **Orquestia** station         | 1760–2080  | night         | Agency studio stage with blank billboard. Panel + live link.                                                                                                                                                                                                       |
-| 6   | **Classified wing**           | 2080–2880  | darkest night | Fence panels + beacons (`props-zones`). The vault door rolls aside on interact. Four redacted dossiers on stands, one per confidential project → dossier panel.                                                                                                    |
-| 7   | **Reagent lab** (stack)       | 2880–3680  | pre-dawn      | Fume hood + lab shelves (`props-zones`). Eight floating **element blocks** (one per skill category) over low platforms. Bump from below (or interact) → the category's skills burst out as element tiles and fly into a periodic board (drawn in code).            |
-| 8   | **Sunrise lookout** (contact) | 3680–4300  | sunrise       | Mailbox + phone booth. Panel: call to action + email / LinkedIn / GitHub / WhatsApp. Panda waves (celebrates if everything was visited). "Thanks for visiting" + fast-travel back.                                                                                 |
+| 6   | **Transcolombia** station     | 2080–2400  | night         | Transport dispatch yard: delivery truck, dispatch booth with a radio/GPS mast, route board. Panel + live link (360° tracking, offline-first driver app).                                                                                                           |
+| 7   | **Classified wing**           | 2400–3200  | darkest night | Fence panels + beacons (`props-zones`). The vault door rolls aside on interact. Four redacted dossiers on stands, one per confidential project → dossier panel.                                                                                                    |
+| 8   | **Reagent lab** (stack)       | 3200–4000  | pre-dawn      | Fume hood + lab shelves (`props-zones`). Eight floating **element blocks** (one per skill category) over low platforms. Bump from below (or interact) → the category's skills burst out as element tiles and fly into a periodic board (drawn in code).            |
+| 9   | **Sunrise lookout** (contact) | 4000–4620  | sunrise       | Mailbox + phone booth. Panel: call to action + email / LinkedIn / GitHub / WhatsApp. Panda waves (celebrates if everything was visited). "Thanks for visiting" + fast-travel back.                                                                                 |
 
 The sky gradient, star density and ambient light are a function of the player's x — night at the
 gate, sunrise at the lookout. It is drawn in code from palette colors, so it costs no media.
@@ -59,8 +60,8 @@ gate, sunrise at the lookout. It is drawn in code from palette colors, so it cos
 keys):
 
 - Menu / zone stops: `gate`, `fiora`, `japaniracer`, `le-parche`, `maison-cielare`, `orquestia`,
-  `classified`, `lab`, `contact`.
-- Panels: the 5 project ids, the 4 `confidentialProjects` ids (dossiers), `stack` (Reagent lab),
+  `transcolombia`, `classified`, `lab`, `contact`.
+- Panels: the 6 project ids, the 4 `confidentialProjects` ids (dossiers), `stack` (Reagent lab),
   `contact`, and `intro` (opened by the HUD name badge: name, roles, tagline, summary and contact
   links from `profile.ts`; built in Phase 7).
 - Skill blocks use the `SKILL_CATEGORIES` ids.
@@ -68,7 +69,7 @@ keys):
   own — the menu lists the 4 dossiers as indented sub-entries, each travelling to its stand and
   opening that dossier; `lab` → `stack`; `contact` → `contact`. Deep links accept stop and panel
   ids alike (`/#lab` = `/#stack`, `/#gate` = `/#intro`, `/#classified` travels to the vault).
-- "Everything visited" (finale) = the 5 project panels, at least one dossier, and `stack`.
+- "Everything visited" (finale) = the 6 project panels, at least one dossier, and `stack`.
 
 ## Stations (the core loop)
 
@@ -111,7 +112,7 @@ Gamepad support is a nice-to-have (Phase 12), not required.
 
 ## Menu / map (the recruiter fast path)
 
-A pixel-framed overlay listing every stop in order — Gate, 5 projects, Classified wing, Reagent
+A pixel-framed overlay listing every stop in order — Gate, 6 projects, Classified wing, Reagent
 lab, Contact — with visited marks. Selecting one makes the panda **run** there (auto-walk) or,
 if far, fade-teleport. From the menu, every panel is two keystrokes away. It is also the
 keyboard/screen-reader path through all content.

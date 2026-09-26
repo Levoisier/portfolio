@@ -101,4 +101,19 @@ export const projects: Project[] = [
       en: 'Open live site for Orquestia',
     },
   },
+  {
+    id: 'transcolombia',
+    title: 'Transcolombia',
+    description: {
+      es: 'Plataforma para una empresa de transporte de Medellín: seguimiento 360° de los envíos para sus clientes, más una app para conductores que se comunica con la administración y reporta el estado de cada entrega. Muchas rutas cruzan zonas de Colombia sin internet, así que la app es offline-first: encola las peticiones y las envía cuando vuelve la conexión.',
+      en: 'Platform for a Medellín transportation company: 360° shipment tracking for its customers, plus a driver app that talks to the administration and reports the status of every delivery. Many routes cross parts of Colombia with no internet, so the app is offline-first: it queues requests and sends them once the connection is back.',
+    },
+    // Cristian will provide the stack.
+    stack: [],
+    liveUrl: 'https://serviciodetransporte.com.co/',
+    liveAriaLabel: {
+      es: 'Abrir sitio en vivo de Transcolombia',
+      en: 'Open live site for Transcolombia',
+    },
+  },
 ];

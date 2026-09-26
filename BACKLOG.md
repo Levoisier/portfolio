@@ -48,7 +48,7 @@ P0 foundation ✅
 | ---- | --------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------- |
 | A    | panda-idle, walk, air, interact, wave (+ optional run); portrait ✅                                                   | P3         | interim panda from the sheet                                          |
 | B    | floor-plant, platforms, bg-far, bg-mid                                                                                | P4         | placeholder skyline + floor                                           |
-| C    | **gate first**, then 5 stations, vault, dossier, skill-block, contact-post, props-zones (+ optional sleep, celebrate) | P5, P8–P10 | placeholder boxes with anchors, same size; intro/finale use idle/wave |
+| C    | **gate first**, then 6 stations, vault, dossier, skill-block, contact-post, props-zones (+ optional sleep, celebrate) | P5, P8–P10 | placeholder boxes with anchors, same size; intro/finale use idle/wave |
 | D    | props-misc, flask-bubbling (+ optional bg-fore, flare-flame)                                                          | P11        | placeholders, same size (props-misc and flask are required)           |
 
 ---
@@ -240,11 +240,11 @@ each zone via the hook, screenshot, `zone:enter` fires.
 
 ### [ ] feat(stations): project stations, prompts, DOM panels, visited, deep links
 
-**Depends on:** P4. **Media:** the 5 project stations of wave C (placeholders until then).
+**Depends on:** P4. **Media:** the 6 project stations of wave C (placeholders until then).
 
 **Acceptance criteria**
 
-- Station objects for the 5 projects at their layout slots, trigger zones, and the prompt per
+- Station objects for the 6 projects at their layout slots, trigger zones, and the prompt per
   ARCHITECTURE.md → _Stations & panels_ (pixel glyph above the prop + DOM live-region text,
   localized, input-aware).
 - Panels pre-rendered at build from `src/content/projects.ts`, both languages
@@ -395,7 +395,7 @@ panda-sleep, panda-celebrate).
 - `<title>`, meta description, OG/Twitter tags, JSON-LD `Person` from `src/content/profile.ts`.
 
 **Tests:** e2e — intro skippable, contact post opens the panel with the correct hrefs, meta tags
-present; with the visited keys for the 5 projects, one dossier and `stack` seeded in
+present; with the visited keys for the 6 projects, one dossier and `stack` seeded in
 `localStorage`, arriving at the lookout plays the finale (visited keys are canonical ids, so this
 works before P8/P9 merge).
 

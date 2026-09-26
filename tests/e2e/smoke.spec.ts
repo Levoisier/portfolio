@@ -4,7 +4,7 @@ import { watchErrors } from './helpers';
 test('page loads with the profile name and no console errors', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Cristian Zapata Cartagena');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Cristian Cartagena');
   await page.waitForLoadState('networkidle');
   expect(errors).toEqual([]);
 });

@@ -249,6 +249,15 @@
       "maxSize": [176, 160]
     },
     {
+      "id": "station-transcolombia",
+      "kind": "sprite",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "targetHeight": 128,
+      "maxSize": [176, 160]
+    },
+    {
       "id": "confidential-vault",
       "kind": "set",
       "wave": "C",
