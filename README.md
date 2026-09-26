@@ -26,8 +26,9 @@ pnpm test:e2e     # browser tests (local machines: pnpm exec playwright install 
    there — PixelLab for the panda animations (reference `art/reference/panda-right-64.png`), Nano
    Banana for the rest (attach the references listed in ASSETS.md, the canvas image last).
 2. Save it as `art/raw/<id>.png` — the exact id from the ASSETS.md registry table.
-3. Commit it (or hand it to an agent). `pnpm assets` normalizes it on the next dev/build run and
-   the game uses it automatically; placeholders fill anything not delivered yet.
+3. Commit it together with its ASSETS.md registry status set to `delivered` (or hand it to an
+   agent to do both). `pnpm assets` normalizes it on the next dev/build run and the game uses it
+   automatically; placeholders fill anything not delivered yet.
 4. Check it in the game and mark it `approved` in ASSETS.md.
 
 ## Working with agents
@@ -43,8 +44,8 @@ and what "done" means. One phase per PR; P1 and P2 can run in parallel, as can P
 **Required before Phase 1:** `next` is the integration branch and should be the repository's
 default branch, so new agent sessions start on the rebuild instead of the old site.
 
-1. Create it once from this foundation (`git push origin claude/portfolio-improvements-3vykmc:next`)
-   and set it as the default branch in GitHub → Settings → General.
+1. `next` exists (pushed from this foundation). Set it as the default branch in GitHub → Settings
+   → General, and keep Vercel's Production Branch on `main`.
 2. Every phase branches from `next` and opens its PR into `next`; Vercel builds a preview for each.
 3. At launch (Phase 12), merge `next` into `main`.
 

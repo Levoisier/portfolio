@@ -28,19 +28,24 @@ interface AssetBase {
    * and the game reads the resolved values from `public/game/assets.json`.
    */
   anchors?: Record<string, Rect>;
+  /** Black flood-fill threshold override for `art/raw/<id>.png` (default: border max + 4). */
+  backgroundThreshold?: number;
 }
 
 export interface StripAsset extends AssetBase {
   kind: 'strip';
   /** Fixed frame cell every frame is packed into. */
   cell: Size;
-  /** Animation frames (the ruler frame of green-screen deliveries is not counted). */
+  /** Animation frames (a green-screen delivery's ruler frame is not counted). */
   frames: number;
   /** y of the line the art stands on; the lowest opaque row is `baseline − 1`. */
   baseline: number;
-  /** Green-screen deliveries carry one leftmost size-reference frame (dropped after scaling). */
+  /**
+   * When the source is green-screen, its leftmost frame is a size reference (scaled to 48 px,
+   * then dropped). Transparent sources never carry one.
+   */
   ruler?: boolean;
-  /** Clip guard: maximum opaque height of any frame after normalization. */
+  /** Clip guard: the report warns when a frame is taller than this + 2 px. */
   targetHeight: number;
   /** 0 = frames are states, not an auto-playing animation. */
   fps: number;
@@ -57,8 +62,15 @@ export interface SpriteAsset extends AssetBase {
 
 export interface SetItem {
   name: string;
-  /** Final box the item is fitted into (preserving aspect, bottom-centred). */
+  /** Final box: the item is fitted into it preserving aspect and bottom-centred… */
   size: Size;
+  /**
+   * …unless it must fill the box width exactly (it tiles or collides): scaled to `size[0]`
+   * wide, then aligned to the box's `top` (platforms) or `bottom` (fence panels).
+   */
+  fill?: 'top' | 'bottom';
+  /** Anchors relative to the item's `size` box (e.g. the vault wall's `doorway`). */
+  anchors?: Record<string, Rect>;
 }
 
 export interface SetAsset extends AssetBase {
@@ -101,7 +113,7 @@ const isRect = (v: unknown): v is Rect =>
 /** The box anchors must fit in: the cell, the max sprite size, or the layer size. */
 function geometryOf(a: Record<string, unknown>): Size | undefined {
   if (a.kind === 'strip') return a.cell as Size;
-  if (a.kind === 'sprite') return a.maxSize as Size;
+  if (a.kind === 'sprite') return [(a.maxSize as Size)[0], a.targetHeight as number];
   if (a.kind === 'layer' || a.kind === 'tile-strip') return a.size as Size;
   return undefined;
 }
@@ -154,6 +166,17 @@ export function parseManifest(json: unknown): AssetManifest {
         for (const item of a.items as Record<string, unknown>[]) {
           if (typeof item.name !== 'string' || !isSize(item.size))
             fail(`${id}: every item needs a name and a size [w, h]`);
+          if (item.fill !== undefined && item.fill !== 'top' && item.fill !== 'bottom')
+            fail(`${id}: ${String(item.name)} fill must be "top" or "bottom"`);
+          for (const [name, rect] of Object.entries(
+            (item.anchors ?? {}) as Record<string, unknown>
+          )) {
+            const [w, h] = item.size as Size;
+            if (!isRect(rect) || rect[0] + rect[2] > w || rect[1] + rect[3] > h)
+              fail(
+                `${id}: ${String(item.name)} anchor "${name}" must be [x, y, w, h] inside its size`
+              );
+          }
         }
         break;
       case 'layer':
@@ -164,6 +187,14 @@ export function parseManifest(json: unknown): AssetManifest {
         if (a.kind === 'layer' && typeof a.scrollFactor !== 'number') fail(`${id}: scrollFactor`);
         break;
     }
+
+    if (
+      a.backgroundThreshold !== undefined &&
+      (!Number.isInteger(a.backgroundThreshold) ||
+        (a.backgroundThreshold as number) < 0 ||
+        (a.backgroundThreshold as number) > 64)
+    )
+      fail(`${id}: backgroundThreshold must be an integer 0–64`);
 
     if (a.anchors !== undefined) {
       const box = geometryOf(a);

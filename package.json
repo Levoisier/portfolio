@@ -7,8 +7,8 @@
     "node": ">=22.18"
   },
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "pnpm assets && astro dev",
+    "build": "pnpm assets && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
@@ -18,6 +18,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "assets": "node scripts/assets/cli.ts",
     "references": "node scripts/make-references.ts",
     "verify": "bash scripts/verify.sh"
   },

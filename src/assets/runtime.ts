@@ -16,10 +16,13 @@ interface RuntimeBase {
   kind: AssetKind;
   tier: AssetTier;
   required: boolean;
-  source: AssetSource;
-  /** `/game/<id>.png`; absent when `source === 'missing'`. */
-  url?: string;
-  /** Resolved anchors in final art px (detected on delivered art, else the manifest defaults). */
+  source: Exclude<AssetSource, 'missing'>;
+  /** `/game/<id>.png`. */
+  url: string;
+  /**
+   * Resolved anchors in final art px (detected on delivered art, else the manifest defaults).
+   * For strips, a rect anchor is the union across frames (it covers every frame's position).
+   */
   anchors?: Record<string, Rect>;
   /** Human-readable pipeline warnings (also printed in the report). */
   warnings: string[];
@@ -48,7 +51,7 @@ export interface RuntimeSet extends RuntimeBase {
   kind: 'set';
   /** Phaser JSON-hash atlas; frame keys are the item names. `url` is the atlas image. */
   atlasUrl?: string;
-  items: Record<string, { w: number; h: number }>;
+  items: Record<string, { w: number; h: number; anchors?: Record<string, Rect> }>;
 }
 
 export interface RuntimeLayer extends RuntimeBase {
@@ -58,7 +61,22 @@ export interface RuntimeLayer extends RuntimeBase {
   scrollFactor?: number;
 }
 
-export type RuntimeAsset = RuntimeStrip | RuntimeSprite | RuntimeSet | RuntimeLayer;
+/** An optional asset with nothing to serve: check `source === 'missing'` before `kind`. */
+export interface RuntimeMissing {
+  id: string;
+  kind: AssetKind;
+  tier: AssetTier;
+  required: false;
+  source: 'missing';
+  warnings: string[];
+}
+
+export type RuntimeAsset =
+  | RuntimeStrip
+  | RuntimeSprite
+  | RuntimeSet
+  | RuntimeLayer
+  | RuntimeMissing;
 
 export interface RuntimeManifest {
   version: 1;

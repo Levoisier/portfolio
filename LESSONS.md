@@ -93,3 +93,21 @@ dither: 0` round-tripped exactly — verify by reading the file back.
   darker back fur); it is recorded per sprite in the slices file.
   **Rule of thumb:** Read ARCHITECTURE.md's Phaser recipe before writing any scene code; verify
   image output by reading it back, not by trusting encoder options.
+
+## 2026-09-26 — Phase 1 pipeline: native detection, rulers and fills
+
+**Context:** Building `pnpm assets` and its fixtures.
+**Problem / finding:**
+
+- A flat-color synthetic fixture (a hard-edged box) has ≤ 64 colors and a run GCD of 2, so the
+  pipeline reads it as native pixel art and divides it by 2 instead of resampling it — the `fill`
+  test then got half the expected width. Blur fixtures meant to be "fake" art; the pipeline now
+  warns when a native item cannot reach its `fill` width exactly.
+- The ruler frame exists only on green-screen deliveries. Dropping the leftmost frame of a
+  transparent (native) strip deleted a real frame; the ruler drop is tied to the green background.
+- Binarizing alpha after resize can clear the lowest row, leaving art 1 px above the baseline;
+  re-trim after binarizing, before packing.
+- Loop-point search must start from `Infinity`, not the full width, or a strip whose best loop is
+  the whole width never matches.
+  **Rule of thumb:** Classify a source (native vs. fake, green vs. transparent) once, up front, and
+  make every later step depend on that classification instead of re-guessing.

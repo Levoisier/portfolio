@@ -6,6 +6,10 @@ test('page loads with the profile name and no console errors', async ({ page }) 
     if (msg.type() === 'error') errors.push(msg.text());
   });
   page.on('pageerror', (err) => errors.push(err.message));
+  page.on('requestfailed', (req) => errors.push(`request failed: ${req.url()}`));
+  page.on('response', (res) => {
+    if (res.status() >= 400) errors.push(`HTTP ${res.status()}: ${res.url()}`);
+  });
 
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Cristian Zapata Cartagena');

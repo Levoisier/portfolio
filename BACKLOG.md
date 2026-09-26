@@ -68,7 +68,7 @@ import boundary; not-a-PWA policy tests; docs rewritten and reviewed.
 
 ## Phase 1 — Asset pipeline
 
-### [ ] feat(assets): `pnpm assets` — normalize art/raw into public/game
+### [x] feat(assets): `pnpm assets` — normalize art/raw into public/game
 
 **Goal:** any image Cristian drops in `art/raw/<id>.png` (Nano Banana green-screen or PixelLab
 transparent) becomes a clean, palette-snapped, correctly packed game asset, and every missing
@@ -154,7 +154,9 @@ right integer zoom on every screen, with the plumbing every later phase uses.
 - Pauses the game loop when the tab is hidden.
 
 **Tests:** unit — zoom math, layout mode, tier decision, lang default/persistence; e2e — no console
-errors and no failed requests (with and without `public/game/`), canvas non-blank (screenshot
+errors and no failed requests, both with the pipeline's manifest and with none (a second
+Playwright project builds with `PORTFOLIO_NO_ASSETS=1`, which `index.astro` treats as a `null`
+manifest; a unit test covers manifest → request list), canvas non-blank (screenshot
 variance), `#loading` disappears, canvas `getBoundingClientRect()` × dpr within 0.1 px of an
 integer multiple of the backing size (desktop + mobile).
 
@@ -186,8 +188,9 @@ integer multiple of the backing size (desktop + mobile).
 - Input per ARCHITECTURE.md → _Input_: keys via `addKey(code, false)` (← → A D, Shift, Space W ↑,
   E Enter, M Esc), `ui:modal` gating, wheel/trackpad walking (`deltaY` and `deltaX`, `deltaMode`,
   decay, `input:wheel` forwarding). Pure `input/merge.ts`.
-- Camera per the rendering contract via pure `render/follow.ts` (integer scroll, dt-based smoothing
-  - deadzone, clamped) and bottom anchoring with `cam.setBounds(0, WORLD_H − viewH, WORLD_W, viewH)`.
+- Camera per the rendering contract via pure `render/follow.ts` (integer scroll, dt-based
+  smoothing with a deadzone, clamped) and bottom anchoring with
+  `cam.setBounds(0, WORLD_H − viewH, WORLD_W, viewH)`.
 - A temporary flat ground (placeholder floor) and one test platform; landing shows the `land`
   frame; no jitter between panda and ground at any zoom, facing either way, at 60 and 120 Hz.
 
@@ -257,7 +260,8 @@ each zone via the hook, screenshot, `zone:enter` fires.
 
 **Tests:** unit — trigger enter/leave, hash parsing, walk-to-x target; e2e — teleport to each
 station, open, title text in ES and EN, close with Esc, deep link `/#japaniracer`, Fiora gallery,
-Enter/Space activate links inside an open panel.
+Enter/Space activate links inside an open panel, Esc on an open panel closes it and the game doesn't
+react to that key press.
 
 **Files:** `src/game/stations/`, `src/game/travel/`, `src/components/panels/`, `src/ui/panels.ts`,
 `tests/e2e/`.
@@ -298,7 +302,7 @@ playing, no horizontal page overflow.
 **Acceptance criteria**
 
 - Menu (M / Esc / HUD button / START, precedence per ARCHITECTURE → _Input_): every stop in world
-  order with visited ✓; choosing one auto-runs the panda there (fade-teleport if > 1.5 screens
+  order plus the dossier sub-entries, mapped per `GAME_DESIGN.md` → _Canonical ids_, with visited ✓; choosing one auto-runs the panda there (fade-teleport if > 1.5 screens
   away), then opens its panel. Stops whose phase hasn't merged open a stub panel titled with the
   stop name. Pure `travel/plan.ts`.
 - HUD per `GAME_DESIGN.md`: name badge (opens the `intro` panel: name, roles, tagline, summary,
@@ -311,7 +315,8 @@ playing, no horizontal page overflow.
 - Recruiter test: from page load, a project panel is open in ≤ 10 s using only the mouse, and
   using only the keyboard.
 
-**Tests:** unit — travel planner; e2e — menu → each stop opens its panel (or stub); language toggle
+**Tests:** unit — travel planner; e2e — menu → each stop opens its panel (or stub); Esc on an
+open panel closes it and the menu stays closed; language toggle
 switches panel + HUD text; keyboard-only run-through; the recruiter test timed; an axe-core scan
 (`@axe-core/playwright`, add with an ADR) has no serious violations.
 
@@ -379,7 +384,8 @@ panda-sleep, panda-celebrate).
 
 **Acceptance criteria**
 
-- Gate: name, roles and tagline in pixel text inside the `sign` anchor (localized); intro beat —
+- Gate: name and roles in pixel text inside the `sign` anchor (localized; measure that three lines
+  fit at the chosen pixel-font size — if not, report it so the sign art can grow); intro beat —
   panda asleep on the crate (`panda-sleep`, or idle if `missing`, with code-drawn "Z"s) → wakes →
   waves; skippable by any input; plays once per session.
 - Contact post at the lookout: `idle` → `active` frame on approach; interact opens the `contact`
@@ -389,7 +395,9 @@ panda-sleep, panda-celebrate).
 - `<title>`, meta description, OG/Twitter tags, JSON-LD `Person` from `src/content/profile.ts`.
 
 **Tests:** e2e — intro skippable, contact post opens the panel with the correct hrefs, meta tags
-present.
+present; with the visited keys for the 5 projects, one dossier and `stack` seeded in
+`localStorage`, arriving at the lookout plays the finale (visited keys are canonical ids, so this
+works before P8/P9 merge).
 
 **Files:** `src/game/stations/`, `src/pages/`, `src/components/`.
 
