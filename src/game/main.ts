@@ -37,6 +37,7 @@ export function startGame({ parent, manifest, debug }: BootOptions): Phaser.Game
     physicsHz: LAYOUT_STEP_HZ,
     player: null,
     camera: { scrollX: 0, scrollY: 0 },
+    zone: '',
   };
 
   const game = new Phaser.Game({
@@ -97,6 +98,7 @@ export function startGame({ parent, manifest, debug }: BootOptions): Phaser.Game
         player: ctx.player,
         camera: ctx.camera,
         physicsHz: ctx.physicsHz,
+        zone: ctx.zone,
       }),
       setTier: (tier: Tier) => {
         ctx.tier = tier;

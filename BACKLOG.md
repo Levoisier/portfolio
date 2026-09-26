@@ -207,9 +207,9 @@ panda standing still facing left and right show no sub-pixel shimmer.
 
 ---
 
-## Phase 4 — World: layout, ground, sky, parallax
+## Phase 4 — World: layout, ground, sky, parallax ✅
 
-### [ ] feat(world): the level from data — ground, platforms, night→dawn sky, parallax
+### [x] feat(world): the level from data — ground, platforms, night→dawn sky, parallax
 
 **Depends on:** P3. **Media:** wave B (placeholders until then).
 

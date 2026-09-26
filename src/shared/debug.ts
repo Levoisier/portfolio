@@ -41,6 +41,8 @@ export interface GameState {
   camera: { scrollX: number; scrollY: number };
   /** The measured display refresh Arcade steps at (`world.setFPS`). */
   physicsHz: number;
+  /** The zone the player is currently in (Phase 4 — `world/layout.ts` id), e.g. `"fiora"`. */
+  zone: string;
 }
 
 /**

@@ -1,38 +1,54 @@
 /**
- * Phase 3: the panda controller end to end — a temporary flat ground and one test platform
- * (Phase 4 replaces both with `world/layout.ts`), keyboard + wheel input, and the integer
- * camera follow. Phase 2's empty world lived here before; see LESSONS.md for what changed.
+ * The level from data (ARCHITECTURE.md → World model, Phase 4): ground and one-way platforms
+ * built from `world/layout.ts`, the night→dawn sky and parallax layers, and zone tracking on
+ * the bus. Phase 3's temporary flat ground and single test platform lived here before; see
+ * LESSONS.md for what changed.
  */
 import Phaser from 'phaser';
 import { profile } from '../../content';
 import { num } from '../../design/palette';
 import { bus } from '../../shared/bus';
+import { onReducedMotionChange, prefersReducedMotion } from '../../shared/motion';
 import { DEBUG_STATS_MS, GROUND_Y, LAYOUT_STEP_HZ, PANDA_ART_H, WORLD_H, WORLD_W } from '../config';
 import { REGISTRY_KEY, type GameContext } from '../context';
+import { applyParallaxMotion, buildParallax, type ParallaxHandle } from '../fx/parallax';
+import { SkyRenderer } from '../fx/sky';
 import { KeyboardSource } from '../input/keyboard';
 import { mergeIntents } from '../input/merge';
 import { WheelWalker } from '../input/wheel';
 import { PandaSprite } from '../player/PandaSprite';
-import { FpsGuard } from '../quality';
+import { FpsGuard, tierFlags } from '../quality';
 import { follow, snapFollow, type FollowState } from '../render/follow';
 import { RefreshMeter } from '../render/refresh';
 import { PIXEL_FONT, PIXEL_FONT_SIZE, registerPixelFont } from '../text/bitmap-font';
+import { WORLD_LAYOUT, zoneAt, type PlatformSize } from '../world/layout';
 
 const SPAWN_X = 160;
 const FLOOR_ID = 'floor-plant';
 const FLOOR_PLACEHOLDER = 'floor-placeholder';
 const FLOOR_HEIGHT = 32;
 const PLATFORMS_ID = 'platforms';
-const PLATFORM_FRAME = 'platform-m';
-const PLATFORM_PLACEHOLDER = 'platform-placeholder';
-/** Test platform (Phase 4 makes this data-driven): its top must clear `jumpApex() − 4`. */
-const PLATFORM_X = 560;
-const PLATFORM_DROP = 48;
-const PLATFORM_FALLBACK_SIZE = { w: 80, h: 16 };
+const PLATFORM_FRAME: Record<PlatformSize, string> = {
+  s: 'platform-s',
+  m: 'platform-m',
+  l: 'platform-l',
+};
+const PLATFORM_FALLBACK_SIZE: Record<PlatformSize, { w: number; h: number }> = {
+  s: { w: 48, h: 16 },
+  m: { w: 80, h: 16 },
+  l: { w: 128, h: 16 },
+};
+/** Full star field on the high tier; scaled by `tierFlags().particleScale` on low, and capped
+ * further under `prefers-reduced-motion` (ARCHITECTURE.md → Motion preference: "particles
+ * minimal"). */
+const BASE_STAR_COUNT = 40;
+const REDUCED_MOTION_STAR_CAP = 12;
 
 export class WorldScene extends Phaser.Scene {
   private ctx!: GameContext;
   private panda!: PandaSprite;
+  private sky!: SkyRenderer;
+  private parallax!: ParallaxHandle;
   private label: Phaser.GameObjects.BitmapText | null = null;
   private fpsGuard = new FpsGuard();
   private refreshMeter = new RefreshMeter();
@@ -43,6 +59,7 @@ export class WorldScene extends Phaser.Scene {
   /** Physics steps taken this frame (`world.stepsLastFrame`), read before `postUpdate` clears it. */
   private stepsThisFrame = 0;
   private statsIn = 0;
+  private zoneId = '';
   private cleanup: (() => void)[] = [];
   private groundBody!: Phaser.Physics.Arcade.StaticBody;
 
@@ -56,12 +73,22 @@ export class WorldScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
 
     this.buildGround();
-    const platform = this.buildPlatform();
+    const platforms = this.buildPlatforms();
 
     this.panda = new PandaSprite(this, SPAWN_X, GROUND_Y, this.ctx.manifest);
     this.ctx.pandaTexture = this.panda.textureKey;
     this.physics.add.collider(this.panda.sprite, this.groundBody);
-    this.physics.add.collider(this.panda.sprite, platform);
+    this.physics.add.collider(this.panda.sprite, platforms);
+
+    this.sky = new SkyRenderer(this, WORLD_LAYOUT.zones, WORLD_LAYOUT.width, this.starCount());
+    this.parallax = buildParallax(
+      this,
+      this.ctx.manifest,
+      this.ctx.tier,
+      WORLD_LAYOUT.width,
+      GROUND_Y
+    );
+    applyParallaxMotion(this.parallax, prefersReducedMotion());
 
     this.keyboard = new KeyboardSource(this);
     this.cleanup.push(
@@ -79,6 +106,7 @@ export class WorldScene extends Phaser.Scene {
       }),
       bus.on('fonts:ready', () => this.addLabel(), { replay: true }),
       bus.on('tier:change', ({ tier }) => (this.ctx.tier = tier)),
+      onReducedMotionChange((reduced) => applyParallaxMotion(this.parallax, reduced)),
       () => this.keyboard.destroy()
     );
 
@@ -92,6 +120,8 @@ export class WorldScene extends Phaser.Scene {
       for (const off of this.cleanup) off();
     });
     this.layout();
+    this.setZone(zoneAt(this.panda.sprite.x).id);
+    this.sky.update(this.panda.sprite.x);
     this.updateDebugState();
 
     this.ctx.ready = true;
@@ -136,6 +166,7 @@ export class WorldScene extends Phaser.Scene {
         viewH: v.backingH,
         tier: this.ctx.tier,
         mode: this.ctx.mode,
+        zone: this.zoneId,
       });
     }
   }
@@ -152,6 +183,8 @@ export class WorldScene extends Phaser.Scene {
       dtMs: this.stepsThisFrame * stepMs,
     });
     this.applyCamera();
+    this.setZone(zoneAt(this.panda.sprite.x).id);
+    this.sky.update(this.panda.sprite.x);
     if (this.ctx.debug) this.updateDebugState();
   }
 
@@ -165,12 +198,28 @@ export class WorldScene extends Phaser.Scene {
       worldW: WORLD_W,
     });
     this.applyCamera();
+    this.setZone(zoneAt(x).id);
+    this.sky.update(x);
     this.updateDebugState();
   }
 
   private applyCamera(): void {
     this.cameras.main.scrollX = this.followState.scrollX;
     this.ctx.camera = { scrollX: this.cameras.main.scrollX, scrollY: this.cameras.main.scrollY };
+  }
+
+  /** Emits `zone:enter` (ARCHITECTURE.md → bus contract) and updates the debug hook only when
+   * the zone actually changed. */
+  private setZone(id: string): void {
+    if (id === this.zoneId) return;
+    this.zoneId = id;
+    this.ctx.zone = id;
+    bus.emit('zone:enter', { id });
+  }
+
+  private starCount(): number {
+    const scaled = Math.round(BASE_STAR_COUNT * tierFlags(this.ctx.tier).particleScale);
+    return prefersReducedMotion() ? Math.min(scaled, REDUCED_MOTION_STAR_CAP) : scaled;
   }
 
   private updateDebugState(): void {
@@ -189,7 +238,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Ground: a `floor-plant` strip tiled across the world, `ink-900` filling the rest, one solid
-   * collider (Phase 4 replaces this with `world/layout.ts`). */
+   * collider. */
   private buildGround(): void {
     const key = this.textures.exists(FLOOR_ID) ? FLOOR_ID : ensureFloorPlaceholder(this);
     this.add.tileSprite(0, GROUND_Y, WORLD_W, FLOOR_HEIGHT, key).setOrigin(0, 0);
@@ -205,34 +254,37 @@ export class WorldScene extends Phaser.Scene {
     this.groundBody = this.physics.add.staticBody(0, GROUND_Y, WORLD_W, WORLD_H - GROUND_Y);
   }
 
-  /** One one-way test platform: only its top face collides. */
-  private buildPlatform(): Phaser.Physics.Arcade.StaticBody {
-    const size = this.platformSize();
-    const topY = GROUND_Y - PLATFORM_DROP;
-    const platform = this.textures.exists(PLATFORMS_ID)
-      ? this.physics.add
-          .staticImage(PLATFORM_X, topY, PLATFORMS_ID, PLATFORM_FRAME)
-          .setOrigin(0.5, 0)
-          .refreshBody()
-      : this.physics.add
-          .staticImage(PLATFORM_X, topY, ensurePlatformPlaceholder(this, size))
-          .setOrigin(0.5, 0)
-          .refreshBody();
-    const body = platform.body;
-    body.setSize(size.w, size.h, false);
-    body.checkCollision.down = false;
-    body.checkCollision.left = false;
-    body.checkCollision.right = false;
-    return body;
+  /** One-way platforms from `world/layout.ts` (currently the Reagent lab's 8 block platforms):
+   * only their top face collides. */
+  private buildPlatforms(): Phaser.Types.Physics.Arcade.ImageWithStaticBody[] {
+    return WORLD_LAYOUT.platforms.map((p) => {
+      const frame = PLATFORM_FRAME[p.size];
+      const size = this.platformSize(p.size);
+      const image = this.textures.exists(PLATFORMS_ID)
+        ? this.physics.add
+            .staticImage(p.x, p.y, PLATFORMS_ID, frame)
+            .setOrigin(0.5, 0)
+            .refreshBody()
+        : this.physics.add
+            .staticImage(p.x, p.y, ensurePlatformPlaceholder(this, size, p.size))
+            .setOrigin(0.5, 0)
+            .refreshBody();
+      const body = image.body;
+      body.setSize(size.w, size.h, false);
+      body.checkCollision.down = false;
+      body.checkCollision.left = false;
+      body.checkCollision.right = false;
+      return image;
+    });
   }
 
-  private platformSize(): { w: number; h: number } {
+  private platformSize(size: PlatformSize): { w: number; h: number } {
     const asset = this.ctx.manifest?.assets[PLATFORMS_ID];
     const item =
       asset && asset.source !== 'missing' && asset.kind === 'set'
-        ? asset.items[PLATFORM_FRAME]
+        ? asset.items[PLATFORM_FRAME[size]]
         : undefined;
-    return item ?? PLATFORM_FALLBACK_SIZE;
+    return item ?? PLATFORM_FALLBACK_SIZE[size];
   }
 
   private addLabel(): void {
@@ -251,6 +303,7 @@ export class WorldScene extends Phaser.Scene {
     cam.setSize(width, height);
     cam.setBounds(0, WORLD_H - height, WORLD_W, height);
     cam.scrollY = WORLD_H - height;
+    this.sky.resize(width, height);
     if (this.panda) {
       this.followState = snapFollow({
         targetX: this.panda.sprite.x,
@@ -277,13 +330,18 @@ function ensureFloorPlaceholder(scene: Phaser.Scene): string {
 }
 
 /** A set item's documented placeholder: its `size` box in `navy-700` with a `navy-400` outline. */
-function ensurePlatformPlaceholder(scene: Phaser.Scene, size: { w: number; h: number }): string {
-  if (!scene.textures.exists(PLATFORM_PLACEHOLDER)) {
+function ensurePlatformPlaceholder(
+  scene: Phaser.Scene,
+  size: { w: number; h: number },
+  sizeKey: PlatformSize
+): string {
+  const key = `platform-placeholder-${sizeKey}`;
+  if (!scene.textures.exists(key)) {
     const g = scene.make.graphics({}, false);
     g.fillStyle(num('navy-700')).fillRect(0, 0, size.w, size.h);
     g.lineStyle(1, num('navy-400')).strokeRect(0.5, 0.5, size.w - 1, size.h - 1);
-    g.generateTexture(PLATFORM_PLACEHOLDER, size.w, size.h);
+    g.generateTexture(key, size.w, size.h);
     g.destroy();
   }
-  return PLATFORM_PLACEHOLDER;
+  return key;
 }

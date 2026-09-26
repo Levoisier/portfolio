@@ -238,14 +238,25 @@ Mode is recomputed on resize/orientation change. Respect `env(safe-area-inset-*)
 camera shake, no screen flashes, parallax differential ×0.3, particles minimal, travel uses fades
 and door/vault tweens are instant. Player movement stays.
 
-## World model **(Phase 4)**
+## World model
 
-`src/game/world/layout.ts` is plain typed data (no Phaser import): `width`, `height`, `groundY`,
-`zones[]` (id, x-range, sky keyframe), `platforms[]`, `stations[]`, `props[]`, `sky[]`.
-`validate.ts` (pure, unit-tested) checks: stations inside their zone; every station id resolves to
-a project, confidential or skill-category id in `src/content`, or to `gate | classified | lab |
-contact` (`GAME_DESIGN.md` → _Canonical ids_); no overlapping triggers; props on the ground or a
-platform; and the jump rules below.
+`src/game/world/layout.ts` is plain typed data (no Phaser import) and the **owner** of the world's
+dimensions: `WORLD_W`, `WORLD_H`, `GROUND_Y` are computed/declared there (`WORLD_W` from the last
+zone's `x1`) and re-exported from `config.ts` for the rest of the game to keep importing from one
+place. `WORLD_LAYOUT: WorldLayout` holds `width`, `height`, `groundY`, `zones[]` (id, x-range, a
+`SkyMood`), `stations[]` (id, kind, x, y, asset id, trigger width — every project, the gate, the
+vault, the 4 dossiers and the 8 skill-category blocks; a `block` station's `platformId` names the
+platform it sits over), `platforms[]` (id, x, top-surface y, size `s | m | l` — currently the
+Reagent lab's 8 one-way platforms), and `props[]` (decorative slots; positions only — the phase
+that owns a prop renders it, e.g. Phase 8/9/10, so this starts near-empty). `zoneAt(x, zones?)`
+returns the zone containing `x` (clamped to the world).
+
+`validate.ts` (pure, unit-tested) checks: zones are ordered, contiguous and cover `[0, width)`;
+every station's `x` falls inside some zone and its `id` resolves to a project, confidential-project
+or `SKILL_CATEGORIES` id in `src/content`, or to `gate | classified | lab | contact`
+(`GAME_DESIGN.md` → _Canonical ids_); no two stations' trigger spans overlap; every prop rests on
+the ground or on a platform at that x; and the jump rules below. It reads platform widths from
+`ASSET_MANIFEST` (`assets/registry.ts`) rather than duplicating them (Golden Rule 5).
 
 **Jump-derived layout rules** (from `config.ts` via `jumpApex()`): a one-way platform's top is
 ≤ apex − 4 (≈ 53 px) above the surface it is jumped from; a skill block's bottom edge is between
@@ -253,6 +264,54 @@ max(bodyH + 2, PANDA_ART_H + 1) (= 49 px — the panda, ears included, walks und
 bodyH + apex − 4 (≈ 97 px — the head reaches it) above the surface beneath it. `config.ts` exports
 `PANDA_ART_H = 48`. One-way platforms: static bodies with
 `checkCollision.down = left = right = false`.
+
+**Zone tracking:** `WorldScene` calls `zoneAt(panda.sprite.x)` from its `POST_UPDATE` handler (and
+on teleport); a change updates `ctx.zone` (read by the debug hook's `getState().zone`) and emits
+`zone:enter` on the bus. The `?debug` overlay appends the zone id to its stats line.
+
+## Sky & parallax
+
+Screen-space (`setScrollFactor(0)`), drawn from palette colors only (ASSETS.md → _Drawn in code_);
+built and updated by `src/game/fx/sky.ts`'s `SkyRenderer` and `src/game/fx/parallax.ts`'s
+`buildParallax()`/`applyParallaxMotion()`. Both modules only ever call methods on the
+`Phaser.Scene`/objects they are handed (`import type Phaser from 'phaser'`, never a runtime
+import), so their pure functions load directly under Vitest.
+
+- **Sky mood:** each zone carries a `SkyMood` (`deep-night | night | darkest-night | pre-dawn |
+sunrise`); `sky.ts`'s `MOODS` maps each to a 4-color top→horizon ramp, a star density, and
+  moon/sun visibility. `skyStopsFromZones()` turns the zones into stops: a flat stop at `x = 0`,
+  a `[from, to]` pair straddling every mood **change** (not every zone), 240 px wide and centred on
+  the change's x, and a flat closing stop at `worldW`. Consecutive same-mood zones (the 6 project
+  stations) collapse into one flat run, and each zone keeps a flat, "pure" mood through its middle
+  — only a 240 px window around a boundary blends, so e.g. the classified wing reads as genuinely
+  "darkest night", not a slow fade across its whole 800 px.
+- **`skyPhaseAt(x, stops)`** finds the bracket `[a, b]` around `x` and the blend `t ∈ [0, 1]`
+  (`a === b` outside the world, at `t = 0`). `bandColorAt(x, stops, band)` steps the sky's 8
+  screen-space rows (`SKY_BANDS`) through the palette: below a band's ordered-dither threshold
+  (`BAND_ORDER`, a dispersed, not top-to-bottom, flip order) it shows mood `a`'s ramp color,
+  above it mood `b`'s — so a mood change dithers in band by band across the transition's width
+  instead of recoloring the whole sky in one "banding jump". `starDensityAt`/`moonAlphaAt`/
+  `sunAlphaAt` interpolate linearly (an alpha/count, not a new color, so Golden Rule 4 still holds).
+  Stars are a fixed, seeded field (`makeStarField`, deterministic — no `Math.random`): each has a
+  screen-fraction position and a priority; it shows once density clears that priority, so stars
+  fade in one at a time rather than all at once.
+- **`SkyRenderer`** (Phaser adapter): builds `SKY_BANDS` rectangles, a star field sized by
+  `tierFlags().particleScale` (capped further under `prefers-reduced-motion`), and a moon/sun
+  circle, all `setScrollFactor(0)`. `resize(viewW, viewH)` re-slices the bands to the current view
+  (called from `WorldScene.layout()`); `update(x)` repaints everything from the player's x (called
+  from `POST_UPDATE`, alongside the camera and zone tracking).
+- **Parallax:** `buildParallax()` reads `bg-far` / `bg-mid` / `bg-fore` from the resolved manifest
+  (falling back to the documented flat-skyline placeholder — ARCHITECTURE.md → Asset pipeline —
+  when a texture is missing), builds one `tileSprite` per active layer bottom-aligned at `groundY`
+  in **world** space (normal `scrollFactorY`), and sets `scrollFactorX` to the manifest's
+  `scrollFactor` (parallax is horizontal only). `tierFlags().parallaxLayers` (2 low / 3 high) picks
+  how many layers load; an optional layer resolved to `missing` is skipped regardless. Depths
+  stack sky (−100…−90) behind parallax (−80…−60) behind the floor/gameplay (0). Each tile sprite
+  is sized generously wide (`worldW × max(1, scrollFactor) + a max viewport width`) so a
+  faster-than-camera layer (`bg-fore`'s 1.25) never runs out of texture before either end of the
+  level. `applyParallaxMotion(handle, reduced)` scales each layer's differential from 1 by ×0.3
+  under `prefers-reduced-motion` instead of removing it (Motion preference: "parallax differential
+  reduced").
 
 ## Player
 

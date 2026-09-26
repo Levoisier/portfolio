@@ -17,6 +17,8 @@ export interface DebugStats {
   viewH: number;
   tier: Tier;
   mode: LayoutMode;
+  /** The zone the player is currently in (`world/layout.ts` id). */
+  zone: string;
 }
 
 export interface Events {

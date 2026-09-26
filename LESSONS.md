@@ -210,3 +210,41 @@ in `WorldScene.create()`.
 **Rule of thumb:** When deleting a scene method that sets shared/debug state, grep for every reader
 of that state (`ctx.*`, the debug hook, e2e specs) first, not just its callers — a unit-tested pure
 module regressing here would still pass `pnpm verify` and only fail e2e.
+
+## 2026-09-26 — Phase 4: a mood "transition" spanning a whole zone reads as no mood at all
+
+**Context:** Building the night→dawn sky (`fx/sky.ts`) from `world/layout.ts`'s zones, each
+tagged with one `SkyMood`.
+**Problem:** The first version put one stop per mood **zone** and blended linearly between
+consecutive stops (one keyframe per zone). Since only 4 of the 10 zones actually change mood (the
+6 project stations all share `night`), each mood-changing zone's **entire width** became the blend
+bracket: at the classified wing's own midpoint (400 px into its 800 px), the sky was already a
+50/50 dither between "darkest night" and "pre-dawn" — the wing's "total blackout" beat never read
+as pure black except right at its front edge. The unit tests all passed throughout (they only
+checked the interpolation math in isolation, which was correct); a screenshot of the actual build
+is what caught it.
+**Fix / finding:** Blend only in a fixed, narrow window (240 px) straddling each **mood change**
+(not each zone) — `skyStopsFromZones()` pushes a `[from, to]` pair around every boundary and a flat
+stop everywhere else, so most of a zone reads as a flat, "pure" mood.
+**Rule of thumb:** For a "value that changes with position" system, unit-test the interpolation
+math, but also screenshot a few real in-between points — a bug in how keyframes are _placed_ hides
+behind entirely correct interpolation code.
+
+## 2026-09-26 — Phase 4 world model: a few TS/lint/test traps
+
+**Problem / finding (all verified in this container):**
+
+- `erasableSyntaxOnly` rejects constructor **parameter properties**
+  (`constructor(private readonly scene: Phaser.Scene, …)`), even in a file that's on the
+  Phaser-import allow-list. Declare the field and assign it in the constructor body instead — or,
+  if the value is only needed inside the constructor itself (true of most "receive the scene and
+  use it" builders, which never read `scene` again after building their objects), don't store it
+  as a field at all.
+- `no hardcoded colors` (`palette.test.ts`) scans **every** non-test `.ts` file for `0x`/`#`
+  literals, including a Phaser fill call's default color — `0x000000` for a placeholder rect trips
+  it exactly like a CSS hex would. Use `num('ink-900')` even for a throwaway placeholder fill.
+- Re-exporting `world/layout.ts`'s `WORLD_W`/`WORLD_H`/`GROUND_Y` from `config.ts`
+  (`export { … } from './world/layout'`) only avoids a circular import because `layout.ts` never
+  imports those constants back from `config.ts` — it declares them itself. The data owner must
+  never import from a module that only re-exports it; a `const` read across a real cycle risks a
+  TDZ error depending on which module happens to load first.

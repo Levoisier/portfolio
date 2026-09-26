@@ -23,6 +23,8 @@ export interface GameContext {
   /** Kept for the debug hook's `getState()` (Phase 3 — ARCHITECTURE.md → Player). */
   player: PlayerDebugState | null;
   camera: { scrollX: number; scrollY: number };
+  /** The zone the player is currently in (`world/layout.ts` id), also emitted as `zone:enter`. */
+  zone: string;
   /** Set by `WorldScene.create()`; the debug hook's `teleport(x)` calls through it. */
   teleport?: (x: number) => void;
 }

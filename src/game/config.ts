@@ -2,10 +2,9 @@
  * Plain game constants (no Phaser import). Movement values are "tune by feel" starting points
  * (ARCHITECTURE.md → Player); layout validation derives jump rules from them via `jumpApex()`.
  */
-export const WORLD_H = 480;
-export const GROUND_Y = 432;
-/** Temporary level width until Phase 4's `world/layout.ts` owns it (GAME_DESIGN: ≈ 4 620). */
-export const WORLD_W = 4620;
+/** World dimensions are owned by `world/layout.ts` (the data model); re-exported here so the
+ * rest of the game can keep importing them from `config.ts`. */
+export { GROUND_Y, WORLD_H, WORLD_W } from './world/layout';
 /** Character cell and the baseline its feet stand on (ARCHITECTURE.md → Rendering contract). */
 export const CELL = 64;
 export const CELL_BASELINE = 60;
