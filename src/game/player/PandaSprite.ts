@@ -7,6 +7,7 @@
 import type Phaser from 'phaser';
 import type { RuntimeManifest } from '../../assets/runtime';
 import { num } from '../../design/palette';
+import { bus } from '../../shared/bus';
 import {
   CELL,
   CELL_BASELINE,
@@ -114,6 +115,7 @@ export class PandaSprite {
 
     body.velocity.x = result.vx;
     if (result.vy !== null) body.velocity.y = result.vy;
+    if (result.state.sinceJump === 0) bus.emit('sfx', { name: 'jump' });
 
     this.applyAnim(result.anim, result.frame);
     this.sprite.setFlipX(result.flipX);

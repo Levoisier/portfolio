@@ -403,9 +403,9 @@ works before P8/P9 merge).
 
 ---
 
-## Phase 11 — Ambience & audio
+## Phase 11 — Ambience & audio ✅
 
-### [ ] feat(fx): desktop diorama ambience, lean mobile, optional audio
+### [x] feat(fx): desktop diorama ambience, lean mobile, optional audio
 
 **Depends on:** P6, P7, P8, P9, P10. **Media:** wave D.
 

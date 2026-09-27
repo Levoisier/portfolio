@@ -10,6 +10,7 @@
  * a Phaser call.
  */
 import type Phaser from 'phaser';
+import { bus } from '../../shared/bus';
 import { getAsset, type Rect } from '../../assets/registry';
 import type { RuntimeManifest } from '../../assets/runtime';
 import { skillCategorySymbols, skills } from '../../content';
@@ -312,6 +313,7 @@ export class Skills {
     const block = this.blocks.get(id);
     if (!block || block.state !== 'idle') return;
     const category = id as SkillCategory;
+    bus.emit('sfx', { name: 'bump' });
     const reduced = prefersReducedMotion();
 
     const settle = () => {

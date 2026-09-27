@@ -159,10 +159,13 @@ Favicons are allowed; the old ones were removed in the reset and Phase 12 regene
 
 ## Audio off by default, procedural SFX
 
-**Status:** Proposed (decide in Phase 11)
-**Why:** Autoplaying sound on a portfolio is hostile; procedural SFX (e.g. ZzFX, ~1 KB) avoid
-shipping audio files.
-**Trade-off:** Most visitors never hear it.
+**Status:** Accepted (Phase 11)
+**Why:** Autoplaying sound on a portfolio is hostile; procedural SFX avoid shipping audio files.
+Implemented with a few lines of plain Web Audio (`src/ui/audio.ts`: one oscillator + gain ramp per
+effect — jump, bump, vault, panel open/close) instead of adding ZzFX, so no new dependency. Off by
+default, remembered (`shared/sound.ts`), the AudioContext is created only after the visitor turns
+sound on. No ambient loop.
+**Trade-off:** Most visitors never hear it; the blips are deliberately simple.
 
 ## Panel links: Space activates them too, not just Enter
 

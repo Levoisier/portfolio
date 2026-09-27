@@ -21,6 +21,7 @@ import {
 import { REGISTRY_KEY, type GameContext } from '../context';
 import { applyParallaxMotion, buildParallax, type ParallaxHandle } from '../fx/parallax';
 import { blinkBeacons, ClassifiedWing } from '../fx/classified';
+import { Ambience } from '../fx/ambience';
 import { SkyRenderer } from '../fx/sky';
 import type { SourcedIntent } from '../input/intent';
 import { KeyboardSource } from '../input/keyboard';
@@ -76,6 +77,10 @@ const TRIGGER_STATIONS: Station[] = [
  * generic). */
 const CLASSIFIED_PROPS = WORLD_LAYOUT.props.filter((p) => p.id.startsWith('classified-'));
 const LAB_PROPS = WORLD_LAYOUT.props.filter((p) => p.id.startsWith('lab-'));
+/** Everything else (the gate crate and the Phase 11 `misc-*` dressing). */
+const MISC_PROPS = WORLD_LAYOUT.props.filter(
+  (p) => !p.id.startsWith('classified-') && !p.id.startsWith('lab-')
+);
 
 const SPAWN_X = 160;
 const FLOOR_ID = 'floor-plant';
@@ -104,6 +109,7 @@ export class WorldScene extends Phaser.Scene {
   private sky!: SkyRenderer;
   private parallax!: ParallaxHandle;
   private story!: Story;
+  private ambience!: Ambience;
   private fpsGuard = new FpsGuard();
   private refreshMeter = new RefreshMeter();
   private keyboard!: KeyboardSource;
@@ -177,6 +183,13 @@ export class WorldScene extends Phaser.Scene {
     );
     blinkBeacons(this, buildProps(this, this.ctx.manifest, CLASSIFIED_PROPS));
     buildProps(this, this.ctx.manifest, LAB_PROPS);
+    this.ambience = new Ambience(
+      this,
+      this.ctx.manifest,
+      buildProps(this, this.ctx.manifest, MISC_PROPS),
+      this.ctx.tier,
+      prefersReducedMotion()
+    );
     this.skills = new Skills(
       this,
       SKILL_STATIONS,
@@ -247,12 +260,14 @@ export class WorldScene extends Phaser.Scene {
         { replay: true }
       ),
       bus.on('tier:change', ({ tier }) => {
+        this.ambience.refresh(tier, prefersReducedMotion());
         this.ctx.tier = tier;
         this.classifiedWing.refresh(tier, prefersReducedMotion());
       }),
       onReducedMotionChange((reduced) => {
         applyParallaxMotion(this.parallax, reduced);
         this.classifiedWing.refresh(this.ctx.tier, reduced);
+        this.ambience.refresh(this.ctx.tier, reduced);
       }),
       () => this.keyboard.destroy()
     );
@@ -466,6 +481,7 @@ export class WorldScene extends Phaser.Scene {
     }
     bus.emit('station:open', { id });
     if (VAULT_STATION && id === VAULT_STATION.id) {
+      if (!this.ctx.vaultOpen) bus.emit('sfx', { name: 'vault' });
       this.vault?.open();
       this.classifiedWing.shiftLightToScarlet();
       this.ctx.vaultOpen = true;

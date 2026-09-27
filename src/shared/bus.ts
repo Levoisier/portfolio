@@ -52,6 +52,8 @@ export interface Events {
   'input:first-move': Record<string, never>;
   /** The stack panel's "reset lab" control: every element block back to idle. */
   'skills:reset': Record<string, never>;
+  /** A game sound effect; `src/ui/audio.ts` plays it only when sound is on. */
+  sfx: { name: 'jump' | 'bump' | 'vault' };
   'fonts:ready': Record<string, never>;
   'tier:change': { tier: Tier };
   /** Emitted about twice a second, only in debug mode. */

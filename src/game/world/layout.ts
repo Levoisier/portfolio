@@ -185,6 +185,18 @@ const PROPS: Prop[] = [
   { id: 'classified-fence-4', asset: 'props-zones', item: 'fence', x: 3162, y: GROUND_Y },
   { id: 'lab-fume-hood', asset: 'props-zones', item: 'fume-hood', x: 3226, y: GROUND_Y },
   { id: 'lab-shelf', asset: 'props-zones', item: 'lab-shelf', x: 3972, y: GROUND_Y },
+  // Ambience (Phase 11, `props-misc`): dressing in the gaps between stations.
+  { id: 'misc-gate-lamp', asset: 'props-misc', item: 'lamp-post', x: 40, y: GROUND_Y },
+  { id: 'misc-fiora-bench', asset: 'props-misc', item: 'bench', x: 540, y: GROUND_Y },
+  { id: 'misc-japaniracer-toolbox', asset: 'props-misc', item: 'toolbox', x: 858, y: GROUND_Y },
+  { id: 'misc-japaniracer-barrel', asset: 'props-misc', item: 'barrel', x: 1082, y: GROUND_Y },
+  { id: 'misc-le-parche-cone', asset: 'props-misc', item: 'cone', x: 1176, y: GROUND_Y },
+  { id: 'misc-maison-lamp', asset: 'props-misc', item: 'lamp-post', x: 1480, y: GROUND_Y },
+  { id: 'misc-orquestia-valve', asset: 'props-misc', item: 'valve-pipe', x: 2044, y: GROUND_Y },
+  { id: 'misc-transcolombia-crate', asset: 'props-misc', item: 'crate', x: 2118, y: GROUND_Y },
+  { id: 'misc-transcolombia-gas', asset: 'props-misc', item: 'gas-cylinder', x: 2372, y: GROUND_Y },
+  { id: 'misc-contact-bench', asset: 'props-misc', item: 'bench', x: 4460, y: GROUND_Y },
+  { id: 'misc-contact-lamp', asset: 'props-misc', item: 'lamp-post', x: 4580, y: GROUND_Y },
 ];
 
 export const WORLD_LAYOUT: WorldLayout = {
