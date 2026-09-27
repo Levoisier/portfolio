@@ -297,3 +297,60 @@ and compute the y from the same `GROUND_Y - scrollY` art-y (minus a margin for t
 not a guessed fraction.
 **Rule of thumb:** A click-by-world-coordinate test/tool must replicate `render/zoom.ts`'s actual
 formulas (`computeViewport`) for both axes — "it's roughly centered" is not true of either one.
+
+## 2026-09-27 — `waitForGame` alone is not enough for a real pointer/click test either
+
+**Context:** Writing `tests/e2e/pad.spec.ts`'s first pointer-hold tests (Phase 6): move the mouse
+onto a pad button, `page.mouse.down()`, then poll the debug hook for movement.
+**Problem:** Every one of them timed out with `vx` stuck at 0 — no `pointerdown` ever reached the
+button. `document.elementFromPoint()` at the button's own centre returned `#loading`
+(`data-state="leaving"`), not the button: the loading overlay had already faded to `opacity: 0`
+(its CSS transition) but was still `position: fixed; inset: 0` and had not yet received the
+`hidden` attribute (`display: none`), so it still intercepted the click. The existing LESSONS
+entry above ("A visual/e2e check must wait for the loading screen too, not just ready") was about
+screenshots compositing the overlay's own art on top of the canvas; the exact same half-finished
+state also **blocks pointer hit-testing** on anything underneath it, which a keyboard- or
+debug-hook-driven test (every prior spec) never touches.
+**Fix / finding:** `tests/e2e/helpers.ts`'s `waitForGame` now also
+`await page.locator('#loading').waitFor({ state: 'hidden' })` after the ready poll, so every spec
+gets this for free instead of each new coordinate-based test re-discovering it.
+**Rule of thumb:** Any test that dispatches a **real, coordinate-based** pointer/mouse/touch event
+(not the debug hook, not `page.keyboard`) needs the loading screen actually gone first, not just
+`ready`.
+
+## 2026-09-27 — `page.mouse` works fine for a real pointerdown/up under `hasTouch: true`
+
+**Context:** Testing the pad's D-pad hold-to-walk and A-to-jump (Phase 6) under Playwright's
+`mobile` project (`isMobile: true, hasTouch: true`), which has no public "hold a touch point"
+API (only `page.touchscreen.tap()`, a quick down+up).
+**Finding:** `page.mouse.move(x, y)` + `page.mouse.down()` / `.up()` dispatches real, trusted
+`pointerdown`/`pointerup` events (`pointerType: 'mouse'`) regardless of `hasTouch`/`isMobile` —
+exactly what `src/ui/pad.ts`'s listeners need, since they never filter by `pointerType`. A
+**dispatched synthetic** `PointerEvent` (`locator.dispatchEvent('pointerdown', { pointerId: 1 })`)
+is not equivalent: it has no OS-recognized active pointer, so `el.setPointerCapture(e.pointerId)`
+throws — which is exactly why that call is wrapped in `try/catch` in `pad.ts` (robustness for a
+real finger sliding off a button, not just a testing nicety).
+**Rule of thumb:** Prefer `page.mouse` over a dispatched synthetic `PointerEvent` for anything that
+needs a sustained press (hold, drag) on a pointer-event listener, touch-emulated context or not;
+save synthetic dispatch for one-shot edges where no capture is involved.
+
+## 2026-09-27 — A child's z-index cannot escape a parent that is itself a stacking context
+
+**Context:** Raising `--z-pad` above `--z-panel`/`--z-menu` (Phase 6, DECISIONS.md) so the pad
+stays reachable under an open panel. The `?debug` overlay (`.debug-overlay`, appended inside
+`#hud`) started rendering **behind** the pad in `landscape-touch`, its own z-index (bumped to
+`calc(var(--z-pad) + 1)`) notwithstanding.
+**Problem:** `#hud` itself carries `z-index: var(--z-hud)` (10), which — being a positioned element
+with a specified z-index — establishes its own stacking context. Every descendant's z-index,
+however large, is compared only against its **siblings inside that same context**; it cannot lift
+the whole subtree above a sibling of `#hud` (here, `#pad`, at 45) that outranks `#hud` itself.
+Bumping `.debug-overlay`'s own z-index was consequently a no-op — confirmed by reading the
+generated CSS (correct) and then a screenshot (still wrong): the fix has to break the **ancestor**
+chain, not the leaf's declared value.
+**Fix / finding:** `mountDebugOverlay` now always mounts onto `document.body` (dropping the
+`hud ?? document.body` fallback in favor of always `document.body`), a sibling of `#hud`/`#pad` at
+the page root, where its own z-index is finally compared against the right elements.
+**Rule of thumb:** Before raising a leaf element's z-index to fix a stacking bug, check whether any
+ancestor between it and the root already sets a z-index (or `opacity`/`transform`/`filter` —
+anything that creates a stacking context) — that ancestor's position among _its_ siblings is the
+real ceiling, and no descendant value can lift it.

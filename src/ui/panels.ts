@@ -83,7 +83,15 @@ function closeLightbox(lightbox: HTMLElement): void {
   if (opener) document.getElementById(opener)?.focus();
 }
 
-export function mountPanels(root: HTMLElement, hud: HTMLElement): void {
+export interface PanelsApi {
+  /** Closes the topmost open lightbox or panel (same precedence as a real Esc press) and
+   * reports whether it did — `false` when nothing was open. BACKLOG.md Phase 6: `src/ui/pad.ts`
+   * calls this before ever forwarding a `B` press, so the same press that closes a panel is
+   * never also read as an interact. */
+  closeTopmost(): boolean;
+}
+
+export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
   const promptEl = hud.querySelector<HTMLElement>('[data-slot="prompt"]');
   let currentStationId: string | null = null;
   let openId: string | null = null;
@@ -138,6 +146,17 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): void {
     if (!focusCanvas()) lastFocus?.focus();
   }
 
+  /** The topmost thing open: an open lightbox closes first, a second call (or press) then
+   * closes the panel underneath — same order the Esc handler below already used. */
+  function closeTopmost(): boolean {
+    if (!openId) return false;
+    const section = panelSection(openId);
+    const openLb = section?.querySelector<HTMLElement>('[data-gallery-lightbox]:not([hidden])');
+    if (openLb) closeLightbox(openLb);
+    else closePanel();
+    return true;
+  }
+
   bus.on('station:enter', ({ id }) => {
     currentStationId = id;
     updatePrompt();
@@ -179,8 +198,7 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): void {
     const openLb = section.querySelector<HTMLElement>('[data-gallery-lightbox]:not([hidden])');
 
     if (e.key === 'Escape') {
-      if (openLb) closeLightbox(openLb);
-      else closePanel();
+      closeTopmost();
       return;
     }
     if (openLb) {
@@ -219,4 +237,6 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): void {
       }
     }
   });
+
+  return { closeTopmost };
 }

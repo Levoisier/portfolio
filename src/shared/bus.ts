@@ -8,6 +8,9 @@ import type { Lang } from '../content/types';
 import type { LayoutMode } from './layout-mode';
 
 export type Tier = 'high' | 'low';
+/** A physical control on the handheld pad (BACKLOG.md Phase 6 — ARCHITECTURE.md → Input →
+ * Touch pad). */
+export type PadButton = 'left' | 'right' | 'a' | 'b' | 'start';
 
 export interface DebugStats {
   fps: number;
@@ -39,6 +42,11 @@ export interface Events {
   /** Every wheel event on the page (canvas, HUD, letterbox alike — `src/ui/wheel.ts` is the
    * single path), forwarded so it still walks the panda. */
   'input:wheel': { deltaX: number; deltaY: number; deltaMode: number };
+  /** A handheld-pad button's down/up edge (`src/ui/pad.ts` is the only emitter;
+   * `game/input/touch.ts` reads it, the same way `ui/wheel.ts` forwards `input:wheel`). `B`'s
+   * close precedence (GAME_DESIGN.md → Controls) is decided in `ui/pad.ts` before this ever
+   * fires, so a press that closes a panel is never also forwarded as an interact. */
+  'input:pad': { button: PadButton; down: boolean; timeStamp: number };
   'fonts:ready': Record<string, never>;
   'tier:change': { tier: Tier };
   /** Emitted about twice a second, only in debug mode. */

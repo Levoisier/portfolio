@@ -66,8 +66,12 @@
   /* ─── Layers ──────────────────────────────────────────────────────────── */
   --z-screen: 0;
   --z-hud: 10;
-  --z-pad: 20;
   --z-panel: 30;
   --z-menu: 40;
+  /* Above panels/menu: the pad is a physical control surface (BACKLOG.md Phase 6) — `B`/`START`
+   * must stay reachable to close a panel or the menu the same way Esc does, so it is never the
+   * one thing a modal's full-viewport backdrop covers. `shell.css` also keeps a handheld dialog
+   * within the screen's own top half, so it never fights the pad for the same pixels. */
+  --z-pad: 45;
   --z-loading: 50;
 }

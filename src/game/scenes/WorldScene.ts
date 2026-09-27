@@ -16,6 +16,7 @@ import { SkyRenderer } from '../fx/sky';
 import type { SourcedIntent } from '../input/intent';
 import { KeyboardSource } from '../input/keyboard';
 import { mergeIntents } from '../input/merge';
+import { TouchPadState } from '../input/touch';
 import { WheelWalker } from '../input/wheel';
 import { PandaSprite } from '../player/PandaSprite';
 import { FpsGuard, tierFlags } from '../quality';
@@ -63,6 +64,7 @@ export class WorldScene extends Phaser.Scene {
   private refreshMeter = new RefreshMeter();
   private keyboard!: KeyboardSource;
   private wheel = new WheelWalker();
+  private touch = new TouchPadState();
   private modalOpen = false;
   private followState: FollowState = { exact: 0, scrollX: 0, screenX: 0 };
   /** Physics steps taken this frame (`world.stepsLastFrame`), read before `postUpdate` clears it. */
@@ -127,11 +129,18 @@ export class WorldScene extends Phaser.Scene {
           this.modalOpen = open;
           this.keyboard.setModal(open);
           this.wheel.reset();
+          this.touch.reset();
         },
         { replay: true }
       ),
       bus.on('input:wheel', ({ deltaX, deltaY, deltaMode }) => {
         if (!this.modalOpen) this.wheel.push(deltaX, deltaY, deltaMode);
+      }),
+      // `B`'s close precedence (GAME_DESIGN.md → Controls) is decided in `ui/pad.ts` before it
+      // ever emits this event, so a press that closed a panel never also reads as an interact
+      // here (the same outcome the keyboard gets from `KeyboardState`'s modal gate).
+      bus.on('input:pad', (e) => {
+        if (!this.modalOpen) this.touch.handle(e);
       }),
       bus.on('fonts:ready', () => this.addLabel(), { replay: true }),
       bus.on('tier:change', ({ tier }) => (this.ctx.tier = tier)),
@@ -181,6 +190,7 @@ export class WorldScene extends Phaser.Scene {
 
     const keyboardIntent = this.keyboard.read();
     const wheelMoveX = this.wheel.update(delta);
+    const padIntent = this.touch.read();
     // Any manual input cancels an in-flight click-to-open walk (ARCHITECTURE.md → Input →
     // Pointer/tap): the player took over.
     if (
@@ -188,7 +198,10 @@ export class WorldScene extends Phaser.Scene {
       (keyboardIntent.moveX !== 0 ||
         keyboardIntent.jumpPressed ||
         keyboardIntent.interactPressed ||
-        wheelMoveX !== 0)
+        wheelMoveX !== 0 ||
+        padIntent.moveX !== 0 ||
+        padIntent.jumpPressed ||
+        padIntent.interactPressed)
     ) {
       this.travel = null;
     }
@@ -196,6 +209,7 @@ export class WorldScene extends Phaser.Scene {
     const sources: SourcedIntent[] = [
       { source: 'keyboard', intent: keyboardIntent },
       { source: 'wheel', intent: { moveX: wheelMoveX } },
+      { source: 'pad', intent: padIntent },
     ];
     if (this.travel) {
       const step = autoWalkStep(this.panda.sprite.x, this.travel.plan);

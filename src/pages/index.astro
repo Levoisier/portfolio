@@ -8,6 +8,7 @@ import '../styles/tokens.css';
 import '../styles/shell.css';
 import Hud from '../components/Hud.astro';
 import Loading from '../components/Loading.astro';
+import Pad from '../components/Pad.astro';
 import Panels from '../components/panels/Panels.astro';
 import { inlineJson, readRuntimeManifest } from '../assets/inline';
 import { profile } from '../content';
@@ -48,6 +49,7 @@ const roles = (lang: 'es' | 'en') => profile.roles.map((r) => r[lang]).join(' ·
     <Loading manifest={manifest} />
     <div id="screen"></div>
     <Hud />
+    <Pad />
     <div id="panels">
       <Panels />
     </div>

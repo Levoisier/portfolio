@@ -72,7 +72,7 @@ src/
     fx/                       ← sky, parallax, particles, filters (tiered)
     travel/                   ← plan.ts (pure walk-to-x) + deep-link.ts (pure hash parsing); menu
                                 fast-travel/fade-teleport (Phase 7) add to the same folder
-  ui/                         ← DOM: main.ts (page entry), loading, fonts, debug overlay, panels; later menu, pad
+  ui/                         ← DOM: main.ts (page entry), loading, fonts, debug overlay, panels, pad; later menu
   components/                 ← Astro components: Loading, Hud, panels/Panels.astro (exist)
   pages/index.astro           ← the single page
 public/
@@ -116,7 +116,7 @@ index.astro (static HTML)
 adding an event = adding a key with its payload type. Known events: `game:progress`, `game:ready`,
 `zone:enter`, `station:enter`, `station:leave`, `station:open`, `panel:closed`, `ui:modal`
 `{ open: boolean }`, `menu:open`, `travel:to`, `travel:arrived`, `lang:change`, `sound:toggle`,
-`input:wheel`, `fonts:ready`, `tier:change`, `debug:stats`. No `window` custom events for game↔UI
+`input:wheel`, `input:pad`, `fonts:ready`, `tier:change`, `debug:stats`. No `window` custom events for game↔UI
 traffic. The bus remembers each event's last payload: `on(event, fn, { replay: true })` also
 receives it immediately (the lazy game chunk subscribes after `fonts:ready` and the initial
 `lang:change` have already fired).
@@ -221,6 +221,24 @@ which is false under Playwright touch emulation); portrait = `(orientation: port
 
 Mode is recomputed on resize/orientation change. Respect `env(safe-area-inset-*)`.
 `html, body { overflow: hidden; overscroll-behavior: none }` — the page itself never scrolls.
+
+**A handheld dialog stays inside the screen's own box.** `section[data-panel]` (a project panel)
+normally covers the full viewport, which in `handheld` mode would sit on top of the pad below it —
+a physical control surface that must stay reachable (`B` closes a panel the same way Esc does). A
+global `shell.css` rule keyed on `html[data-mode='handheld']` constrains it (and `.panel`'s own
+max-height) to the same top-half box as `#screen`, instead — never a scoped `<style>` inside
+`Panels.astro` itself (the same reason `html[data-lang]`'s visibility rule lives in `shell.css`,
+per that component's own comment): an ancestor-qualified selector's extra `html[…]` **type**
+selector out-specifies Astro's injected scope attribute even at equal class/attribute-tier
+specificity, so the global override reliably wins regardless of the two stylesheets' load order —
+but only because the added ancestor makes it so; a same-specificity rule without one would lose to
+source order instead. `landscape-touch` panels stay full-viewport (its pad is a slim, translucent
+bottom strip, not a solid half-screen block, so the visual overlap is minor). This is also why
+`--z-pad` (`tokens.css`) sits above `--z-panel`/`--z-menu`: a `position: fixed` descendant's
+z-index is still capped by any ancestor that itself establishes a stacking context (a specified
+`z-index`) — the `?debug` overlay used to render inside `#hud` and, however high its own z-index
+went, could never paint above a sibling `#pad` outranking `#hud` itself, so `mountDebugOverlay` now
+mounts straight onto `document.body` to escape that ceiling.
 
 ## Quality tiers
 
@@ -354,7 +372,7 @@ sunrise`); `sky.ts`'s `MOODS` maps each to a 4-color top→horizon ramp, a star 
   right after construction and after `teleportTo()` (the debug hook's `teleport(x)`), which also
   zeroes velocity and resets the state machine.
 
-## Input **(Phase 6 / 7)**
+## Input **(Phase 7)**
 
 Every source writes into one per-frame `Intent` (`moveX ∈ [−1, 1]`, `run`, `jumpPressed`,
 `jumpHeld`, `interactPressed`, `menuPressed`); merging is pure (`input/merge.ts`) and unit-tested.
@@ -377,7 +395,13 @@ false }` the game calls `this.input.keyboard.resetKeys()` and `KeyboardState` dr
   it a moment later — one Esc press never both closes a panel and opens the menu, and a key still
   held through the close needs a fresh `down` (its next auto-repeat) before it counts again.
 - **Esc precedence:** Esc (and **B** on the pad) closes the topmost open panel or the menu. Only
-  when nothing is open do Esc/M/START open the menu and B/E/Enter interact.
+  when nothing is open do Esc/M/START open the menu and B/E/Enter interact. The pad's half of this
+  is decided in `src/ui/pad.ts` itself, **before** a `B` press ever reaches the bus: it calls
+  `PanelsApi.closeTopmost()` (returned by `mountPanels`) and only forwards the press as an ordinary
+  `input:pad` event when nothing closed — so, unlike the keyboard's Esc (a real `KeyboardEvent`
+  Phaser also sees and must be told to ignore via a wall-clock cutoff — see the entry above), the
+  same physical press can never both close a panel and register as an interact: the DOM decides
+  synchronously which one it is, and the game never sees the ones that closed something.
 - **Wheel (done):** `deltaY > 0` (scroll down) walks right, `deltaX` walks too (horizontal swipes),
   normalized for `deltaMode` (lines × 16 px), with a short decay (`input/wheel.ts`'s `WheelWalker`)
   so a flick walks a few steps. `src/ui/wheel.ts` is the **single** wheel path: one passive
@@ -390,7 +414,26 @@ false }` the game calls `this.input.keyboard.resetKeys()` and `KeyboardState` dr
   toward it as an ordinary `pointer`-sourced intent (`WorldScene.update()`), opening it on arrival;
   any manual move/jump/interact cancels the plan. **Travel (P7)** adds menu fast-travel and
   fade-teleport, overriding other sources while active.
-- **Touch pad (P6):** DOM D-pad ◀ ▶, A (jump), B (interact), START (menu); double-tap-hold ◀/▶ runs.
+- **Touch pad (done):** DOM D-pad ◀ ▶, A (jump), B (interact/close), START (menu) — `handheld` /
+  `landscape-touch` only (Layout modes, below); `≥ 48 × 48` px targets, `pointer-events: none` on
+  the pad's own box (only its buttons re-enable it), so a translucent `landscape-touch` overlay
+  never eats a tap meant for the canvas underneath. `src/components/Pad.astro` is markup only;
+  `src/ui/pad.ts` does the pointer handling and is the **only** emitter of `input:pad { button,
+down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b' | 'start'`), the pad's
+  equivalent of `ui/wheel.ts` forwarding `input:wheel`. Multi-touch (`hold ▶ + tap A`) falls out of
+  each button owning an independent `Set<pointerId>` (`pointerdown`/`pointerup`/`pointercancel`,
+  `setPointerCapture` so a finger sliding off a button still delivers its `pointerup`); a later
+  pointer landing on an already-held button is not a second press. `game/input/touch.ts`'s
+  `TouchPadState` (pure, unit-tested) is fed these events by `WorldScene` exactly like
+  `WheelWalker` (`bus.on('input:pad', …)`, gated by the scene's own `modalOpen` and `reset()` on
+  every `ui:modal` change — a finger still resting on a button across that boundary needs a fresh
+  lift-and-press, the touch equivalent of `KeyboardSource.setModal`'s `resetKeys()`); double-tap
+  detection (`DOUBLE_TAP_MS = 300`) tracks each direction's last release time, so a release-then-
+  press within the window, held, runs — a lone tap, or a re-press outside the window, does not. An
+  Android `navigator.vibrate(10)` tick fires on `A`/`B` (optional; iOS Safari has no Vibration API,
+  and a blocked/thrown call is silently swallowed). `aria-label`s are applied client-side (like the
+  HUD prompt), re-applied on `lang:change` — never baked into the static HTML, since the pad has no
+  per-language DOM pair to key visibility off like panels do.
 
 ## Stations & panels
 

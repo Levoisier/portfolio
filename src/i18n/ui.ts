@@ -26,6 +26,12 @@ export const ui = {
    * every `ui` entry stays a `Localized<string>`. */
   stationPromptKey: { es: 'E — {title}', en: 'E — {title}' },
   stationPromptTouch: { es: 'Toca — {title}', en: 'Toca — {title}' },
+  // ─── Handheld pad (Phase 6) ───────────────────────────────────────────────
+  padLeft: { es: 'Caminar a la izquierda', en: 'Walk left' },
+  padRight: { es: 'Caminar a la derecha', en: 'Walk right' },
+  padJump: { es: 'Saltar', en: 'Jump' },
+  padInteract: { es: 'Interactuar', en: 'Interact' },
+  padMenu: { es: 'Menú', en: 'Menu' },
 } satisfies Record<string, Localized>;
 
 export type UiKey = keyof typeof ui;

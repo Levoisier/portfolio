@@ -59,11 +59,30 @@ html[data-mode='landscape-touch'] #screen {
   right: env(safe-area-inset-right);
 }
 
+/* Handheld: a dialog is conceptually "on the screen", so it stays inside the screen's own box —
+ * the pad below it (BACKLOG.md Phase 6) is a physical control surface and is never the thing a
+ * modal's full-viewport backdrop covers, so `B` (and a second Esc) can always reach it. These
+ * beat `components/panels/Panels.astro`'s own scoped `inset: 0`/`max-height` because the extra
+ * `html[data-mode=…]` ancestor adds a type-selector tie-breaker over Astro's injected scope
+ * attribute (equal attribute/class specificity either way). */
+html[data-mode='handheld'] section[data-panel] {
+  top: env(safe-area-inset-top);
+  right: 0;
+  bottom: 50dvh;
+  left: 0;
+}
+
+html[data-mode='handheld'] .panel {
+  max-height: calc(50dvh - env(safe-area-inset-top) - 2 * var(--space-4));
+}
+
 .debug-overlay {
   position: fixed;
   left: var(--space-2);
   bottom: var(--space-2);
-  z-index: var(--z-menu);
+  /* Above the pad (BACKLOG.md Phase 6): a `?debug` aid should never be the one thing a physical
+   * control covers. */
+  z-index: calc(var(--z-pad) + 1);
   margin: 0;
   padding: var(--space-1) var(--space-2);
   background: var(--c-ink-900);

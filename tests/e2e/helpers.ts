@@ -14,7 +14,15 @@ export function watchErrors(page: Page): string[] {
   return errors;
 }
 
-/** Waits until the game reports ready through the debug hook. */
+/**
+ * Waits until the game reports ready through the debug hook, AND `#loading` has actually left
+ * (`ready` flips as soon as `WorldScene.create()` returns, but the loading overlay fades out on
+ * its own CSS transition and, being `position: fixed` above everything, still intercepts clicks
+ * and taps at that moment — LESSONS.md: "A visual/e2e check must wait for the loading screen
+ * too, not just ready"; the same is true of any coordinate-based pointer interaction, not only
+ * screenshots).
+ */
 export async function waitForGame(page: Page) {
   await page.waitForFunction(() => window.__PORTFOLIO__?.getState().ready === true);
+  await page.locator('#loading').waitFor({ state: 'hidden' });
 }

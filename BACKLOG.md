@@ -268,9 +268,9 @@ react to that key press.
 
 ---
 
-## Phase 6 — Mobile: handheld mode & touch
+## Phase 6 — Mobile: handheld mode & touch ✅
 
-### [ ] feat(mobile): handheld layout, touch pad, tap-to-interact
+### [x] feat(mobile): handheld layout, touch pad, tap-to-interact
 
 **Depends on:** P5. **Media:** none (controls are CSS/SVG).
 

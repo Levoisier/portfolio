@@ -178,3 +178,20 @@ safe pattern (the synthetic click still runs inside the trusted keydown handler)
 **Trade-off:** A screen reader that already announces "link" for that control now also responds
 to a key screen-reader users don't expect a link to answer to; scoped to panel content only
 (`section.contains(link)`), so it never changes how links behave anywhere else on the page.
+
+## The pad outranks panels and the menu; a handheld dialog stays in the screen's own box
+
+**Status:** Accepted (2026-09-27, BACKLOG.md Phase 6)
+**Why:** GAME_DESIGN.md's control table promises `B` closes the topmost open panel or menu, the
+same as Esc. A panel's backdrop is `position: fixed; inset: 0`, so with the pad's original
+`--z-pad: 20` (below `--z-panel: 30`) an open panel fully covered the physical D-pad/A/B/START —
+reachable to a keyboard's Esc, unreachable to a touch visitor's actual finger. `--z-pad` moved
+above `--z-panel`/`--z-menu` (still below `--z-loading`), and `shell.css` constrains a handheld
+dialog (`section[data-panel]`, `.panel`) to the screen's own top-half box instead of the full
+viewport, so it never visually fights the pad for the same pixels. `landscape-touch` panels stay
+full-viewport (its pad is a slim translucent strip, not a solid half-screen block).
+**Trade-off:** A handheld panel's usable height is capped at roughly half the viewport (it already
+scrolls internally past that, `.panel`'s existing `overflow-y: auto`); the gallery lightbox (a
+second, nested modal `B` still closes first, same as Esc) was left visually unconstrained to the
+same box, since its own z-index already sits below the pad — only a cosmetic overlap in the rare
+case its enlarged image reaches the very bottom of a short viewport.
