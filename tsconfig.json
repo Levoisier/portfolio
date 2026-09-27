@@ -3,13 +3,13 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@scripts/*": ["src/scripts/*"],
-      "@styles/*": ["src/styles/*"],
-      "@components/*": ["src/components/*"]
+      "@/*": ["src/*"]
     },
     "strictNullChecks": true,
-    "noUncheckedIndexedAccess": true
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "erasableSyntaxOnly": true
   },
-  "include": ["src/**/*", "scripts/**/*.ts"]
+  "include": ["src/**/*", "scripts/**/*.ts", "tests/**/*.ts", "*.config.ts", "art/**/*.json"],
+  "exclude": ["dist", "node_modules", "public/game"]
 }

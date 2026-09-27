@@ -1,0 +1,102 @@
+---
+/**
+ * The `stack` panel (BACKLOG.md Phase 9): the full accessible skill list — symbol, name,
+ * category, proficiency — from `src/content/skills.ts`, both languages. Opened by the Reagent
+ * lab stop (`lab` → `stack`), automatically once when the periodic board completes, and from the
+ * menu. "Reset lab" emits `skills:reset` through `src/ui/panels.ts`.
+ */
+import '../../styles/panel.css';
+import { LANGS, sectionCopy, skillCategoryLabels, skills, skillsIntro } from '../../content';
+import { HTML_LANG } from '../../i18n/lang';
+import { ui } from '../../i18n/ui';
+
+const ordered = [...skills].sort((a, b) => a.number - b.number);
+---
+
+<section id="panel-stack" data-panel="stack" hidden>
+  {
+    LANGS.map((lang) => (
+      <div
+        class="panel"
+        lang={HTML_LANG[lang]}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`panel-stack-title-${lang}`}
+        tabindex="-1"
+      >
+        <button type="button" class="panel__close" data-panel-close aria-label={ui.close[lang]}>
+          <span aria-hidden="true">×</span>
+        </button>
+        <h2 id={`panel-stack-title-${lang}`} class="panel__title">
+          {sectionCopy.skills.heading[lang]}
+        </h2>
+        <p class="panel__desc">{skillsIntro[lang]}</p>
+        <table class="stack__table">
+          <thead>
+            <tr>
+              <th scope="col">{ui.stackSymbol[lang]}</th>
+              <th scope="col">{ui.stackName[lang]}</th>
+              <th scope="col">{ui.stackCategory[lang]}</th>
+              <th scope="col">{ui.stackProficiency[lang]}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ordered.map((s) => (
+              <tr>
+                <td class="stack__symbol">
+                  {s.symbol}
+                  <sub>{s.number}</sub>
+                </td>
+                <td>{s.name}</td>
+                <td>{skillCategoryLabels[s.category][lang]}</td>
+                <td>{s.proficiency} %</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button type="button" class="stack__reset" data-skills-reset>
+          {ui.stackReset[lang]}
+        </button>
+      </div>
+    ))
+  }
+</section>
+
+<style>
+  .stack__table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-block: var(--space-4);
+  }
+
+  .stack__table th,
+  .stack__table td {
+    padding: var(--space-1) var(--space-2);
+    text-align: left;
+    border-bottom: 1px solid var(--c-ink-600);
+  }
+
+  .stack__table th {
+    font-family: var(--font-display);
+    font-weight: 400;
+    color: var(--color-text-muted);
+  }
+
+  .stack__symbol {
+    font-family: var(--font-display);
+    color: var(--c-amber-400);
+  }
+
+  .stack__reset {
+    font: inherit;
+    color: var(--color-text);
+    background: var(--c-navy-700);
+    border: var(--pixel-border) solid var(--c-navy-400);
+    padding: var(--space-1) var(--space-3);
+    cursor: pointer;
+  }
+
+  .stack__reset:focus-visible {
+    outline: var(--pixel-border) solid var(--color-focus);
+  }
+</style>

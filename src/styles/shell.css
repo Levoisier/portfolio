@@ -1,0 +1,107 @@
+/* The game shell: full-viewport layers, no page scroll, language visibility, layout modes. */
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--c-ink-900);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+
+/* Component `display` rules must never un-hide an element with the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
+
+/* Both languages are in the HTML; html[data-lang] shows one. */
+html[data-lang='es'] [lang='en'],
+html[data-lang='en'] [lang='es-419'] {
+  display: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The canvas mount. Letterbox = ink-900; main.ts positions the canvas on whole device px. */
+#screen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-screen);
+  overflow: hidden;
+  background: var(--c-ink-900);
+  touch-action: none;
+}
+
+#screen canvas {
+  position: absolute;
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* Handheld (touch + portrait): the game is the top half of the visual viewport. */
+html[data-mode='handheld'] #screen {
+  top: env(safe-area-inset-top);
+  bottom: auto;
+  height: calc(50dvh - env(safe-area-inset-top));
+}
+
+html[data-mode='landscape-touch'] #screen {
+  left: env(safe-area-inset-left);
+  right: env(safe-area-inset-right);
+}
+
+/* Handheld: a dialog is conceptually "on the screen", so it stays inside the screen's own box —
+ * the pad below it (BACKLOG.md Phase 6) is a physical control surface and is never the thing a
+ * modal's full-viewport backdrop covers, so `B` (and a second Esc) can always reach it. `#menu`
+ * (Phase 7) gets the exact same treatment as a project panel's `section[data-panel]`; its own
+ * dialog already carries class `.panel` (`components/Menu.astro`), so the `max-height` rule below
+ * covers it for free. These out-specify `styles/panel.css`'s plain, unscoped base rules (an extra
+ * `html[data-mode=…]` ancestor beats them regardless of file/rule order). */
+html[data-mode='handheld'] section[data-panel],
+html[data-mode='handheld'] #menu {
+  top: env(safe-area-inset-top);
+  right: 0;
+  bottom: 50dvh;
+  left: 0;
+}
+
+html[data-mode='handheld'] .panel {
+  max-height: calc(50dvh - env(safe-area-inset-top) - 2 * var(--space-4));
+}
+
+.debug-overlay {
+  position: fixed;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  /* Above the pad (BACKLOG.md Phase 6): a `?debug` aid should never be the one thing a physical
+   * control covers. */
+  z-index: calc(var(--z-pad) + 1);
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  background: var(--c-ink-900);
+  color: var(--c-amber-400);
+  font:
+    12px/1.2 ui-monospace,
+    monospace;
+  pointer-events: none;
+}
+
+.noscript {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  text-align: center;
+  background: var(--c-navy-950);
+  z-index: calc(var(--z-loading) + 1);
+}

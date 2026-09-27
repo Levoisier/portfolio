@@ -1,6 +1,9 @@
 dist/
+dist-no-assets/
 node_modules/
 .astro/
-.agents/
 .claude/settings.local.json
 pnpm-lock.yaml
+public/game/
+test-results/
+playwright-report/

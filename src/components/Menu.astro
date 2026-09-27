@@ -1,0 +1,138 @@
+---
+/**
+ * The fast-travel menu (BACKLOG.md Phase 7 — GAME_DESIGN.md → Menu / map): every stop in world
+ * order (`gate`, the 6 projects, `classified`, `lab`, `contact`) plus the 4 dossier ids as
+ * indented sub-entries under `classified` — the exact same order/ids `src/game/world/layout.ts`
+ * places them in. Markup only; `src/ui/menu.ts` owns opening/closing, focus and the visited ✓
+ * marks (read from `localStorage` client-side — a build-time checkmark would go stale the
+ * moment a visitor closes their first panel).
+ */
+import '../styles/panel.css';
+import { LANGS, confidentialProjects, projects } from '../content';
+import { HTML_LANG } from '../i18n/lang';
+import { ui } from '../i18n/ui';
+import type { Localized } from '../content/types';
+import type { Lang } from '../content/types';
+
+interface Entry {
+  id: string;
+  title: Localized | string;
+}
+
+/** World order (GAME_DESIGN.md → Canonical ids: "Menu / zone stops"). */
+const topEntries: Entry[] = [
+  { id: 'gate', title: ui.menuGate },
+  ...projects.map((p) => ({ id: p.id, title: p.title })),
+  { id: 'classified', title: ui.menuClassified },
+  { id: 'lab', title: ui.menuLab },
+  { id: 'contact', title: ui.contactLabel },
+];
+
+const dossierEntries: Entry[] = confidentialProjects.map((c) => ({ id: c.id, title: c.industry }));
+
+const titleFor = (title: Entry['title'], lang: Lang) =>
+  typeof title === 'string' ? title : title[lang];
+---
+
+<div id="menu" hidden>
+  {
+    LANGS.map((lang) => (
+      <div
+        class="panel menu__dialog"
+        lang={HTML_LANG[lang]}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`menu-title-${lang}`}
+        tabindex="-1"
+      >
+        <button type="button" class="panel__close" data-menu-close aria-label={ui.close[lang]}>
+          <span aria-hidden="true">×</span>
+        </button>
+        <h2 id={`menu-title-${lang}`} class="panel__title">
+          {ui.menuLabel[lang]}
+        </h2>
+        <ul class="menu__list">
+          {topEntries.map((entry) => (
+            <li>
+              <button type="button" class="menu__item" data-menu-entry={entry.id}>
+                <span class="menu__check" aria-hidden="true" data-menu-check />
+                <span>{titleFor(entry.title, lang)}</span>
+                <span class="sr-only" data-menu-visited-label hidden>
+                  {ui.menuVisitedLabel[lang]}
+                </span>
+              </button>
+              {entry.id === 'classified' && (
+                <ul class="menu__sublist">
+                  {dossierEntries.map((sub) => (
+                    <li>
+                      <button
+                        type="button"
+                        class="menu__item menu__item--sub"
+                        data-menu-entry={sub.id}
+                      >
+                        <span class="menu__check" aria-hidden="true" data-menu-check />
+                        <span>{titleFor(sub.title, lang)}</span>
+                        <span class="sr-only" data-menu-visited-label hidden>
+                          {ui.menuVisitedLabel[lang]}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  .menu__list,
+  .menu__sublist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .menu__sublist {
+    margin-left: var(--space-6);
+    margin-top: var(--space-1);
+  }
+
+  .menu__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 2px solid transparent;
+    background: transparent;
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .menu__item:hover,
+  .menu__item:focus-visible {
+    border-color: var(--color-focus);
+    background: var(--c-navy-700);
+  }
+
+  .menu__item--sub {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  .menu__check {
+    display: inline-block;
+    width: 1em;
+    flex: none;
+    color: var(--c-amber-400);
+  }
+</style>

@@ -1,0 +1,36 @@
+---
+/**
+ * The `contact` panel (BACKLOG.md Phase 7 — GAME_DESIGN.md → Canonical ids): built from
+ * `profile.contact` and `profile.callToAction`, opened by the HUD Contact button and the menu's
+ * `contact` entry (Phase 10 later reuses it for the contact post at the lookout).
+ */
+import '../../styles/panel.css';
+import { LANGS, profile, sectionCopy } from '../../content';
+import { HTML_LANG } from '../../i18n/lang';
+import { ui } from '../../i18n/ui';
+import ContactLinks from './ContactLinks.astro';
+---
+
+<section id="panel-contact" data-panel="contact" hidden>
+  {
+    LANGS.map((lang) => (
+      <div
+        class="panel"
+        lang={HTML_LANG[lang]}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`panel-contact-title-${lang}`}
+        tabindex="-1"
+      >
+        <button type="button" class="panel__close" data-panel-close aria-label={ui.close[lang]}>
+          <span aria-hidden="true">×</span>
+        </button>
+        <h2 id={`panel-contact-title-${lang}`} class="panel__title">
+          {sectionCopy.contact.heading[lang]}
+        </h2>
+        <p class="panel__desc">{profile.callToAction[lang]}</p>
+        <ContactLinks lang={lang} />
+      </div>
+    ))
+  }
+</section>

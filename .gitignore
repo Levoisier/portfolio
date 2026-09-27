@@ -1,9 +1,17 @@
 # Build output
 dist/
+dist-no-assets/
 .astro/
 
 # Dependencies
 node_modules/
+
+# Generated game assets (pnpm assets) — never commit
+public/game/
+
+# Test output
+test-results/
+playwright-report/
 
 # Env
 .env

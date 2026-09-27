@@ -1,79 +1,62 @@
-# Cristian Zapata Cartagena — Portfolio
+# Cristian Cartagena — Portfolio (the game)
 
-Personal portfolio site. Single-page long-scroll narrative fusing Full Stack Developer identity with Chemical Engineering aesthetics: molecular motifs, blueprint grids, a panda mascot.
+A 2D pixel-art side-scroller: play the panda through a chemical plant at night and discover
+each project on the way to a sunrise contact lookout. Full Stack Developer & Chemical Engineer.
 
-**Stack:** Astro · GSAP ScrollTrigger · Tailwind · TypeScript strict · Vercel static
+**Stack:** Astro · Phaser 4 · TypeScript strict · Vitest · Playwright · Vercel static
+
+> Status: **rebuild in progress.** Phase 0 (foundation) is done; the game is built phase by
+> phase from [BACKLOG.md](./BACKLOG.md).
 
 ---
 
-## Running Locally
+## Run
 
 ```bash
 pnpm install
-pnpm dev        # http://localhost:4321
+pnpm dev          # http://localhost:4321
+pnpm test         # unit tests
+pnpm verify       # the gate: format, lint, typecheck, unit tests, build
+pnpm test:e2e     # browser tests (local machines: pnpm exec playwright install chromium, once)
 ```
 
-## Build
+## Media workflow (Cristian)
 
-```bash
-pnpm build      # outputs to dist/
-pnpm preview    # preview the static build locally
-```
+1. Pick the next wave in [ASSETS.md](./ASSETS.md) and generate each image with the prompt given
+   there — PixelLab for the panda animations (reference `art/reference/panda-right-64.png`), Nano
+   Banana for the rest (attach the references listed in ASSETS.md, the canvas image last).
+2. Save it as `art/raw/<id>.png` — the exact id from the ASSETS.md registry table.
+3. Commit it together with its ASSETS.md registry status set to `delivered` (or hand it to an
+   agent to do both). `pnpm assets` normalizes it on the next dev/build run and the game uses it
+   automatically; placeholders fill anything not delivered yet.
+4. Check it in the game and mark it `approved` in ASSETS.md.
 
-## Verify (run before every commit)
+## Working with agents
 
-```bash
-pnpm verify     # build + typecheck + lint + format check
-```
+Point an agent at the repo (on `next`) and say: _"Implement the next phase in BACKLOG.md, then
+commit it and open a PR into `next`."_ AGENTS.md tells it how to read the docs, what the gate is
+and what "done" means. One phase per PR; P1 and P2 can run in parallel, as can P6/P7 and P8–P10.
 
-## Deploy
+## Branching & deploy
 
-Vercel static deploy — push to `main`, Vercel picks up `vercel.json` automatically.  
-No adapter needed: `output: 'static'` in `astro.config.mjs`.
+`main` deploys to production on Vercel and keeps serving the old site until launch.
 
----
+**Required before Phase 1:** `next` is the integration branch and should be the repository's
+default branch, so new agent sessions start on the rebuild instead of the old site.
 
-## Documentation Index
+1. `next` exists (pushed from this foundation). Set it as the default branch in GitHub → Settings
+   → General, and keep Vercel's Production Branch on `main`.
+2. Every phase branches from `next` and opens its PR into `next`; Vercel builds a preview for each.
+3. At launch (Phase 12), merge `next` into `main`.
 
-| Doc                                  | Purpose                                                                              |
-| ------------------------------------ | ------------------------------------------------------------------------------------ |
-| [AGENTS.md](./AGENTS.md)             | Canonical agent operating manual — Golden Rules, verify gate, DoD, commit convention |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | Stack decisions, folder map, GSAP Scene pattern, token system, how to extend         |
-| [BACKLOG.md](./BACKLOG.md)           | Ordered build backlog for the loop agent                                             |
-| [ASSETS.md](./ASSETS.md)             | Media manifest — every expected file path, dimensions, and status                    |
-| [DECISIONS.md](./DECISIONS.md)       | Architecture Decision Records (ADR-lite)                                             |
-| [LESSONS.md](./LESSONS.md)           | Append-only engineering log of gotchas and fixes                                     |
+## Documentation
 
----
-
-## Project Structure
-
-```
-src/
-  styles/
-    tokens.css          # single source of truth for all design tokens
-    global.css          # Tailwind base + font-face + scroll stage
-  layouts/
-    Layout.astro        # HTML shell + fixed scroll stage + controller script
-  pages/
-    index.astro         # Single page — imports all 5 sections in order
-  components/sections/
-    Hero.astro
-    Skills.astro
-    Projects.astro
-    ConfidentialProjects.astro
-    Contact.astro
-  scripts/scroll/
-    types.ts            # Scene interface + factory type
-    controller.ts       # GSAP engine — do not modify core; extend via registry
-    scenes/
-      hero.ts           # Reference scene — fully working
-      revealPlaceholder.ts  # Generic reveal fallback for all other sections
-
-public/
-  fonts/                # Self-hosted variable fonts (populate per BACKLOG)
-  media/                # All visual assets (see ASSETS.md for exact paths)
-
-scripts/
-  verify.sh             # CI gate script
-```
+| Doc                                  | Purpose                                                 |
+| ------------------------------------ | ------------------------------------------------------- |
+| [AGENTS.md](./AGENTS.md)             | Agent rules, verify gate, Definition of Done, commits   |
+| [GAME_DESIGN.md](./GAME_DESIGN.md)   | The game: world, stations, controls, tiers, tone        |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Runtime, rendering contract, pipeline, testing, budgets |
+| [BACKLOG.md](./BACKLOG.md)           | The phased roadmap with acceptance criteria             |
+| [ASSETS.md](./ASSETS.md)             | Every media file: spec, prompt, status                  |
+| [DECISIONS.md](./DECISIONS.md)       | Architecture Decision Records                           |
+| [LESSONS.md](./LESSONS.md)           | Append-only log of gotchas and fixes                    |

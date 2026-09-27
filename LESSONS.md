@@ -1,376 +1,478 @@
-# LESSONS.md — Engineering Log
+# LESSONS.md — Engineering log
 
-**APPEND-ONLY.** Never edit or delete existing entries.  
-When you hit a gotcha, a failed approach, or a non-obvious fix — add an entry.
+Append-only. One entry per gotcha, dead end, or non-obvious fix, newest last. The previous
+scroll site's log (GSAP, ScrollSmoother, LCP work) is in git history at `51bbf3c`.
 
-**Template:**
+Template:
 
 ```
-### [YYYY-MM-DD] <short title>
-**Context:** What were you trying to do?
-**Problem/Dead-end:** What went wrong or why the first approach failed?
-**Fix/Decision:** What actually worked, and why?
-**Don't repeat:** One-line rule to prevent recurrence.
+## YYYY-MM-DD — <short title>
+**Context:** what you were doing.
+**Problem:** what went wrong / what was surprising.
+**Fix / finding:** what worked, with numbers if any.
+**Rule of thumb:** the one line the next agent should remember.
 ```
 
 ---
 
-### [2026-06-20] Scaffold: pnpm approve-builds is interactive — use pnpm-workspace.yaml instead
-
-**Context:** Setting up the project, running `pnpm install` for the first time with Astro 5.
-
-**Problem/Dead-end:** `pnpm approve-builds` is interactive (requires TTY) and cannot be piped non-interactively. Running it in a non-TTY CI-like environment caused `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`.
-
-**Fix/Decision:** Added `pnpm-workspace.yaml` with `onlyBuiltDependencies: [esbuild, sharp]`. This grants build-script permission declaratively without needing the interactive command. Re-ran `CI=true pnpm install` to force the install without TTY checks.
-
-**Don't repeat:** Always use `pnpm-workspace.yaml` `onlyBuiltDependencies` for native build approvals; never rely on the interactive `approve-builds` command in agent contexts.
-
----
-
-### [2026-06-20] Scaffold: create astro CLI requires interactive TTY
-
-**Context:** Tried to scaffold Astro using `pnpm create astro@latest . --template minimal --no-install --no-git --typescript strict`.
-
-**Problem/Dead-end:** The CLI animation runs but requires an interactive terminal to progress past the loading state. No files were created in the non-TTY agent environment.
-
-**Fix/Decision:** Created `package.json`, `astro.config.mjs`, `tsconfig.json`, and all source files manually. This gives full control over file contents and is reproducible.
-
-**Don't repeat:** In agent contexts, never use interactive CLI scaffolders (`create astro`, `create next-app`, etc.). Write configs directly.
-
----
-
-### [2026-06-20] DM Mono upstream does not provide a variable WOFF2
-
-**Context:** Implementing the self-hosted variable fonts backlog item.
-
-**Problem/Dead-end:** The documented `DMMono-VariableFont_wght.woff2` file is not present in Google Fonts' `ofl/dmmono` upstream directory; the family currently ships static TTF faces. A transient `ttf2woff2` conversion also failed to parse the signed upstream TTF, and `fonteditor-cli` does not exist on npm.
-
-**Fix/Decision:** Kept the documented public path for the site contract, declared the face as its real `truetype` format, and recorded the mismatch in DECISIONS.md so a future true variable WOFF2 can replace it without changing component code.
-
-**Don't repeat:** Check upstream font manifests before assuming a variable font artifact exists just because the local filename says variable.
-
----
-
-### [2026-06-20] Prettier must ignore read-only agent skill manuals
-
-**Context:** Running `pnpm verify` before committing the self-hosted fonts item.
-
-**Problem/Dead-end:** `pnpm format:check` scanned `.agents/skills/gsap-*` markdown files and failed formatting, but those files are mounted read-only in this workspace and cannot be rewritten even after `chmod u+w`.
-
-**Fix/Decision:** Added `.agents/` to `.prettierignore` because skill manuals are external agent resources, not project source files.
-
-**Don't repeat:** Keep read-only tool/skill mounts out of repo-wide format checks.
-
----
-
-### [2026-06-20] Reduced-motion scenes must reveal during init
-
-**Context:** Polishing the hero entrance choreography.
-
-**Problem/Dead-end:** The scroll controller skips ScrollTrigger setup when `prefers-reduced-motion: reduce` is active, so scene `enter()` callbacks do not run. The hero scene had split characters hidden in `init()` and only revealed them in `enter()`.
-
-**Fix/Decision:** Set the reduced-motion visible state directly in `hero.init()`, with opacity at 1 and motion transforms at rest.
-
-**Don't repeat:** Any scene that hides elements in `init()` must also fully reveal them in the reduced-motion branch of `init()`.
-
----
-
-### [2026-06-20] Narrow optional scene config fields before mapping
-
-**Context:** Building the global backdrop scene from a readonly layer config array.
-
-**Problem/Dead-end:** TypeScript rejected `config.drift` because only one member of the readonly config union defines that optional field.
-
-**Fix/Decision:** Narrowed with `'drift' in config` before creating the runtime layer object.
-
-**Don't repeat:** With `noUncheckedIndexedAccess` and strict unions, narrow optional config fields before reading them from `as const` arrays.
-
----
-
-### [2026-06-20] Reduced-motion decorative elements may need explicit hiding
-
-**Context:** Building the Confidential section scan-line and redaction shimmer treatment.
-
-**Problem/Dead-end:** The first reduced-motion branch revealed all animation hooks, which left the scan line and shimmer sheen visible even though their motion loops were stopped.
-
-**Fix/Decision:** Revealed only the card content and corner accents, and explicitly hid scan-line and shimmer elements in the reduced-motion branch.
-
-**Don't repeat:** Reduced-motion fallbacks should reveal meaningful content but hide motion-only decorative layers.
-
----
-
-### [2026-06-20] Inline Node scripts: avoid template literals in shell strings
-
-**Context:** Generating responsive WebP derivatives for the hero Panda image with `node -e` and `sharp`.
-
-**Problem/Dead-end:** Backticks inside the inline script were interpreted by the shell before Node ran, producing a bogus `/panda-hero-.webp` path and a missing output file error.
-
-**Fix/Decision:** Re-ran the generation with plain string concatenation for output paths.
-
-**Don't repeat:** In `node -e` commands wrapped by the shell, avoid JavaScript template literals or quote them so the shell cannot treat backticks as command substitution.
-
----
-
-### [2026-06-20] LCP images should not be hidden or animated by scene startup
-
-**Context:** Lighthouse performance pass for the hero section.
-
-**Problem/Dead-end:** The global `[data-scene] { opacity: 0 }` guard and GSAP writes to the hero Panda body delayed mobile LCP even after the image was preloaded.
-
-**Fix/Decision:** Kept the hero section paintable before controller startup, stopped touching the LCP image in the normal animation path, deferred non-critical decorative media to scene hooks, and served small WebP derivatives via `srcset`.
-
-**Don't repeat:** Treat the LCP element as critical HTML: reserve its dimensions, preload the selected source, and avoid startup opacity/transform writes on that element.
-
----
-
-### [2026-06-21] ScrollSmoother: modern versions use a relative wrapper, not a fixed one
-
-**Context:** Phase 11 — integrating GSAP ScrollSmoother and verifying it in a headless browser.
-
-**Problem/Dead-end:** Older ScrollSmoother docs/tutorials describe a `position: fixed; overflow: hidden` `#smooth-wrapper`, so I expected to assert that. In gsap 3.15 the active smoother instead leaves the wrapper effectively `position: relative` and writes inline styles like `box-sizing: border-box; width: 100%; overflow: visible` to `#smooth-content`. Asserting the old fixed-wrapper shape would have produced a false "smoother not working" reading. Headless Chrome also does **not** default to `prefers-reduced-motion: reduce` here, but it needed `set media ... reduced-motion` (the CLI verb is `set media`, not `media`) to emulate it.
-
-**Fix/Decision:** Verify ScrollSmoother is live by (a) the presence of its inline styles on `#smooth-content`, and (b) `scroll:progress` advancing as you scroll — not by a hardcoded wrapper `position`. Confirmed the reduced-motion branch by asserting **no** inline styles appear on wrapper/content (create() skipped) while all `[data-scene]` stay opacity 1. Also removed CSS `scroll-behavior: smooth` (set to `auto`) because it fights ScrollSmoother for control of scrolling.
-
-**Don't repeat:** Don't gate ScrollSmoother verification on a specific wrapper `position`; check its content inline-styles + a live progress signal. CSS `scroll-behavior: smooth` must not coexist with ScrollSmoother.
-
----
-
-### [2026-06-21] Two scroll drivers on one stage: split them onto independent transform channels
-
-**Context:** Phase 12 — the hero pinned depth intro must drive the backdrop stage during the pin, while the global backdrop parallax (backdrop scene, `scroll:progress`) drives it for the rest of the page. Acceptance required "no double-driving and no positional jump at the handoff."
-
-**Problem/Dead-end:** Both drivers want to transform the same stage layers. If hero and backdrop both write `x`/`y` to `#stage-particles`, the last writer each frame wins and the handoff jumps. Suspending the backdrop during the pin and resuming it afterward also jumps, because the backdrop computes an absolute position from page progress that won't match the hero's end-state.
-
-**Fix/Decision:** Gave each stage layer an inner `.stage-depth` wrapper. The backdrop scene drives the OUTER `#stage-*` (parallax `x`/`y` + atmosphere opacity); the hero pin drives the INNER `.stage-depth` (depth scale/translate). Two independent transform contexts compose multiplicatively, so neither overwrites the other and there is nothing to hand off — the depth channel stops advancing when the pin releases while the parallax channel keeps going, seamlessly. Every depth tween uses `fromTo()` so scrub progress 0 = identity = the static hero, and `panda-body` (LCP) is never touched. Also: `loadHeroHead` must use `overwrite: 'auto'` (not `true`) — `true` would kill the pinned depth tween that shares the `#panda-head` target.
-
-**Don't repeat:** When two scroll systems must animate the same element, give each its own transform channel (nested element) instead of time-slicing one channel between them. And never `overwrite: true` a target that another (scrubbed) tween also animates.
-
----
-
-### [2026-06-21] ScrollSmoother data-speed gives the reduced-motion fallback for free
-
-**Context:** Phase 13 — wiring the lab-asset continuity thread (molecules/flasks) as decorative parallax across the page.
-
-**Problem/Dead-end:** I expected to need a scene + per-frame math + an explicit `prefers-reduced-motion` branch to stop the drift, like the backdrop scene does.
-
-**Fix/Decision:** Used ScrollSmoother `data-speed` attributes (enabled by `effects: true` from Phase 11) on plain `<img>` decor instead. Because Phase 11 skips `ScrollSmoother.create()` entirely under reduced motion, the `data-speed` attributes are simply never activated — the decor sits static at its CSS position with no extra code. So this phase needed **no JS scene at all**: just markup + Tailwind. Placements are `position: absolute` (no CLS), `hidden md:block` + `loading="lazy"` (not fetched on mobile, protects the LCP budget), inside `overflow-hidden` sections placed before a `relative` content wrapper so content paints on top (the existing `projects-accent` / `blueprint-grid` pattern).
-
-**Don't repeat:** For decorative scroll drift, reach for `data-speed`/`data-lag` before writing a scene — it's less code and its reduced-motion fallback is automatic. Only write per-frame scene math when an element must be driven by something other than its own scroll position (e.g. the fixed backdrop stage).
-
----
-
-### [2026-06-21] Coexisting scrub + hover on the same tiles: split by property AND element
-
-**Context:** Phase 14 — the skills tiles assemble on a scrubbed reveal, but must keep the v1 hover (active scale 1.08, neighbour dim to 70%, badge, bar).
-
-**Problem/Dead-end:** Both behaviours want to animate the tiles. The hover used `overwrite: true`, which kills _all_ other tweens of the target — so the first hover would detach the scrubbed assemble tween from its ScrollTrigger (it then never reverses on scroll-back). Putting both on the same property (tile opacity) also fights.
-
-**Fix/Decision:** Gave each behaviour its own channel. Assemble drives the **tile** transform (y/scale/rotate) + the **card** opacity (fade-in). Hover drives the **card** scale + the **tile** opacity (dim) + badge + bar. No element/property pair is touched by both. Then switched the hover tweens from `overwrite: true` to `overwrite: 'auto'` so they only override the exact conflicting property and leave the scrub tween intact. The assemble's scrub range ends (`top 35%`) well before the section settles for interaction, so the two effectively never run at the same instant anyway.
-
-**Don't repeat:** When two animation systems share elements, separate them by element _and_ property and prefer `overwrite: 'auto'`. `overwrite: true` is a footgun next to scrubbed/ScrollTrigger-bound tweens.
-
----
-
-### [2026-06-21] Horizontal pinned gallery: gate the flex layout behind a JS class
-
-**Context:** Phase 15 — the Projects section becomes a desktop horizontal pinned gallery (pin + scrub the card track sideways), but must stay a reachable vertical stack on tablet/mobile and under reduced motion.
-
-**Problem/Dead-end:** If the horizontal layout (`flex-nowrap` with cards wider than the viewport) lives in the markup/CSS, then under reduced motion / no-JS — where the pin+scrub never runs — the off-screen cards are clipped by the section's `overflow-hidden` and become permanently unreachable.
-
-**Fix/Decision:** Kept the default layout the vertical grid stack (`grid md:grid-cols-2 lg:grid-cols-3`). The horizontal track is opt-in via an `.is-horizontal` class the projects scene adds **only** inside its `(min-width: 1024px)` `matchMedia` branch (and removes on cleanup). So reduced-motion/no-JS always get the safe stack. For the pin: animate the track's `x` to `-(scrollWidth - clientWidth)` via a **function** with `invalidateOnRefresh: true` and a function-based `end`, so the travel distance recomputes on resize and the last card is never clipped.
-
-**Don't repeat:** Any layout that only works because JS is driving it (horizontal scroll, pinned tracks) must be applied by that JS, not baked into static CSS — otherwise the no-JS/reduced-motion path traps content.
-
-### [2026-06-21] Hero story beat: animate a sibling, not the LCP panda
-
-**Context:** Phase 18 needed to remove the hero panda-to-wave crossfade but keep a subtle flask "reaction begins" beat during the pinned scrub.
-
-**Problem/Dead-end:** Reusing the old scrub target would still write opacity or transform to `#panda-body`, which is the LCP element and must paint exactly like the static hero at scroll 0.
-
-**Fix/Decision:** Removed the hero `panda-wave` overlay entirely and added a separate `#hero-reaction-glow` layer positioned over the flask. The scrub intensifies only that overlay plus the existing backdrop depth layers; `#panda-body` is not targeted by GSAP at all.
-
-**Don't repeat:** Hero character reactions can orbit the LCP image, but they must not animate the LCP image itself.
-
-### [2026-06-21] Projects rewrite: keep scrub and hover on separate properties
-
-**Context:** Phase 19 replaced the horizontal project cards with a pinned editorial experiment log and kept the panda-coding accent reactive.
-
-**Problem/Dead-end:** The first scene draft let the pinned timeline and the generic section `progress()` hook both write `y` to the panda accent. That repeats the two-scroll-drivers problem from the backdrop work at a smaller scale.
-
-**Fix/Decision:** Let the pinned timeline own the accent's scroll `y` motion, and let hover/focus reactions touch only `x` and `rotation`. The generic `progress()` hook intentionally does no work for this scene.
-
-**Don't repeat:** Even for decorative accents, one element/property pair should have one driver; use separate properties for hover reactions.
-
-### [2026-06-21] Fixed scenes need an inner animation target
-
-**Context:** Phase 20 added a fixed panda companion as a `[data-scene]` element outside the ScrollSmoother wrapper.
-
-**Problem/Dead-end:** The scroll controller calls `scene.init(el)` and then immediately sets the `[data-scene]` element opacity to 1 to clear the global FOUC guard. If the companion scene also uses that same outer element for its own fade state, the controller can reveal it before the companion's section logic runs.
-
-**Fix/Decision:** Kept the outer `#panda-companion` as the fixed scene shell and added an inner `[data-companion-stage]` for all scene-owned opacity, transform, cursor tracking, and pose cross-fades.
-
-**Don't repeat:** For any persistent fixed scene, let the controller own the outer scene shell and animate an inner child.
-
-### [2026-06-21] v3 audit: browser-only metrics need the human dev server
-
-**Context:** Phase 24 required a reduced-motion, layout, accessibility, and performance audit after the v3 narrative pass.
-
-**Problem/Dead-end:** This session explicitly prohibited `agent-browser` and starting dev/preview servers, so real Lighthouse scores, CLS, and horizontal-scroll measurements could not be collected from a rendered page.
-
-**Fix/Decision:** Completed static audits instead: removed the remaining raw blueprint-grid color into `--blueprint-grid-line`, verified old project-gallery hooks were gone, confirmed reduced-motion branches guard the v3 scenes, updated architecture docs, and ran `pnpm verify`. Lighthouse numbers remain a manual follow-up in the human's running dev environment.
-
-**Don't repeat:** When browser tools are disallowed, record the audit boundary clearly and do not invent Lighthouse or CLS numbers.
-
----
-
-### [2026-06-21] Companion "behind content" must stay above opaque sections
-
-**Context:** Phase 28 reworked the companion to a per-section zig-zag route. The spec said the fixed companion stays "behind content".
-
-**Problem/Dead-end:** Taking "behind content" literally (moving `#panda-companion` below `--z-content` in the stacking order) hides it entirely inside the two sections with **opaque** backgrounds — Confidential (`background-color: var(--navy)`) and Contact (`var(--paper)`). The route's "Confidential → right" and "Contact → center wave" beats would be invisible.
-
-**Fix/Decision:** Kept the companion at `--z-overlay` (above content) and satisfied "behind content" in spirit: it is `pointer-events:none` + `aria-hidden` (never intercepts) and routed through the **side margins** (x ≈ 0.15 / 0.85) so it never covers copy. Drove the route with **per-section `ScrollTrigger.create()`** (scene-local, not the controller core) instead of `documentProgress()`, so pose/position track the _visible_ section even while a section is pinned. Position eases via `gsap.quickTo`; the pose cross-fade is a gentle scale/slide turn.
-
-**Don't repeat:** "Behind content" for a decorative overlay means non-interactive + out of the reading path, not necessarily a lower z-index — check for opaque section backgrounds before lowering the stacking order.
-
----
-
-### [2026-06-21] v4 audit: Lighthouse/CLS/LCP remain a human follow-up
-
-**Context:** Phase 30 required a full reduced-motion / a11y / performance audit (incl. Lighthouse desktop ≥90, mobile ≥80, A11y ≥95) after the v4 liquid-glass + companion-journey pass.
-
-**Problem/Dead-end:** Same boundary as the Phase 24 audit — this session prohibits `agent-browser` and starting a dev/preview server, so real Lighthouse scores, CLS, and mobile LCP cannot be measured from a rendered page.
-
-**Fix/Decision:** Completed the static audits instead: confirmed no raw colors outside `tokens.css` (grep), verified each v4 reduced-motion branch (glass sheen disabled by the global `animation-duration: 0.01ms` rule; hero static split; projects instant via the reduced-motion init branch; companion single static pose with no route/triggers/cursor), kept `backdrop-filter` gated behind `@supports` + desktop with a lean solid-tint mobile fallback (no new mobile blur cost), and left the LCP panda untouched. **The Lighthouse/CLS/LCP numbers are a human follow-up** — run them in your `pnpm dev` / `pnpm preview` and record them here.
-
-**Don't repeat:** When browser tools are disallowed, finish the static sweep and explicitly hand the rendered-page metrics back to the human; never fabricate them.
-
----
-
-### [2026-06-26] Mobile lost the pandas to breakpoint gating, not reduced-motion
-
-**Context:** Bringing the desktop experience to mobile. The brief assumed mobile was flat because of "reduced movement rules."
-
-**Problem/Dead-end:** Easy to conflate two separate gates. `prefers-reduced-motion` (a per-user OS setting) is one thing; the real reason mobile read as a flat SPA was **breakpoint gating** — `#panda-companion` is `display:none` below 1024px, the hero pin/Skills scatter/glass loupe/`backdrop-filter` are all `min-width` desktop-only. Mobile users without the OS setting still get section reveals + backdrop parallax; they just lose everything fenced behind `min-width`.
-
-**Fix/Decision:** Added a first-class mobile layer via the normal engine seams — a new `companion-mobile` scene + one `SCENE_REGISTRY` line, scoped with `gsap.matchMedia('(max-width: 1023px)')`, plus a `#panda-companion-mobile` shell (inverse visibility of the desktop one). Reused the existing five panda poses; no new media, no controller-core edits.
-
-**Don't repeat:** Distinguish reduced-motion gating from breakpoint gating before "fixing mobile" — they live in different places and want different solutions.
-
-### [2026-06-26] iOS device-tilt needs a user gesture; wire it to a tap
-
-**Context:** Replacing the desktop cursor look-toward with a touch-native device-tilt gaze on the mobile companion.
-
-**Problem/Dead-end:** On iOS 13+ `deviceorientation` emits nothing until `DeviceOrientationEvent.requestPermission()` is called, and that call only resolves `granted` from inside a user gesture. Attaching the listener eagerly (or calling requestPermission on load) silently fails. Android and most browsers have no such gate.
-
-**Fix/Decision:** `touch-tilt.ts` exposes `requestTilt()` and only attaches the `deviceorientation` listener after permission resolves; the mobile companion calls it from the **first tap on the panda** (the same tap that triggers the wave reaction), with a one-time "tap me · tilt to play" hint. Unsupported / denied → silently no tilt (graceful degrade, no idle listener). Tilt emits a `tilt:change` CustomEvent mirroring the `scroll:progress` contract so consumers stay decoupled. Fully off under reduced motion.
-
-**Don't repeat:** Any motion/orientation sensor on iOS must be requested from a real user gesture; don't attach sensor listeners at load.
-
-### [2026-06-26] Browser verification WAS available this session
-
-**Context:** Prior v3/v4 audits (see entries above) hand-waved Lighthouse/CLS/LCP because browser tools were disallowed.
-
-**Fix/Decision:** This remote environment ships Chromium at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` with Playwright globally installed (`/opt/node22/lib/node_modules`). Verified the mobile companion end-to-end against `pnpm preview`: per-section poses (hero→wave, projects→coding, confidential→head silhouette, skills→master, contact→wave), reduced-motion single static `master` pose, zero console errors, zero horizontal overflow at 390px, and the desktop companion correctly `display:none` on mobile / mobile companion `display:none` on desktop. (ESM import needs the absolute path + `const { chromium } = pkg` default-import shape.) Real Lighthouse LCP timing on a throttled device is still worth a human pass.
-
-**Don't repeat:** Check for a usable Chromium/Playwright before deferring rendered-page checks to a human.
-
-### [2026-07-21] scroll-snap mandatory silently kills a JS auto-scroll carousel
-
-**Context:** Mobile auto-scrolling carousels for Projects + Confidential — a rAF loop nudging `track.scrollLeft` a fraction of a pixel per frame, yielding to the reader on first gesture.
-
-**Problem/Dead-end:** The track had `scroll-snap-type: x mandatory` (for nice manual swipe snapping). With mandatory snap the browser re-snaps to the nearest snap point after every programmatic `scrollLeft` write, so sub-card increments get yanked straight back to 0 — the carousel looks completely dead (measured `scrollLeft` delta = 0 over seconds) even though the rAF loop is running fine. Easy to misread as "the loop never started."
-
-**Fix/Decision:** `autoCarousel.ts` sets `track.style.scrollSnapType = 'none'` while the auto-drift runs, and restores it (clears the inline style → falls back to the CSS `x mandatory`) the instant the reader takes over in `stop()`. Best of both: smooth ambient drift + snappy manual swiping after takeover. Also: detect user intent via `pointerdown`/`wheel`/`touchstart`/`keydown` (never `scroll`, since programmatic writes fire it). Reduced motion → util no-ops, snap stays intact for manual use.
-
-**Also:** headless Chromium defaults to `prefers-reduced-motion: reduce`; pass `reducedMotion: 'no-preference'` to the Playwright context or motion-gated code paths look broken in verification.
-
-**Don't repeat:** Never drive `scrollLeft`/`scrollTop` by small steps on a `scroll-snap-type: *-mandatory` element — toggle snap off while animating, or the snap engine erases your motion.
-
-### [2026-07-21] Removed all prefers-reduced-motion handling (owner call)
-
-**Context:** The site is lightweight; the owner asked to drop reduced-motion gating everywhere so the experience is identical for everyone.
-
-**Fix/Decision:** Stripped every `prefers-reduced-motion` branch across the repo — the `@media (prefers-reduced-motion: reduce)` blocks (global.css, LangSwitch, ScreenshotLightbox, Projects), the `const prefersReducedMotion = matchMedia(...)` guards + their static-fallback branches in every scene (hero, backdrop, companion, companionMobile, skills, projects, confidential, contact, revealPlaceholder), the controller's smooth-scroll/scene skip, and the `initAutoCarousel`/`initGlassLoupe` early-returns. Animations, ScrollSmoother, the marquee, and both auto-carousels now run unconditionally. Verified in a headless context (which itself defaults to `reduce`) that everything still animates.
-
-**Don't repeat:** There is intentionally no reduced-motion path anymore — do not re-add `prefers-reduced-motion` guards to "be safe"; that was removed on purpose. (Note the earlier scroll-snap lesson's reduced-motion asides are now historical only.)
-
-### [2026-07-23] Backdrop stage jank: uniform overscan + parallel decodes, and px drift vs % cover
-
-**Context:** Startup felt laggy; the 3-layer fixed parallax stage was the main cost. Also added the hero presentation veil (`#hero-veil`) that fades on scroll.
-
-**Problem/Dead-end:** Every `.stage-layer` used one uniform 120%×155% box with `will-change: transform, opacity` on BOTH the outer layer and the inner `.stage-depth` — six viewport-plus composited layers (~11 viewports of GPU memory) alive from first paint. On top of that, all three 2560px webp sources downloaded and decoded in parallel right when the controller mounted, competing with the LCP panda, and `render()` allocated a `gsap.set` per layer on every scroll tick.
-
-**Fix/Decision:** Sized each layer's overscan to ITS max travel (rate × viewport + hero-pin scale), kept `will-change` only on the outer layer (GSAP promotes the inner during the pin anyway), generated 1280/1920 webp variants picked by effective viewport width (DPR capped at 2), chained the loads sequentially with `image.decoding='async'` + `await image.decode()` + `fetchpriority=low`, and switched per-tick writes to cached `gsap.quickSetter`s with an epsilon skip. One trap: the mid-glass layer drifts +32px in **px**, so its left cover must be fixed px (`left:-48px`) — a `-4%` cover is thinner than the drift on narrow phones and exposes the edge.
-
-**Don't repeat:** Don't give parallax layers a shared worst-case overscan or blanket `will-change`; budget each layer to its own travel. And when a transform travel is in px, the safety cover must be px too, not %.
-
-### [2026-07-23] GSAP yPercent doubles a CSS translate baseline
-
-**Context:** Skills tiles fill with "liquid" up to the proficiency level on hover. The fill's height is the level (inline style); the scene slides it in via `yPercent: 102 → 0`. A CSS `transform: translateY(102%)` was left on `.skill-liquid` for the pre-JS resting state.
-
-**Problem/Dead-end:** On hover the liquid never rose. `gsap.set(el, {yPercent:102})` with an existing CSS `translateY(102%)` reads the computed matrix (≈75px) into the tween's **px** channel AND adds `yPercent:102` on top → measured translateY ≈ 150px (double). Animating `yPercent → 0` only zeroes the percent channel; the ≈75px CSS-seeded px baseline stays, so the fill sits one card-height low and looks stuck.
-
-**Fix/Decision:** Dropped the CSS transform (the whole Skills section is `opacity:0` until the controller mounts, so the resting fill is never visible pre-JS anyway) and pinned `y: 0` alongside `yPercent: 102` in the scene's init so both channels are explicit. Verified in-browser: liquid rests below the card (y≈75px) and rises to y=0 on hover with a gentle rotation slosh.
-
-**Don't repeat:** Don't seed a CSS `translate`/`translateY` on an element you'll drive with GSAP `x/yPercent` — GSAP treats the computed px as a separate additive channel. Set the resting offset in GSAP (`gsap.set`), or zero the px channel (`y:0`) explicitly.
-
-### [2026-07-23] Astro scopes `<style>` — you can't target another component's class
-
-**Context:** Projects.astro needed the `.liquid-glass` card (rendered by GlassSurface.astro) to fill the stretched mobile carousel item and to carry a desktop `min-height`, so the cards read as uniform.
-
-**Problem/Dead-end:** Rules written as `[data-project-entry] > .liquid-glass { … }` silently did nothing to the glass. Astro scopes every component `<style>` by appending that component's `data-astro-cid-*` to each selector. `.liquid-glass` lives in GlassSurface (a different cid), so the scoped selector `.liquid-glass[data-astro-cid-projects]` never matched. The desktop min-height stayed unapplied (cards measured 259px, not the 320px asked for); mobile only looked right by accident because the uniform height came from `align-items: stretch` + the `[data-project-desc]` clamp (both Projects-owned elements), not from the glass rule.
-
-**Fix/Decision:** Wrap the foreign-component part in `:global()` — `[data-project-entry] > :global(.liquid-glass)`. The `[data-project-entry]` half stays scoped (keeps the rule local to Projects), and `:global(.liquid-glass)` matches the GlassSurface element. After that the desktop min-height applied (320px) and the mobile glass filled the stretched card (575/575).
-
-**Don't repeat:** A selector in an Astro `<style>` only reaches elements that component renders. To style a child component's root/class, use `:global()` on that part (keep an owned ancestor scoped so it doesn't leak), or pass a class the child spreads onto its root.
-
-### [2026-07-23] Mobile URL-bar resize rescaled the fixed backdrop ("images reload on scroll-stop")
-
-**Context:** The fixed parallax stage layers visibly changed size whenever mobile scrolling stopped.
-
-**Problem/Dead-end:** Two coupled causes. (1) `#scroll-stage` was `position: fixed; inset: 0`, so its height tracked the _dynamic_ viewport; when the address bar hides/shows on scroll the box resized and the `background-size: cover` layers re-scaled. (2) the backdrop scene's `resize` handler recomputed the parallax reference `viewportHeight = innerHeight` on every resize — and the URL-bar toggle fires `resize` with a new height but the same width — so the translate multiplier jumped too.
-
-**Fix/Decision:** (1) Pin the stage to the large viewport with `height: 100lvh` (`100vh` fallback) and drop `inset: 0`'s bottom anchor, so it stays constant across the URL-bar toggle. (2) Gate the resize handler on **width**: `if (innerWidth === lastWidth) return;` — only a real reflow (orientation / desktop resize) updates the reference. Verified the atmosphere transform is now stable to <0.01px across a height-only viewport change (the residual is just scroll-progress recalc, not the layer rescale).
-
-**Don't repeat:** For fixed full-bleed backdrops on mobile, size them with `lvh` (or `dvh` only if you _want_ to follow the bar) and never key parallax math to a live `innerHeight` that jitters with the address bar — gate on width.
-
-### [2026-07-29] `content-visibility: auto` silently corrupts ScrollTrigger geometry
-
-**Context:** Perf pass. Off-screen sections were doing paint/composite work for content nobody could see, and `content-visibility: auto` is the textbook fix.
-
-**Problem/Dead-end:** It quietly breaks the whole scroll model. With `#skills,#projects,#confidential,#contact { content-visibility: auto; contain-intrinsic-size: auto 1200px }`, every not-yet-rendered section reports the **placeholder** size instead of its real one — measured `confidential` 1903px → 1488, `skills` 745 → 1488, `contact` 712 → 1488, and total `scrollHeight` 8535 → 9639px. ScrollTrigger computes every trigger position against that wrong geometry at `refresh()` time, and `contain-intrinsic-size: auto` doesn't save you: on first load there is no remembered size to use. It was also _slower_ in the scroll benchmark (avg frame 46.8ms → 50.4ms), because sections kept entering/leaving the render tree while scrolling past them.
-
-**Fix/Decision:** Rejected it. To skip off-screen work on a ScrollTrigger page, gate the _expensive effects_ rather than the _rendering_: an IntersectionObserver that toggles a class (`src/scripts/offscreen.ts` → `.is-offscreen`), with CSS dropping `backdrop-filter` and setting `animation-play-state: paused`. That touches no layout, so measurements stay exact. Polarity matters — effects must be **on by default and switched off**, never the reverse, or the hero's glass renders unblurred on first paint and pops when the observer first fires.
-
-**Don't repeat:** Never put `content-visibility: auto` on an element whose height feeds a scroll-driven animation. Verify any containment change by diffing `document.documentElement.scrollHeight` before/after — if it moves, the trigger positions moved with it.
-
-### [2026-07-29] `unicode-range` doesn't shrink a font — and a too-narrow range hides real glyphs
-
-**Context:** Inter shipped at 344 KB for a site that renders ~90 distinct characters.
-
-**Problem/Dead-end:** Both `@font-face` rules already declared `unicode-range: U+0000-00FF`, which reads like the font was trimmed to Latin-1. It wasn't: `unicode-range` only tells the browser **whether to download** the file for a given character — the file itself is untouched. Worse, the declared range was _narrower than the copy_: the em dash (U+2014) is used throughout, sits outside U+0000-00FF, and was therefore being rendered from a system fallback font, mid-sentence, in a different typeface. `format('truetype')` on a `.woff2` was a third latent bug (Chrome sniffs past it; not everything does).
-
-**Fix/Decision:** Actually subset the files with `scripts/subset-fonts.mjs` (fontTools) to Google's `latin` range, **in place** so the paths in ASSETS.md stay valid — 393 KB → 107 KB. Widened both `unicode-range` descriptors to match the subset exactly, and fixed the format hint. Verified with fontTools that Inter's `opsz`/`wght` axes survive subsetting (`--layout-features=*`, no instancing). Note DM Mono has **no** `fvar` despite its `VariableFont` filename — it was always static.
-
-**Don't repeat:** `unicode-range` is a download gate, not a diet. Keep it in sync with what the file actually contains, and after subsetting a variable font always re-check `fvar` is intact.
-
-### [2026-07-29] Rewriting the hero name on mount WAS the site's entire CLS
-
-**Context:** Mobile CLS measured 0.0756 — a single shift, always at ~1.5s.
-
-**Problem/Dead-end:** `hero.ts`'s `splitChars()` cleared `#hero-name` and re-appended one `<span>` per character with `<br>` at the spaces. That happens when the deferred controller mounts, so the name reflowed from its natural wrap to three forced lines a second and a half after paint, moving the whole hero copy block. Every bit of the site's CLS came from the animation's own setup code.
-
-**Fix/Decision:** Emit the split spans at **build time** in `Hero.astro` (`heroNameHtml`) and reduce the scene to a read-only `readChars()` query. Pre-JS and post-JS DOM are now identical, so there is nothing to reflow — CLS 0.0756 → 0.0002. Build the string rather than JSX-mapping the characters, or Prettier's formatting puts whitespace between the spans and opens gaps inside the words.
-
-**Don't repeat:** Any character/word splitter that runs on mount is a layout shift waiting to happen. Ship the final DOM structure statically and let JS only animate it. (The related blink — name painted at 66ms, blanked at controller mount, re-staggered — was fixed separately by moving the entrance off GSAP entirely; see the next entry.)
-
-### [2026-07-29] A ScrollTrigger pin re-parents its trigger, which restarts CSS animations inside it
-
-**Context:** The hero copy entrance (premise → name stagger → role → hint) lived in the hero scene's `enter()`, so it could not start until the deferred controller had downloaded and mounted — measured at ~1.6s on a throttled phone. Worse, `#hero-name` is the painted `<h1>`, so the scene had to blank it to `opacity: 0` first: the title was readable at 66ms, then visibly blinked out and re-staggered 1.5s later.
-
-**Problem/Dead-end:** Rewriting the entrance as CSS `@keyframes` fixed the wait but broke in a new way — the animation played, finished, and then **restarted from zero** partway through the page's life. Cause: ScrollTrigger's desktop hero pin wraps `#hero` in a generated `.pin-spacer` and **moves the element into it**. Re-inserting an element into the DOM restarts every CSS animation in its subtree. Instrumenting `#hero.parentElement` made it unambiguous — the parent flipped `scroll-content` → `pin-spacer` at 1551ms and the entrance reset at exactly 1551ms. Confirmed by viewport: at 393px, where the `min-width: 768px` matchMedia never creates the pin, there was no reset at all. No CSS-only workaround exists; you cannot ask a CSS animation not to restart on re-insertion.
-
-**Fix/Decision:** Drove the entrance with the **Web Animations API** instead (`src/scripts/heroEntrance.ts`, ~1 KB, no GSAP). A WAAPI animation is owned by the element rather than resolved from its computed style, so it survives the re-parent and keeps its current time — verified opacity stays monotonic straight through the pin swap. CSS keeps only the opening frame (`html.js` gated) to cover the gap before the module runs; every animation uses `fill: 'both'` so the final frame persists. Two details worth keeping: a transform keyframe replaces the **whole** transform, so the scroll hint's `-translate-x-1/2` had to be written into its keyframes as `translate(-50%, …)` (verified centre X = 720 on a 1440 viewport); and the hint's infinite bob is parked off-screen through its `Animation` handle, not `animation-play-state`.
-
-**Don't repeat:** Don't put a CSS animation on anything inside a pinned ScrollTrigger subtree — it will replay when the pin is created. Use WAAPI (or GSAP) there. And don't couple a first-impression animation to the deferred controller: if it must play on arrival, it cannot wait on 51 KB gzip of GSAP.
+## 2026-09-26 — The AI concept sheet is "fake" pixel art
+
+**Context:** Evaluating `art/reference/panda-sheet-v1.png` (1536×1024, AI-generated) as a
+sprite source.
+**Problem:** 101 026 unique colors, horizontal color runs of 1 px (no real pixel grid; each
+"pixel" is ~3.3 source px and blurred), RGB with no alpha on a flat black background while
+the panda's fur is also near-black, baked ground-shadow ellipses under every pose, and frames of
+different sizes (84–105 × 103–114 px) that are not on a uniform grid.
+**Fix / finding:** A prototype that (1) flood-fills the background from the image borders
+where max(R,G,B) ≤ 14, (2) takes connected components as frames, (3) resamples to the target
+height with an area/lanczos kernel, (4) quantizes without dithering and (5) binarizes alpha at
+~110/255 produces a recognizable 48 px panda. Flood-fill (not global keying) is what keeps
+the black fur — but it only works because the fur is slightly lighter than the background,
+which is fragile. The frame boxes are recorded in `art/reference/panda-sheet-v1.slices.json`.
+**Rule of thumb:** Request pure `#00FF00` backgrounds (or transparent PNGs), slice by connected
+components rather than a grid, scale a whole strip by one factor, and align frames bottom-centre.
+
+## 2026-09-26 — Nano Banana cannot output transparency
+
+**Context:** Choosing the delivery format for AI-generated sprites.
+**Problem:** Gemini image models (Nano Banana / Pro) return flat RGB; "transparent background"
+prompts give a solid or checkerboard fill. Dark backgrounds with dark outlines make keying
+unsolvable; anti-aliasing bakes the background color into edge pixels.
+**Fix / finding:** Solid `#00FF00` background with explicit "no gradient / no shadow / no
+texture" wording, keyed in HSV (hue ≈ 120° ± 22°, saturation and value > 0.3), then edge
+cleanup; slice by content, not by a uniform grid, because the model does not keep a grid.
+Sources: https://roboticape.com/2026/03/07/generating-game-sprites-with-gemini-image-generation-nano-banana-pro-lessons-learned/ ·
+https://ruky.me/nano-banana/
+**Rule of thumb:** Never key black or white for sprites; green screen + HSV + palette snap.
+
+## 2026-09-26 — Playwright version must match the container's browsers
+
+**Context:** Setting up e2e tests in the cloud agent container.
+**Problem:** The container ships Chromium build 1194 in `/opt/pw-browsers`
+(`PLAYWRIGHT_BROWSERS_PATH`) and must not run `playwright install`; newer `@playwright/test`
+versions expect a newer browser build.
+**Fix / finding:** `@playwright/test` is pinned to 1.56.1, which uses that build. Local machines
+run `pnpm exec playwright install chromium` once.
+**Rule of thumb:** Upgrade Playwright only together with the browsers it expects.
+
+## 2026-09-26 — `panda-portrait` keys cleanly only with a tight black threshold
+
+**Context:** Converting Cristian's front-view portrait (`art/raw/panda-portrait.png`, 1254×1254,
+AI pixel-art style on black) into a true pixel sprite.
+**Problem:** With a flood-fill threshold of max(R,G,B) ≤ 20 the legs and arms came out hollow:
+the leg fur sits at 16–19 in places and is connected to the background along the silhouette.
+**Fix / finding:** The background is pure 0–3 and the fur never goes below 12, so a threshold of
+**6** keeps all the fur. The art was drawn at ~9.5 source px per "pixel", i.e. a native size of
+~77×100 px; downsampling to 100 px tall (lanczos) + OKLab palette snap + alpha ≥ 50 % recovers it
+almost losslessly, and 48 px tall still reads well in-game. 45 705 source colors → 29.
+**Rule of thumb:** Derive the black-key threshold from the border's own max channel (+4), unless
+the source declares a `backgroundThreshold`; never a fixed "dark enough" constant — measure fur
+darkness before choosing. (The ~110/255 alpha cut above was a prototype value; the spec is ≥ 50 %.)
+
+## 2026-09-26 — Foundation review: traps an implementer would have hit
+
+**Context:** Four agents dry-ran Phases 1–3 and the media spec against the installed tools.
+**Problem / finding (all verified in the container):**
+
+- Phaser 4.2.1: `Scale.zoom` is CSS px per game px and ignores DPR; `resize()` then `setZoom()` —
+  the reverse order leaves a stale CSS size. `camera.startFollow()` resets the camera's
+  `roundPixels` to false and scrolls fractionally. A flipped sprite is not vertex-rounded under
+  the default `safeAuto` (use `setVertexRoundMode('full')`). `addKey()` captures keys on `window`
+  and `preventDefault`s them (use `addKey(code, false)`). A view taller than the camera bounds is
+  pinned to the top (use `setBounds(0, WORLD_H − viewH, …)`). Importing `phaser` in Node throws
+  `window is not defined`. Arcade's real jump apex at 60 Hz is 57.75 px for v0 = 330, g = 900.
+- sharp `png({ palette: true })` re-quantizes with libimagequant: with `colours ≤ 32` or
+  `effort < 10` it writes off-palette colors. Only `colours: 256, quality: 100, effort: 10,
+dither: 0` round-tripped exactly — verify by reading the file back.
+- Node 22.22 runs `.ts` natively, but JSON imports need `with { type: 'json' }`.
+- pnpm pre/post scripts ran in this container but depend on version/config
+  (`enable-pre-post-scripts`); chain `pnpm assets && …` explicitly instead.
+- Nano Banana copies the aspect ratio of the last attached image; PixelLab animation canvases are
+  64×64 with references ≤ 256×256.
+- The sheet's RIGHT directional sprite needs `backgroundThreshold` 8 (14 punches holes in its
+  darker back fur); it is recorded per sprite in the slices file.
+  **Rule of thumb:** Read ARCHITECTURE.md's Phaser recipe before writing any scene code; verify
+  image output by reading it back, not by trusting encoder options.
+
+## 2026-09-26 — Phase 1 pipeline: native detection, rulers and fills
+
+**Context:** Building `pnpm assets` and its fixtures.
+**Problem / finding:**
+
+- A flat-color synthetic fixture (a hard-edged box) has ≤ 64 colors and a run GCD of 2, so the
+  pipeline reads it as native pixel art and divides it by 2 instead of resampling it — the `fill`
+  test then got half the expected width. Blur fixtures meant to be "fake" art; the pipeline now
+  warns when a native item cannot reach its `fill` width exactly.
+- The ruler frame exists only on green-screen deliveries. Dropping the leftmost frame of a
+  transparent (native) strip deleted a real frame; the ruler drop is tied to the green background.
+- Binarizing alpha after resize can clear the lowest row, leaving art 1 px above the baseline;
+  re-trim after binarizing, before packing.
+- Loop-point search must start from `Infinity`, not the full width, or a strip whose best loop is
+  the whole width never matches.
+  **Rule of thumb:** Classify a source (native vs. fake, green vs. transparent) once, up front, and
+  make every later step depend on that classification instead of re-guessing.
+
+## 2026-09-26 — Phase 2 shell: hidden, emulated DPR, fonts
+
+**Context:** Building the loading screen, zoom and pixel text.
+**Problem / finding:**
+
+- A component rule like `.loading { display: grid }` beats the UA `[hidden] { display: none }`:
+  the loading screen stayed visible with `hidden` set. `shell.css` now has
+  `[hidden] { display: none !important }`.
+- Under emulated DPR (Playwright `deviceScaleFactor`, DevTools), ResizeObserver's
+  `devicePixelContentBoxSize` reports CSS px, so a 390×844@3 phone got zoom 1. Trust it only when
+  it matches `contentBoxSize × devicePixelRatio`; otherwise use `floor(css × dpr)`.
+- Pixelify Sans at its nominal 11 px is blurry (outlines are off the pixel grid by ~0.66 px, and
+  canvas `fillText` snaps sub-pixel offsets so you cannot shift it). Render at 88 px and
+  downsample by cells with a detected phase. Its Z and C really do look like that — compare with
+  a large render before "fixing" glyphs.
+- Phaser already pauses its loop on `visibilitychange` (`Game#onHidden` → `loop.pause()`); listen
+  to `Phaser.Core.Events.HIDDEN/VISIBLE` for state instead of adding a second handler.
+- `Bus.once(…, { replay: true })` must not call `on()` and then `off()` inside the handler —
+  the replay runs synchronously before `off` exists (TDZ error).
+  **Rule of thumb:** Verify DPR-dependent code at a real emulated DPR, not only at @1, and check
+  `hidden` elements are actually invisible in a screenshot.
+
+## 2026-09-26 — Phaser 4.2.1 does not queue window keydowns until its next step
+
+**Context:** Building `input/keyboard-state.ts` / `input/keyboard.ts` (modal gating: a key event
+stamped before `ui:modal { open: false }` closes must not fire after the close).
+**Problem:** ARCHITECTURE.md's Input → Modal gating section used to say "Phaser queues window
+keydowns until its next step", implying a `resetKeys()` call made during the same tick as a closing
+keydown would always win the race. Reading `KeyboardManager`'s source (Phaser 4.2.1) shows the
+opposite: its `window` keydown/keyup listener pushes the event and synchronously emits
+`MANAGER_PROCESS` — a `Key`'s `down`/`up` fire during DOM dispatch, not on the engine's next step.
+Worse, each later key event in the same frame **replays the whole queue**, which is only cleared at
+`POST_STEP`; a key released and then pressed again in the same frame gets a second `down`/`up` from
+the replay.
+**Fix / finding:** A timestamp cutoff is required, not just a safety net: `KeyboardState.reset()`
+records the closing event's `timeStamp`, and every key event stamped at or before it
+(`timeStamp <= cutoff`, not `<` — browsers coarsen timestamps, and an event stamped in the same
+millisecond as the close belonged to the UI) is ignored, including ones replayed later in the same
+frame. Two more edge cases fall out of the same replay behavior: a key **held through** the reset
+needs its next auto-repeat (`event.repeat`) to count as a fresh press, or "held through close needs
+a fresh down" silently breaks after ~500 ms (the OS repeat delay); and a Ctrl/Meta/Alt chord
+(`modified`) must be ignored outright, because macOS drops the `keyup` of a key pressed with Meta
+held, which would otherwise leave an input source stuck reporting that key as down forever.
+**Rule of thumb:** Never assume an input library batches or queues browser events for you — read
+its source for the version you actually depend on, and gate on wall-clock timestamps when the
+question is "did this happen before or after the close," not on delivery order.
+
+## 2026-09-26 — Phase 3 integration: scene step order decides who reads what, when
+
+**Context:** Wiring `player/logic.ts` + `PandaSprite` + `render/follow.ts` into `WorldScene`, per
+ARCHITECTURE.md's rule that the camera applies in `POST_UPDATE`, after Arcade has synced the
+sprite.
+**Problem:** Phaser's `Scene.Systems#step` fires, in order, `PRE_UPDATE`, `UPDATE` (the Arcade
+plugin's own listener runs `world.update()` here — the physics step for the frame), _then_ the
+scene's own `update()` method, _then_ `POST_UPDATE` (Arcade's own listener there runs
+`world.postUpdate()`, which copies each body's position onto its Game Object). So inside the
+scene's own `update()`, `sprite.x` is still last frame's value — read it there for the camera and
+the follow lags by one frame, which reads as stutter under fast motion. Also,
+`world.stepsLastFrame` (needed for `follow()`'s physics-time `dtMs`) is reset to 0 inside
+`world.postUpdate()`, i.e. _before_ a listener on the scene's own `POST_UPDATE` gets to read it.
+**Fix / finding:** Read/act on `sprite.x` only from a `POST_UPDATE` listener registered in
+`create()` (the physics plugin subscribes when the scene boots, so ours, registered later, fires
+after it — `EventEmitter` calls listeners in registration order). Snapshot `world.stepsLastFrame`
+at the end of the scene's own `update()`, before `postUpdate()` clears it, and use that stored
+value in the `POST_UPDATE` handler.
+**Rule of thumb:** Know exactly which scene-loop phase you're in before reading a synced transform
+or a step count: `update()` sees last frame's transform and this frame's still-unconsumed step
+count; `POST_UPDATE` sees the opposite.
+
+## 2026-09-26 — A visual/e2e check must wait for the loading screen too, not just `ready`
+
+**Context:** Writing a Playwright script to screenshot the panda for the Phase 3 manual check.
+**Problem:** `getState().ready === true` flips as soon as `WorldScene.create()` returns, but
+`#loading` (portrait + walking-runner + progress bar) is a separate DOM overlay that fades out on
+its own schedule and can still be on top of the canvas at that moment. A screenshot taken right
+after `waitForGame()` showed what looked like a second, floating panda in the sky — actually the
+loading screen's own portrait/runner, composited into the shot because `locator.screenshot()`
+captures whatever is visually on top of that element's box, not an isolated render of the canvas's
+own draw buffer.
+**Fix / finding:** Also `await page.locator('#loading').waitFor({ state: 'hidden' })` (as
+`shell.spec.ts`'s first test already does) before taking any screenshot meant to show only the
+game.
+**Rule of thumb:** `ready` means the scene finished `create()`, not that the loading screen is
+gone — wait for both before trusting a screenshot.
+
+## 2026-09-26 — Re-wire every field the old code set when replacing it with an adapter
+
+**Context:** Replacing `WorldScene`'s inline "pick the panda texture" helper with `PandaSprite`.
+**Problem:** The old helper's last line was `this.ctx.pandaTexture = …`, read by
+`window.__PORTFOLIO__.getState()` and asserted by `shell.spec.ts`'s "boots the game" test. Moving
+texture selection into `PandaSprite`'s constructor dropped that assignment entirely; `pnpm verify`
+and the unit tests stayed green (nothing there touches `ctx.pandaTexture`), and the regression only
+showed up in `pnpm test:e2e`.
+**Fix / finding:** Added a `textureKey` getter to `PandaSprite` and set `ctx.pandaTexture` from it
+in `WorldScene.create()`.
+**Rule of thumb:** When deleting a scene method that sets shared/debug state, grep for every reader
+of that state (`ctx.*`, the debug hook, e2e specs) first, not just its callers — a unit-tested pure
+module regressing here would still pass `pnpm verify` and only fail e2e.
+
+## 2026-09-26 — Phase 4: a mood "transition" spanning a whole zone reads as no mood at all
+
+**Context:** Building the night→dawn sky (`fx/sky.ts`) from `world/layout.ts`'s zones, each
+tagged with one `SkyMood`.
+**Problem:** The first version put one stop per mood **zone** and blended linearly between
+consecutive stops (one keyframe per zone). Since only 4 of the 10 zones actually change mood (the
+6 project stations all share `night`), each mood-changing zone's **entire width** became the blend
+bracket: at the classified wing's own midpoint (400 px into its 800 px), the sky was already a
+50/50 dither between "darkest night" and "pre-dawn" — the wing's "total blackout" beat never read
+as pure black except right at its front edge. The unit tests all passed throughout (they only
+checked the interpolation math in isolation, which was correct); a screenshot of the actual build
+is what caught it.
+**Fix / finding:** Blend only in a fixed, narrow window (240 px) straddling each **mood change**
+(not each zone) — `skyStopsFromZones()` pushes a `[from, to]` pair around every boundary and a flat
+stop everywhere else, so most of a zone reads as a flat, "pure" mood.
+**Rule of thumb:** For a "value that changes with position" system, unit-test the interpolation
+math, but also screenshot a few real in-between points — a bug in how keyframes are _placed_ hides
+behind entirely correct interpolation code.
+
+## 2026-09-26 — Phase 4 world model: a few TS/lint/test traps
+
+**Problem / finding (all verified in this container):**
+
+- `erasableSyntaxOnly` rejects constructor **parameter properties**
+  (`constructor(private readonly scene: Phaser.Scene, …)`), even in a file that's on the
+  Phaser-import allow-list. Declare the field and assign it in the constructor body instead — or,
+  if the value is only needed inside the constructor itself (true of most "receive the scene and
+  use it" builders, which never read `scene` again after building their objects), don't store it
+  as a field at all.
+- `no hardcoded colors` (`palette.test.ts`) scans **every** non-test `.ts` file for `0x`/`#`
+  literals, including a Phaser fill call's default color — `0x000000` for a placeholder rect trips
+  it exactly like a CSS hex would. Use `num('ink-900')` even for a throwaway placeholder fill.
+- Re-exporting `world/layout.ts`'s `WORLD_W`/`WORLD_H`/`GROUND_Y` from `config.ts`
+  (`export { … } from './world/layout'`) only avoids a circular import because `layout.ts` never
+  imports those constants back from `config.ts` — it declares them itself. The data owner must
+  never import from a module that only re-exports it; a `const` read across a real cycle risks a
+  TDZ error depending on which module happens to load first.
+
+## 2026-09-26 — Phase 5: a `rgba()` backdrop trips `no hardcoded colors` even off the palette
+
+**Context:** Styling the panel/lightbox dimmed backdrop in `components/panels/Panels.astro`.
+**Problem:** `background: rgb(7 15 31 / 0.72)` (navy-950 with alpha) failed `palette.test.ts`'s
+scan — the regex flags any `rgba?(`/`hsla?(` call, full stop, regardless of whether the numbers
+inside happen to match a palette entry. There is no "translucent palette color" primitive.
+**Fix / finding:** `color-mix(in srgb, var(--c-navy-950) 72%, transparent)` — a real CSS function
+name the scanner does not match, reading the color from the token and mixing in the alpha.
+**Rule of thumb:** Need a palette color at partial opacity in CSS? Reach for `color-mix()` over
+`var(--c-x)` — never re-derive the color's numbers as a literal, even inside `rgb()`.
+
+## 2026-09-26 — Phase 5: closing a modal via a real Esc keypress needs no `stopPropagation()`
+
+**Context:** `src/ui/panels.ts`'s Esc handler closing an open panel; ARCHITECTURE.md's Input
+section (written ahead of this phase) said the UI would call `event.stopPropagation()`.
+**Problem:** It doesn't need to, and testing that assumption first would have wasted the effort.
+Phaser's `KeyboardManager` listens on `window`, one step later than `document` in the bubble
+phase; the fix that already existed for this (Phase 3 — `KeyboardState`'s wall-clock `cutoff`,
+see the entry above from 2026-09-26) does not care whether the event still reaches `window` at
+all, because it re-checks `this.modal` and the timestamp at the moment Phaser's listener actually
+runs — by which point the `document`-level handler that closed the panel (earlier in the same
+bubble phase) has already flipped `ui:modal` to `false` and recorded the cutoff.
+**Fix / finding:** Left `stopPropagation()` out; `tests/e2e/stations.spec.ts`'s "Esc closes … and
+the game does not react to that same key press" (a real `page.keyboard.press('Escape')`, not the
+debug hook's `emit`) passes without it. Corrected ARCHITECTURE.md's Input section to match.
+**Rule of thumb:** Before adding `stopPropagation()`/`preventDefault()` to satisfy an existing
+doc's description, write the test the doc implies first — an already-solved race (bubble order +
+a wall-clock cutoff, here) can make the "obvious" extra call redundant.
+
+## 2026-09-26 — Phase 5: a click-to-world-x test needs the real zoom/camera math, not a guess
+
+**Context:** Manually verifying click/tap-to-open (walk-to-x then open) against the running
+preview with a throwaway Playwright script, converting a station's world (art-px) x/y into a CSS
+click position.
+**Problem:** First attempt used `canvasBox.x + (worldX - scrollX) * zoom / dpr` for x (correct)
+but guessed the y as a flat fraction of the canvas's CSS height (`0.55`), and picked a `worldX`
+900+ art px from the current camera position. Both silently missed the target: (1) the visible
+viewport is only `backingW` **art px** wide (e.g. 720 at zoom 2 on a 1440-wide desktop) — a world
+x more than half that away from `camera.scrollX` is off-screen, so the computed CSS x lands
+outside the canvas or on the wrong object entirely; (2) `GROUND_Y` (432) sits near the **bottom**
+of the view, not its middle — `computeViewport`'s `backingH = floor(heightDev / zoom)` and
+`scrollY = WORLD_H - backingH` place the ground line at art-y `GROUND_Y - scrollY` from the top of
+the view, e.g. 402 of 450, so a fraction like `0.55` clicks the empty sky above the prop.
+**Fix / finding:** Teleport near the target first (a few hundred art px away, not across zones),
+and compute the y from the same `GROUND_Y - scrollY` art-y (minus a margin for the prop's height),
+not a guessed fraction.
+**Rule of thumb:** A click-by-world-coordinate test/tool must replicate `render/zoom.ts`'s actual
+formulas (`computeViewport`) for both axes — "it's roughly centered" is not true of either one.
+
+## 2026-09-27 — `waitForGame` alone is not enough for a real pointer/click test either
+
+**Context:** Writing `tests/e2e/pad.spec.ts`'s first pointer-hold tests (Phase 6): move the mouse
+onto a pad button, `page.mouse.down()`, then poll the debug hook for movement.
+**Problem:** Every one of them timed out with `vx` stuck at 0 — no `pointerdown` ever reached the
+button. `document.elementFromPoint()` at the button's own centre returned `#loading`
+(`data-state="leaving"`), not the button: the loading overlay had already faded to `opacity: 0`
+(its CSS transition) but was still `position: fixed; inset: 0` and had not yet received the
+`hidden` attribute (`display: none`), so it still intercepted the click. The existing LESSONS
+entry above ("A visual/e2e check must wait for the loading screen too, not just ready") was about
+screenshots compositing the overlay's own art on top of the canvas; the exact same half-finished
+state also **blocks pointer hit-testing** on anything underneath it, which a keyboard- or
+debug-hook-driven test (every prior spec) never touches.
+**Fix / finding:** `tests/e2e/helpers.ts`'s `waitForGame` now also
+`await page.locator('#loading').waitFor({ state: 'hidden' })` after the ready poll, so every spec
+gets this for free instead of each new coordinate-based test re-discovering it.
+**Rule of thumb:** Any test that dispatches a **real, coordinate-based** pointer/mouse/touch event
+(not the debug hook, not `page.keyboard`) needs the loading screen actually gone first, not just
+`ready`.
+
+## 2026-09-27 — `page.mouse` works fine for a real pointerdown/up under `hasTouch: true`
+
+**Context:** Testing the pad's D-pad hold-to-walk and A-to-jump (Phase 6) under Playwright's
+`mobile` project (`isMobile: true, hasTouch: true`), which has no public "hold a touch point"
+API (only `page.touchscreen.tap()`, a quick down+up).
+**Finding:** `page.mouse.move(x, y)` + `page.mouse.down()` / `.up()` dispatches real, trusted
+`pointerdown`/`pointerup` events (`pointerType: 'mouse'`) regardless of `hasTouch`/`isMobile` —
+exactly what `src/ui/pad.ts`'s listeners need, since they never filter by `pointerType`. A
+**dispatched synthetic** `PointerEvent` (`locator.dispatchEvent('pointerdown', { pointerId: 1 })`)
+is not equivalent: it has no OS-recognized active pointer, so `el.setPointerCapture(e.pointerId)`
+throws — which is exactly why that call is wrapped in `try/catch` in `pad.ts` (robustness for a
+real finger sliding off a button, not just a testing nicety).
+**Rule of thumb:** Prefer `page.mouse` over a dispatched synthetic `PointerEvent` for anything that
+needs a sustained press (hold, drag) on a pointer-event listener, touch-emulated context or not;
+save synthetic dispatch for one-shot edges where no capture is involved.
+
+## 2026-09-27 — A child's z-index cannot escape a parent that is itself a stacking context
+
+**Context:** Raising `--z-pad` above `--z-panel`/`--z-menu` (Phase 6, DECISIONS.md) so the pad
+stays reachable under an open panel. The `?debug` overlay (`.debug-overlay`, appended inside
+`#hud`) started rendering **behind** the pad in `landscape-touch`, its own z-index (bumped to
+`calc(var(--z-pad) + 1)`) notwithstanding.
+**Problem:** `#hud` itself carries `z-index: var(--z-hud)` (10), which — being a positioned element
+with a specified z-index — establishes its own stacking context. Every descendant's z-index,
+however large, is compared only against its **siblings inside that same context**; it cannot lift
+the whole subtree above a sibling of `#hud` (here, `#pad`, at 45) that outranks `#hud` itself.
+Bumping `.debug-overlay`'s own z-index was consequently a no-op — confirmed by reading the
+generated CSS (correct) and then a screenshot (still wrong): the fix has to break the **ancestor**
+chain, not the leaf's declared value.
+**Fix / finding:** `mountDebugOverlay` now always mounts onto `document.body` (dropping the
+`hud ?? document.body` fallback in favor of always `document.body`), a sibling of `#hud`/`#pad` at
+the page root, where its own z-index is finally compared against the right elements.
+**Rule of thumb:** Before raising a leaf element's z-index to fix a stacking bug, check whether any
+ancestor between it and the root already sets a z-index (or `opacity`/`transform`/`filter` —
+anything that creates a stacking context) — that ancestor's position among _its_ siblings is the
+real ceiling, and no descendant value can lift it.
+
+## 2026-09-27 — Menu fast travel silently didn't move the panda: `pose: 'interact'` zeroes `moveX`
+
+**Context:** Wiring the menu's fast travel (Phase 7): `ui:modal` stays `true` the whole time a
+selection runs/fades to its target (`merge.ts` already documented this: "an active travel source
+replaces everything, even while a modal is open"), so `WorldScene.update()` still called
+`this.panda.update(intent, delta, this.modalOpen ? 'interact' : null)` exactly as it did before —
+`modalOpen` was `true`, so the pose was always `'interact'`.
+**Problem:** `player/logic.ts`'s `step()` has `const posed = grounded && pose !== null; const
+moveX = posed ? 0 : clampMove(intent.moveX);` — a non-null pose zeroes `moveX` outright, on the
+theory that a posed panda (playing `panda-interact` while a panel is open) should never also
+slide around. That is exactly right when the game is genuinely paused, and exactly wrong during a
+fast-travel run: the intent's `moveX`/`run` were correct (`mergeIntents` already lets an active
+`travel` source through the modal gate), but the pose then discarded them a step later — the
+panda stood still playing `panda-interact` while its x silently ticked toward the target with
+`vx: 0` (an e2e test's `≤ 10s` recruiter timing check caught it as "the panel just never opens",
+not as an obviously-wrong pose; only logging `player.state`/`vx` mid-travel showed the panda
+never actually moved).
+**Fix / finding:** Pose only when the game is genuinely idle-paused: `this.modalOpen &&
+!this.fastTravel ? 'interact' : null`. A fade-teleport never sets `this.fastTravel` (it teleports
+in one jumpcut, not frame-by-frame), so it is unaffected either way.
+**Rule of thumb:** `modalOpen`/`ui:modal` answers "is a panel or the menu open"; it does not mean
+"nothing is currently allowed to move the panda" — an active `travel` source is a second,
+independent reason movement can happen while it's `true`, and BOTH the intent merge AND the pose
+computation need to agree on that, not just the one you're actively touching.
+
+## 2026-09-27 — Naming a helper `rgb`/`rgba` trips the "no hardcoded colors" scanner even as code
+
+**Context:** Adding `palette.ts`'s channel-splitting helper for `Camera.fadeOut`/`fadeIn`
+(Phase 7's fade-teleport), first named `rgb`.
+**Problem:** `palette.test.ts`'s "no hardcoded colors" scanner matches `\brgba?\(` against every
+source line, full stop — it has no idea `rgb('ink-900')` is a call to this codebase's own helper
+rather than a literal CSS `rgb(...)` function, and correctly has no way to tell the two apart from
+text alone. The JSDoc comment explaining the rename tripped the same regex the first time it was
+worded with a literal `rgb(` inside it, too.
+**Fix / finding:** Renamed to `rgbChannels`; reworded the comment to describe the scanner without
+spelling out the pattern it matches.
+**Rule of thumb:** Never name a helper (or word a comment) so it contains `rgb(`/`rgba(`/`hsl(`/
+`hsla(`/a bare `0xRRGGBB` — the palette scanner is deliberately dumb text matching, not an AST
+check, and it does not special-case your own module.
+
+## 2026-09-27 — A wall-clock UX budget assertion needs its own, longer Playwright wait
+
+**Context:** The recruiter test's "a project panel opens in ≤ 10 s" (Phase 7), measured with
+`Date.now()` around `await expect(locator).toBeVisible()`.
+**Problem:** Under two parallel Playwright workers, the fast-travel run/fade animation this
+assertion waits on can take noticeably longer in wall-clock time than it does running alone (CPU/
+GPU contention, `WebGL` software-fallback warnings in the container) — enough, intermittently, to
+exceed Playwright's own default `expect` retry timeout (5000 ms) even while comfortably inside the
+actual 10 s business budget the test is supposed to enforce. The test then failed on a Playwright
+timeout that had nothing to do with the thing it was asserting.
+**Fix / finding:** Gave both `toBeVisible()` calls in that test `{ timeout: 15_000 }` — generous
+headroom over the 10 s the `Date.now()` diff actually gates. If the real operation ever takes
+longer than 10 s, the `Date.now()` check still fails it correctly; the Playwright-level wait no
+longer fails it for an unrelated reason first.
+**Rule of thumb:** When a test's own assertion is "this took ≤ N", give the Playwright locator
+wait it depends on more than N — otherwise a slow-but-passing run can fail on the wrong check, and
+a flake there reads as a business-rule regression instead of infrastructure noise.
+
+## 2026-09-27 — A stop's canonical id and its panel's id can differ; alias once, on the way in
+
+**Context:** GAME_DESIGN.md → Canonical ids: `gate` → `intro` (the menu/deep-link/finale id is
+`gate`; the actual panel content — name, roles, tagline — lives under `intro`, opened directly by
+the HUD badge too).
+**Problem:** The menu's `gate` entry travels to the gate station and emits `station:open { id:
+'gate' }`, same as any other stop; naively looking up `[data-panel="gate"]` finds nothing (the
+markup is `data-panel="intro"`), so the entry silently failed to open anything, and — if the
+alias were instead applied only at the DOM-lookup call site — visited marks and the hash would
+have been keyed by whichever id happened to reach `openPanel` first (`gate` via the menu, `intro`
+via the badge), splitting one stop's visited state into two.
+**Fix / finding:** `src/ui/panels.ts` exports `panelIdFor(stopId)` (a small `Record`, today just
+`{ gate: 'intro' }`) and resolves it once, at the top of `openPanel`, before anything — including
+`openId` itself — is assigned from it, so the DOM lookup, the hash and the visited mark all agree
+regardless of which route (badge, menu, deep link) opened it. `src/ui/menu.ts` imports the same
+function to check a menu entry's visited mark.
+**Rule of thumb:** When a canonical id and its content's id can differ, resolve the alias in
+exactly one place, before the resolved id is stored anywhere — never at each call site, and never
+after the id has already been used as a key for something else (visited, the hash, a Set).
+
+## 2026-09-27 — Never `pnpm build` while a `pnpm test:e2e`/manual preview is serving `dist/`
+
+**Context:** Re-verifying a small CSS fix (Phase 7) with a throwaway screenshot script while a
+full `pnpm test:e2e` run was already in progress in the background.
+**Problem:** `pnpm test:e2e`'s own `webServer` runs `astro build` once, then serves that `dist/`
+for the rest of the run; a manual `pnpm preview` pointed at the same `dist/` does the same. Running
+`pnpm build` again while either is still serving requests overwrites files on disk mid-response —
+two mobile `shell.spec.ts` checks (canvas backing size, "boots the game") failed with no code
+change of their own, then passed cleanly the moment they were re-run in isolation with no build
+racing them.
+**Fix / finding:** Confirmed by re-running just those two tests alone (clean pass) and then a full,
+untouched `pnpm test:e2e` (own build, nothing else running) — 0 failures. Treated the first
+failure as a real regression signal only after ruling this out, not before.
+**Rule of thumb:** Before rebuilding for any reason (a manual preview, a screenshot script, `pnpm
+build` itself), check whether an e2e run or another preview is already serving `dist/`
+(`pgrep -af "preview --host"`) — let it finish, or point the new build at nothing that's currently
+being read from.
+
+## 2026-09-27 — A prompt-text e2e assertion must not hardcode `E —` (Phase 8)
+
+**Context:** Two new Phase 8 e2e tests asserted `[data-slot="prompt"]` equals the literal string
+`E — Ala clasificada` (and a dossier's `E — <industry>`).
+**Problem:** Both passed on the `desktop` Playwright project and failed on `mobile`, which runs
+with `hasTouch: true` (Layout modes → `shared/layout-mode.ts` reads `pointer: coarse`) and so
+shows `ui.stationPromptTouch` (`Toca — …`) instead of `ui.stationPromptKey` (`E — …`) — a fact the
+new tests had nothing to do with (that prefix logic is Phase 5/6's, already covered elsewhere) but
+still broke on.
+**Fix / finding:** Switched both assertions from `toHaveText` to `toContainText(title)`, checking
+only the part the phase actually added (the title resolving at all for a vault/dossier id, not
+just a project) and staying silent on the E/Toca prefix.
+**Rule of thumb:** A new e2e assertion on `[data-slot="prompt"]` (or anything else that reads
+`shared/layout-mode.ts`) must run — or at least be written to tolerate — both the `desktop` and
+`mobile` Playwright projects; assert only the specific thing the change under test added.
+
+## 2026-09-27 — Phase 12 budget measurement (placeholder art)
+
+**Context:** `pnpm build`, gzip sizes measured with `gzip -c | wc -c`.
+**Finding:** HTML 9.8 KB (budget 60) · page entry JS 11.4 KB + game code ≈ 17 KB inside the
+400 KB engine chunk (Phaser ≈ 383 KB; app budget 80) · CSS 7.7 KB · game assets 29.8 KB per tier
+with placeholders (budget 1.2 / 0.7 MB — re-measure once the real art lands; no `tier: "high"`
+asset has art yet, so both tiers load the same files).
+**Rule of thumb:** Re-run the measurement after every media wave; the art, not the code, is what
+can blow the mobile budget.

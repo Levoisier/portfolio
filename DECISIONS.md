@@ -1,118 +1,265 @@
 # DECISIONS.md — Architecture Decision Records
 
-ADR-lite: one block per significant choice. Template:
+ADR-lite, newest last. Template:
 
 ```
 ## <decision>
-**Status:** Accepted / Superseded by [link]
-**Why:** The reason for this choice.
-**Trade-off:** What we give up or accept in exchange.
+**Status:** Accepted / Proposed / Superseded by <link>
+**Why:** the reason.
+**Trade-off:** what we give up.
 ```
 
----
-
-## Astro + vanilla GSAP over React islands
-
-**Status:** Accepted
-
-**Why:** A portfolio is a narrative document, not an application. Astro's static output ships zero JS by default; a single GSAP controller module is added explicitly. React islands would add ~40 KB of React runtime for animations that don't need component state. GSAP's imperative timeline API is a better fit for tightly sequenced, per-element choreography than declarative component lifecycle.
-
-**Trade-off:** No React ecosystem (hooks, context, component libraries) available in animation code. Accepted: UI is hand-crafted HTML/CSS; the only dynamic layer is GSAP.
+The previous scroll-narrative site's ADRs (Astro + GSAP ScrollSmoother, glass UI, companion
+panda) are superseded by this rebuild; read them in git history at `51bbf3c` if needed.
 
 ---
 
-## Periodic table rendered in code (SVG/CSS) not raster
+## Rebuild the portfolio as a game, from scratch
+
+**Status:** Accepted (2026-09-26)
+**Why:** The scroll site felt buggy and unsurprising; most bugs came from layered scroll
+choreography. Cristian chose a playable 2D pixel-art side-scroller. Only the content survives:
+projects, confidential work, stack and personal info (`src/content/`) plus the Fiora screenshots.
+**Trade-off:** Months of prior visual work are discarded; the site is a game-first experience.
+
+## No classic view — the recruiter path lives inside the game
 
 **Status:** Accepted
+**Why:** Cristian explicitly rejected a separate classic page. Instead, speed-to-content is
+designed into the game: scroll-to-walk, click-to-travel, a fast-travel menu, an always-visible
+Contact button, deep links (`/#fiora`), and all content as pre-rendered DOM panels.
+**Trade-off:** Visitors who dislike games still enter the world; mitigated by the ≤ 10 s
+recruiter test in Phase 7.
 
-**Why:** 30+ element tiles at various sizes need crisp rendering at every DPR (1x, 2x, 3x). A raster sprite would require a 3× export to look sharp on Retina, adding significant payload. CSS/SVG tiles are resolution-independent, infinitely scalable, and trivially themed via CSS custom properties.
-
-**Trade-off:** More complex Astro component markup. Accepted: the Skills component is self-contained and the visual output is better.
-
----
-
-## Font choice: DM Mono (display) + Inter (body)
-
-**Status:** Accepted
-
-**Why:**
-
-- DM Mono: monospaced, geometric, technical — reinforces the "developer precision + lab instrument" identity. Variable weight means one HTTP request for all weights.
-- Inter: the clearest neutral humanist sans for body text, battle-tested at small sizes, variable weight + optical size axis.
-- Both are SIL OFL licensed — freely self-hostable with no attribution requirements on the page.
-
-**Trade-off:** DM Mono is a monospace face; it reads slowly in long paragraphs. Accepted: it's used only for headings, labels, and the hero name — never for body copy.
-
----
-
-## Single CSS custom property file as design token source of truth
+## Side-scroller, not top-down
 
 **Status:** Accepted
+**Why:** A single left→right path mirrors a narrative page, maps to the scroll wheel and a
+two-button touch pad, and needs one walk direction of art (flipped), roughly half the sprite
+work of a 4-direction top-down game.
+**Trade-off:** Less free exploration.
 
-**Why:** Tailwind config references `var(--token)` values so that tokens are available both in utility classes and in arbitrary CSS/JS (`getComputedStyle`). A single `tokens.css` file means changing a brand colour is one edit, not a search-and-replace across Tailwind config + inline styles + CSS files.
-
-**Trade-off:** Tokens are not typed (no TypeScript-level enforcement). Mitigated by the Golden Rule in AGENTS.md: "never hardcode a colour outside tokens.css".
-
----
-
-## GSAP Scene registry pattern (extend without editing controller core)
+## Phaser 4 as the engine
 
 **Status:** Accepted
+**Why:** Mature, MIT, TypeScript types in the package; built-in arcade physics, animation,
+cameras, input (incl. multi-touch), loader, particles, and v4 Filters for the desktop
+ambience. A battle-tested engine reduces the "buggy" risk for an agent-built codebase, and the
+bundled types catch Phaser-3-only API use at compile time. 4.2.1 is the current stable
+(first v4 stable: April 2026).
+**Trade-off:** ~1.38 MB min / ~355 KB gzip, loaded lazily after first paint. A custom
+Canvas2D engine would be ~10× smaller but means writing physics/animation/input ourselves;
+KAPLAY is smaller but less proven. Revisit with a Phaser custom build in Phase 12.
 
-**Why:** The controller is stable infrastructure. Adding a new scene by editing the controller risks introducing a regression in all existing scenes. The registry pattern (import + one dictionary entry) isolates new work to the scene module and a single registry line, making diffs minimal and reviewable.
-
-**Trade-off:** Slightly more boilerplate per scene (must export a factory). Accepted: the Scene interface is small (5 methods) and `revealPlaceholder.ts` provides a copy-paste starting point.
-
----
-
-## Confidential section: no screenshots, no links, no client names
-
-**Status:** Accepted — enforced as a Golden Rule in AGENTS.md
-
-**Why:** NDA obligations. Even abstract screenshots could be reverse-engineered to identify clients. The "redacted blueprint" aesthetic transforms the constraint into a feature: the visual treatment communicates that the work exists and is significant without disclosing anything protected.
-
-**Trade-off:** The confidential section is less immediately impressive than a live-demo portfolio. Accepted: the industry/role/impact framing communicates competence without disclosure risk.
-
----
-
-## Easing: expo.out as the primary reveal easing
+## Astro static shell; canvas draws art, DOM holds text
 
 **Status:** Accepted
+**Why:** Astro renders the shell, meta and the content panels as static HTML (SEO, screen
+readers, instant language switch, crisp text at any DPR) and bundles TS. Phaser only paints the
+world. The two talk through one typed event bus.
+**Trade-off:** Two rendering layers to keep in sync (positions of prompts, pause state).
 
-**Why:** Exponential ease-out (`cubic-bezier(0.16, 1, 0.3, 1)`) reads as fast and snappy — it reaches near-final state quickly, then gently settles. This matches the precision/efficiency identity of the brand. Linear or sine easing feels sluggish; back/elastic easing feels playful in a way that doesn't match the technical aesthetic.
-
-**Trade-off:** `ease-spring` (`cubic-bezier(0.34, 1.56, 0.64, 1)`) is available for specific elastic moments (e.g., skill tile pop). Default to expo.out everywhere else.
-
----
-
-## Self-host Inter variable and DM Mono fallback source
+## Level as typed data; geometry from strips and props, no tilesets
 
 **Status:** Accepted
+**Why:** Agents can read, diff and validate a TypeScript layout; a map editor (Tiled/LDtk)
+needs a GUI. The world is mostly flat ground + a few platforms, so a seamless floor strip and
+standalone platform/prop sprites cover it — and AI image tools handle standalone props far
+better than seamless multi-tile tilesets.
+**Trade-off:** No visual level editor; complex terrain would be awkward (not needed).
 
-**Why:** Inter ships an official variable WOFF2 that can be self-hosted at the documented path. Google Fonts' upstream DM Mono family currently ships static TTF faces rather than a variable WOFF2, but the project contract already documents `/fonts/DMMono-VariableFont_wght.woff2` as the display font path.
-
-**Trade-off:** The DM Mono asset is placed at the documented path to keep the swap contract stable, but it is declared as its real static TrueType format so browsers can load it. Future typography work should replace it with a true DM Mono variable WOFF2 if upstream publishes one or if a licensed build artifact is supplied.
-
-## Responsive hero derivatives from canonical Panda source
-
-**Status:** Accepted
-
-**Why:** Lighthouse mobile LCP was decode-bound on the canonical transparent PNG even after fetch priority and lazy-loading non-critical media. Generated WebP derivatives keep `/media/panda/panda-hero.png` as the source-of-truth replacement path while giving browsers small responsive sources for the above-the-fold image.
-
-**Trade-off:** When Cristian replaces `/media/panda/panda-hero.png`, the generated `/media/panda/generated/panda-hero-*.webp` files must be regenerated from the new source. Accepted: the file names are documented in `ASSETS.md` and the original PNG remains the fallback.
-
-## Inline built stylesheets for the static portfolio page
+## Asset pipeline with global palette snapping
 
 **Status:** Accepted
+**Why:** AI-generated "pixel art" has no real grid, ~100 k colors, no alpha and inconsistent
+frame sizes. Normalizing everything at build time (chroma key → grid → one palette → baseline)
+makes art from different tools and sessions look like one game, and lets placeholders stand in
+with final geometry so media never blocks code.
+**Trade-off:** Pipeline complexity; some AI detail is lost in snapping.
 
-**Why:** The generated CSS is small, but as a separate render-blocking request it pushed mobile FCP/LCP beyond the performance budget under Lighthouse throttling. This is a single-page static portfolio, so inlining the built stylesheet removes a network dependency from the critical path without duplicating CSS across many routes.
-
-**Trade-off:** HTML size increases by the inlined stylesheet size and would be less efficient on a multi-page site. Accepted: the current site has one route, and the LCP improvement is material.
-
-## Defer GSAP controller until after the static hero can paint
+## One 29-color palette derived from the brand
 
 **Status:** Accepted
+**Why:** Brand anchors scarlet `#E11D2A`, navy `#0F2342`, ink `#0A0A0A`, paper `#F5F3EE` expanded
+into ink/navy/scarlet/paper/amber/dusk ramps for sprites, lights and the night→dawn sky. Green is
+excluded (reserved for the chroma key; it also caused the old site's clash).
+`src/design/palette.json` is canonical; `tokens.css` mirrors it; a test enforces both and bans
+color literals elsewhere.
+**Trade-off:** Art must live within 29 colors.
 
-**Why:** The portfolio's above-the-fold hero image is static HTML and does not require GSAP to become visible. Loading and evaluating the animation controller during the critical path delayed mobile LCP even with the selected WebP source already downloaded.
+## Pixel-perfect rendering via low-res canvas + integer device-pixel zoom
 
-**Trade-off:** Entrance choreography starts shortly after the browser reaches idle, or after the timeout fallback. Accepted: the hero LCP image remains visible immediately, and the scroll scenes still mount before normal interaction.
+**Status:** Accepted
+**Why:** Integer scaling in **device** pixels keeps every art pixel square on 1×, 2× and 3×
+screens; a low-resolution backing store is also cheap on phones. Target view height 360 (desktop)
+/ 240 (touch) with variable width shows more world on wider screens instead of stretching.
+**Trade-off:** Camera moves in whole art pixels (authentic, slightly steppier parallax).
+
+## Two quality tiers
+
+**Status:** Accepted
+**Why:** Cristian wants more ambience on desktop than on mobile. One module decides the tier
+(`high` / `low`) plus a runtime FPS downgrade, so no scene invents its own device checks.
+**Trade-off:** Two configurations to test.
+
+## Fonts: Pixelify Sans + Inter
+
+**Status:** Accepted (installed in Phase 2: `@fontsource/pixelify-sans` 5.3.0 → `400.css`,
+`@fontsource-variable/inter` 5.3.0 → `wght.css`, imported by `tokens.css`)
+**Why:** Pixelify Sans (OFL, Google Fonts, latin + latin-ext → Spanish accents) matches the
+pixel look for headings/UI; Inter (OFL) keeps long panel text readable. Self-hosted: no
+third-party font request.
+**Trade-off:** Two font families to load. Both CSS files declare every subset with a
+`unicode-range`, so the browser downloads only latin (and latin-ext when used); the other subset
+files ship in `dist/` but are never requested. (Fontsource's `latin-400.css` alone has no
+`unicode-range`, so combining it with `latin-ext-400.css` would let the latin-ext face shadow
+basic Latin.)
+
+## In-world pixel text: rasterized Pixelify Sans as a BitmapText font
+
+**Status:** Accepted (Phase 2 prototype: the name label in the empty world)
+**Why:** Canvas text must be binary-alpha and crisp at every zoom. Pixelify Sans has 11 design px
+per em, but its outlines are offset ~0.66 px from the pen and chamfered, so drawing at 11 px
+blurs every stem across two pixels. `game/text/` renders each glyph at 88 px (8 px per design
+pixel), finds the grid phase once on a sample, turns each 8×8 cell into one pixel (coverage
+≥ 50 %), packs a white atlas with `textures.createCanvas` and registers it with
+`cache.bitmapFont.add`. Glyphs: printable ASCII, Latin-1 (á é í ó ú ü ñ ¿ ¡) and — – … ’ “ ”.
+It is rebuilt after `fonts:ready` in about the time of one frame.
+**Rejected:** Phaser `Text` (anti-aliased); `RetroFont` (fixed-width grid); a prebuilt BMFont
+file (one more asset and a second font source of truth).
+**Trade-off:** One size (11 px, cap height 7); larger in-world text would need a second
+registration at a multiple.
+
+## Languages: ES + EN, Spanish by default
+
+**Status:** Accepted (2026-09-26, confirmed by Cristian)
+**Why:** Content exists in both languages. Spanish is the default (as on the old site,
+`html lang="es-419"`); the stored `ES · EN` toggle always wins. No browser-language detection.
+**Trade-off:** International visitors land in Spanish and switch with one tap.
+
+## Testing: Vitest + Playwright 1.56.1
+
+**Status:** Accepted
+**Why:** Vitest for pure logic (fast, no browser). Playwright for the real canvas and DOM.
+`@playwright/test` is pinned to 1.56.1 because that matches the Chromium preinstalled in the
+cloud agent container (`/opt/pw-browsers`); locally run `pnpm exec playwright install chromium`.
+`pnpm test:e2e` builds and serves its own preview on port 4323 and never reuses a running server,
+so it can't silently test a dev server or a stale build.
+**Trade-off:** Upgrading Playwright requires matching browsers.
+
+## Not installable — no PWA
+
+**Status:** Accepted (2026-09-26)
+**Why:** Cristian does not want the portfolio installable; an app install prompt makes no sense
+for a portfolio. The old site's `site.webmanifest` and Android install icons were removed in the
+reset. No web app manifest, no service worker, no standalone-mode meta tags, no install prompt.
+Favicons are allowed; the old ones were removed in the reset and Phase 12 regenerates them from
+`panda-portrait`. `src/policy/no-pwa.test.ts` and the e2e smoke test fail if any of it returns.
+**Trade-off:** No offline play and no home-screen app; visitors can still bookmark the site.
+
+## Audio off by default, procedural SFX
+
+**Status:** Accepted (Phase 11)
+**Why:** Autoplaying sound on a portfolio is hostile; procedural SFX avoid shipping audio files.
+Implemented with a few lines of plain Web Audio (`src/ui/audio.ts`: one oscillator + gain ramp per
+effect — jump, bump, vault, panel open/close) instead of adding ZzFX, so no new dependency. Off by
+default, remembered (`shared/sound.ts`), the AudioContext is created only after the visitor turns
+sound on. No ambient loop.
+**Trade-off:** Most visitors never hear it; the blips are deliberately simple.
+
+## Panel links: Space activates them too, not just Enter
+
+**Status:** Accepted (2026-09-26)
+**Why:** BACKLOG.md Phase 5 asks that Enter _and_ Space activate the controls inside an open
+panel. A real `<a href>` only answers to Enter by default (Space is a button-only convention);
+every other control in a panel (close, gallery thumbnails, gallery nav) is a real `<button>`, so
+without this a project's live link would be the one control in the panel that behaves
+differently. `src/ui/panels.ts`'s single keydown listener adds `e.preventDefault()` +
+`el.click()` for Space on any `a[href]` inside the open panel — a normal, transient-activation
+safe pattern (the synthetic click still runs inside the trusted keydown handler), so `target=
+"_blank"` still opens a new tab under a popup blocker.
+**Trade-off:** A screen reader that already announces "link" for that control now also responds
+to a key screen-reader users don't expect a link to answer to; scoped to panel content only
+(`section.contains(link)`), so it never changes how links behave anywhere else on the page.
+
+## The pad outranks panels and the menu; a handheld dialog stays in the screen's own box
+
+**Status:** Accepted (2026-09-27, BACKLOG.md Phase 6)
+**Why:** GAME_DESIGN.md's control table promises `B` closes the topmost open panel or menu, the
+same as Esc. A panel's backdrop is `position: fixed; inset: 0`, so with the pad's original
+`--z-pad: 20` (below `--z-panel: 30`) an open panel fully covered the physical D-pad/A/B/START —
+reachable to a keyboard's Esc, unreachable to a touch visitor's actual finger. `--z-pad` moved
+above `--z-panel`/`--z-menu` (still below `--z-loading`), and `shell.css` constrains a handheld
+dialog (`section[data-panel]`, `.panel`) to the screen's own top-half box instead of the full
+viewport, so it never visually fights the pad for the same pixels. `landscape-touch` panels stay
+full-viewport (its pad is a slim translucent strip, not a solid half-screen block).
+**Trade-off:** A handheld panel's usable height is capped at roughly half the viewport (it already
+scrolls internally past that, `.panel`'s existing `overflow-y: auto`); the gallery lightbox (a
+second, nested modal `B` still closes first, same as Esc) was left visually unconstrained to the
+same box, since its own z-index already sits below the pad — only a cosmetic overlap in the rare
+case its enlarged image reaches the very bottom of a short viewport.
+
+## Dialog chrome moved to a shared, unscoped stylesheet (`styles/panel.css`)
+
+**Status:** Accepted (2026-09-27, BACKLOG.md Phase 7)
+**Why:** `components/panels/Panels.astro`'s `<style>` (Phase 5) was the only place `section[data-
+panel]`/`.panel`/`.panel__*` existed. Phase 7 adds four more consumers of the exact same dialog
+look — `IntroPanel`, `ContactPanel`, `StubPanels` and the menu (`Menu.astro`, which reuses `.panel`
+for its own dialog box) — and Astro scopes a component's `<style>` block to the elements _that
+component_ renders, not to markup with the same class names in a sibling file. Re-declaring ~150
+lines of chrome in four more files would drift the moment one of them changed. The chrome moved,
+verbatim, into `styles/panel.css`, a plain (unscoped) stylesheet every one of the five components
+imports; `#menu` joins `section[data-panel]` in its shared base rule (same look, its own z-index).
+`Panels.astro` keeps its own scoped `<style>` for the Fiora screenshot gallery, which nothing else
+uses.
+**Trade-off:** One more file to open when touching panel chrome; `shell.css`'s handheld-mode
+override rules now out-specify a plain, unscoped base rule by ancestor selector alone (an
+`html[data-mode=…]` ancestor is strictly higher specificity either way), which is simpler than the
+Astro-scope-attribute tie-breaker the previous, single-file version relied on.
+
+## `@axe-core/playwright` for the Phase 7 accessibility scan
+
+**Status:** Accepted (2026-09-27, BACKLOG.md Phase 7)
+**Why:** Phase 7 is the recruiter/keyboard-only path through the whole game (the menu, the HUD,
+every panel) — the phase BACKLOG.md names for an automated accessibility scan, not spot checks.
+`@axe-core/playwright` (MIT, from the axe-core maintainers) drives the same axe-core engine
+Playwright's own docs recommend, scoped with `.include()`/`.analyze()` against a live page (real
+DOM, real computed styles — a static analysis tool cannot see focus-trap or `aria-live` behavior).
+**Trade-off:** One more devDependency (test-only, not shipped); it inspects markup the browser
+already rendered, so it still needs deliberate manual keyboard/screen-reader checks alongside it,
+not instead of them.
+
+## Menu fast travel: run under 1.5 screens, fade-teleport beyond it or under reduced motion
+
+**Status:** Accepted (2026-09-27, BACKLOG.md Phase 7)
+**Why:** GAME*DESIGN.md asks the menu to "auto-run" the panda to a nearby stop but fade-teleport a
+far one; a run across the \_entire* 4620 px level would take too long to feel like fast travel.
+1.5 screens (`travelTargetX`'s view width, `game/travel/plan.ts`'s `shouldFadeTravel`) keeps a
+"nearby" run inside roughly what the visitor can already see becoming what they're arriving at,
+while anything farther cuts straight there. Under `prefers-reduced-motion`, every selection
+fade-teleports (GAME_DESIGN.md → Ambience tiers: "fast-travel uses fades instead of pans" — even a
+short run is still a camera pan), and the fade itself is skipped entirely (an instant cut) rather
+than played at zero duration, the same "instant under reduced motion" pattern as every other
+tween/camera effect in this codebase.
+**Trade-off:** 1.5 is a judgment call, not a measured one; it can move if a real run ever feels too
+long or a fade ever feels too abrupt for a "nearby" stop.
+
+## The vault opens no panel; its own reaction lives in `WorldScene.openStation`
+
+**Status:** Accepted (2026-09-27, BACKLOG.md Phase 8)
+**Why:** GAME_DESIGN.md → Canonical ids already said `classified` has "no panel of its own" — the
+menu's 4 dossier sub-entries are the real content, the vault is scenery — but Phase 7 (before
+anything else existed for that id) filled it with the same generic `StubPanels.astro` placeholder
+every other not-yet-built stop got, so the id briefly did open a DOM panel. Phase 8 removes that
+stub instead of giving the vault a real one: interacting with it rolls the door aside, a purely
+local, game-side reaction (`stations/Vault.ts`) that never needs the UI to know anything, and
+`station:open` for `classified` reverts to the ordinary silent no-op every id-with-no-panel gets
+(Golden Rule 7). That local reaction is called from `WorldScene.openStation(id)` itself — the one
+choke point every "the player reached/activated station `id`" path (interact, click, walk arrival,
+fast-travel arrival) already funnels through — rather than duplicated at each of those four call
+sites, or carried on a dedicated bus event.
+**Trade-off:** `openStation`'s job is no longer purely "tell the UI" (its own doc comment says so):
+a station kind can now also have a local reaction of its own, decided inside the same function.
+That is one more thing to check when reading it, but the alternative — every call site knowing on
+its own "oh, and if this is the vault, also open it" — drifts the moment one of the four is
+missed; a future station with its own local reaction (none planned yet) follows the same pattern.
