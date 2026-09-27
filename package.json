@@ -20,7 +20,8 @@
     "test:e2e": "playwright test",
     "assets": "node scripts/assets/cli.ts",
     "references": "node scripts/make-references.ts",
-    "verify": "bash scripts/verify.sh"
+    "verify": "bash scripts/verify.sh",
+    "share": "node scripts/make-share-assets.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

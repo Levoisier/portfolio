@@ -432,6 +432,10 @@ disables shake/flash.
 
 ### [ ] chore(launch): budgets, polish, share assets, cross-device QA, go live
 
+**Status (2026-09-27):** done — share assets (`pnpm share`: favicons + OG image), OG/Twitter image
+tags, budgets measured (LESSONS.md). Remaining: Lighthouse run, real-device QA (Safari/Firefox,
+iOS, Android, 120 Hz), and merging `next` into `main` for production (Cristian's call).
+
 **Depends on:** everything.
 
 **Acceptance criteria**

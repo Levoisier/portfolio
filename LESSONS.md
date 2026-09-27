@@ -466,3 +466,13 @@ just a project) and staying silent on the E/Toca prefix.
 **Rule of thumb:** A new e2e assertion on `[data-slot="prompt"]` (or anything else that reads
 `shared/layout-mode.ts`) must run — or at least be written to tolerate — both the `desktop` and
 `mobile` Playwright projects; assert only the specific thing the change under test added.
+
+## 2026-09-27 — Phase 12 budget measurement (placeholder art)
+
+**Context:** `pnpm build`, gzip sizes measured with `gzip -c | wc -c`.
+**Finding:** HTML 9.8 KB (budget 60) · page entry JS 11.4 KB + game code ≈ 17 KB inside the
+400 KB engine chunk (Phaser ≈ 383 KB; app budget 80) · CSS 7.7 KB · game assets 29.8 KB per tier
+with placeholders (budget 1.2 / 0.7 MB — re-measure once the real art lands; no `tier: "high"`
+asset has art yet, so both tiers load the same files).
+**Rule of thumb:** Re-run the measurement after every media wave; the art, not the code, is what
+can blow the mobile budget.

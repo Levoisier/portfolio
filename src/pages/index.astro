@@ -27,6 +27,13 @@ const sameAs = profile.contact
   .filter((c) => c.channel === 'github' || c.channel === 'linkedin')
   .map((c) => c.href);
 const email = profile.contact.find((c) => c.channel === 'email')?.href;
+// Crawlers need an absolute og:image; Vercel provides the production host at build time.
+const siteOrigin = import.meta.env.SITE
+  ? new URL(import.meta.env.SITE).origin
+  : process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : '';
+const ogImage = `${siteOrigin}/og.png`;
 const personLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
@@ -50,6 +57,12 @@ const personLd = {
     <meta property="og:description" content={profile.summary[DEFAULT_LANG]} />
     <meta property="og:locale" content="es_419" />
     <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:image" content={ogImage} />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={profile.summary[DEFAULT_LANG]} />
