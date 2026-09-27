@@ -1,8 +1,10 @@
 # GAME_DESIGN.md — "Night Shift at Planta Z"
 
 The portfolio **is** a small 2D pixel-art side-scroller. There is no classic page view. The
-visitor plays the panda through one continuous level — a chemical plant at night that turns
-into sunrise at the end — and every stop along the way is a piece of Cristian's work.
+visitor plays the panda through one continuous level — "Planta Z", the night shift of a
+chemical-engineer's career, walked along a mossy stone path through misty moonlit mountains
+that warms toward sunrise at the end — and every stop along the way is a piece of Cristian's
+work.
 
 This file is the product spec. ARCHITECTURE.md says how it is built; BACKLOG.md says in what
 order; ASSETS.md says what art exists.
@@ -20,11 +22,21 @@ order; ASSETS.md says what art exists.
    else matters.
 3. **One cohesive world.** One palette (`src/design/palette.json`), one pixel scale, one light
    direction (upper-left), one character. The night→dawn sky carries the story.
-4. **Desktop is a diorama, mobile is a handheld.** Desktop gets depth and ambience (more
-   parallax layers, particles, glow). Mobile gets a Game Boy-style handheld layout with big
-   touch controls and a leaner scene — not a shrunken desktop.
+4. **Desktop is a diorama, mobile is a handheld.** Desktop gets depth and ambience (particles,
+   glow). Mobile gets the full screen too, with big translucent touch controls over the bottom
+   edge and the ground lifted above them, and a leaner scene — not a shrunken desktop.
 5. **Readable text lives in the DOM.** Canvas draws art. Descriptions, links and anything a
    screen reader or search engine needs are real HTML in panels.
+
+## Look
+
+A moonlit mountain night, painted: a full-screen backdrop of mist, peaks, pagodas and waterfalls
+over a lake (one painting for portrait screens, one for landscape), a mossy stone terrain path
+the panda walks, wooden bridges over the few gaps in it, a red maple with a lantern framing the
+spawn and more maples between stations. Deep blues and violets, pink-lit cloud edges, warm lamp
+light. The painting pans slowly as the panda travels; toward the lookout a warm wash turns the
+night into dawn. Stations, props and panels keep their own content and roles — only the setting
+changed (DECISIONS.md → _Scenery palette_, _Full-screen handheld_).
 
 ## Audience & constraints
 
@@ -53,8 +65,10 @@ Zone widths are starting values; the layout lives in data (`src/game/world/layou
 | 8   | **Reagent lab** (stack)       | 3200–4000  | pre-dawn      | Fume hood + lab shelves (`props-zones`). Eight floating **element blocks** (one per skill category) over low platforms. Bump from below (or interact) → the category's skills burst out as element tiles and fly into a periodic board (drawn in code).            |
 | 9   | **Sunrise lookout** (contact) | 4000–4620  | sunrise       | Mailbox + phone booth. Panel: call to action + email / LinkedIn / GitHub / WhatsApp. Panda waves (celebrates if everything was visited). "Thanks for visiting" + fast-travel back.                                                                                 |
 
-The sky gradient, star density and ambient light are a function of the player's x — night at the
-gate, sunrise at the lookout. It is drawn in code from palette colors, so it costs no media.
+The sky's mood is a function of the player's x — night at the gate, sunrise at the lookout: the
+painted night backdrop gains a warm dawn wash toward the lookout (ARCHITECTURE.md → _Scenery_).
+Without a delivered backdrop, a code-drawn gradient sky with stars, moon and sun (plus the
+`bg-*` skyline layers) tells the same story from palette colors.
 
 **Canonical ids** (use these everywhere: layout, `data-panel`, deep links `/#<id>`, menu, visited
 keys):
@@ -93,10 +107,10 @@ keys):
 | Run        | hold Shift    | —                                 | double-tap-hold ◀/▶                 |
 | Jump       | Space / W / ↑ | —                                 | **A**                               |
 | Interact   | E / Enter     | click a station prop → auto-walk  | **B**, or tap the station on screen |
-| Menu / map | M / Esc       | menu button                       | **START**                           |
+| Menu / map | M / Esc       | menu button                       | the HUD's **Map** button            |
 
 **Precedence:** Esc (and **B** on the pad) closes the topmost open panel or the menu. Only when
-nothing is open do Esc/M/START open the menu and B/E/Enter interact. While a panel or the menu is
+nothing is open do Esc/M (or the Map button) open the menu and B/E/Enter interact. While a panel or the menu is
 open, game input is paused and keys keep their normal DOM meaning.
 
 Gamepad support is a nice-to-have (Phase 12), not required.
@@ -105,7 +119,8 @@ Gamepad support is a nice-to-have (Phase 12), not required.
 
 - Top-left: tiny name badge with the `panda-portrait` head (opens the intro panel).
 - Top-right: **Contact** (opens the contact panel from anywhere), language `ES · EN`, sound on/off,
-  menu.
+  **Map** (the menu) — pixel-icon buttons with labels; on phones sound and Map are icon-only so
+  the row fits on one line.
 - Bottom-centre: the interact prompt (DOM text, `aria-live="polite"`) when near a station.
 - First visit: a controls hint that disappears after the first move (desktop: keys + "or just
   scroll"; mobile: points at the pad).
@@ -142,13 +157,13 @@ keyboard/screen-reader path through all content.
 
 ## Ambience tiers
 
-| Element                          | High tier (desktop)                   | Low tier (mobile)            |
-| -------------------------------- | ------------------------------------- | ---------------------------- |
-| Parallax                         | sky + `bg-far` + `bg-mid` + `bg-fore` | sky + `bg-far` + `bg-mid`    |
-| Particles (steam, embers, stars) | full                                  | ≤ 30 % count                 |
-| Glow / bloom filters             | on (lamps, screens, flare)            | off (dithered halo textures) |
-| Animated props                   | all                                   | only near the player         |
-| Scanner light, flare flame       | on                                    | off                          |
+| Element                          | High tier (desktop)           | Low tier (mobile)            |
+| -------------------------------- | ----------------------------- | ---------------------------- |
+| Backdrop                         | painted, slow pan + dawn wash | same (portrait painting)     |
+| Particles (steam, embers, stars) | full                          | ≤ 30 % count                 |
+| Glow / bloom filters             | on (lamps, screens, flare)    | off (dithered halo textures) |
+| Animated props                   | all                           | only near the player         |
+| Scanner light, flare flame       | on                            | off                          |
 
 `prefers-reduced-motion: reduce` on any tier: no camera shake, no flashes, parallax differential
 reduced, particles minimal, fast-travel uses fades instead of pans. Player movement is

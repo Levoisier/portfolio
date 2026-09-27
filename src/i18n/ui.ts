@@ -37,7 +37,6 @@ export const ui = {
   padRight: { es: 'Caminar a la derecha', en: 'Walk right' },
   padJump: { es: 'Saltar', en: 'Jump' },
   padInteract: { es: 'Interactuar', en: 'Interact' },
-  padMenu: { es: 'Menú', en: 'Menu' },
   // ─── Menu, HUD & accessibility (Phase 7) ─────────────────────────────────
   /** The HUD's menu button text/aria-label AND the menu dialog's own title. */
   menuLabel: { es: 'Mapa', en: 'Map' },
@@ -51,6 +50,8 @@ export const ui = {
   /** The HUD name badge's aria-label (opens the `intro` panel). */
   profileLabel: { es: 'Ver perfil', en: 'View profile' },
   langSwitchLabel: { es: 'Cambiar idioma', en: 'Switch language' },
+  /** The sound toggle's accessible name; its on/off state is `aria-pressed`. */
+  soundLabel: { es: 'Sonido', en: 'Sound' },
   soundOnLabel: { es: 'Sonido activado', en: 'Sound on' },
   soundOffLabel: { es: 'Sonido desactivado', en: 'Sound off' },
   /** A stop whose own phase has not merged yet opens this generic stand-in panel. */

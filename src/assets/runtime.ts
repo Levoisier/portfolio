@@ -55,7 +55,7 @@ export interface RuntimeSet extends RuntimeBase {
 }
 
 export interface RuntimeLayer extends RuntimeBase {
-  kind: 'layer' | 'tile-strip';
+  kind: 'layer' | 'tile-strip' | 'backdrop';
   width: number;
   height: number;
   scrollFactor?: number;

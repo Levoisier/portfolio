@@ -47,6 +47,9 @@ export interface GameState {
    * Vault.ts`); the vault has no DOM panel of its own, so e2e reads this instead of a
    * `[data-panel]`. */
   vaultOpen: boolean;
+  /** Which painted backdrop is on screen (`backdrop-portrait` / `backdrop-landscape`), or null
+   * when none was delivered and the code-drawn sky shows instead. */
+  backdrop: string | null;
 }
 
 /**

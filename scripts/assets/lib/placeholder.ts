@@ -90,6 +90,13 @@ export function makePlaceholder(entry: AssetEntry): Placeholder {
       fillRect(img, 0, 0, w, 2, rgba('paper-500'));
       return { img };
     }
+    case 'backdrop': {
+      // Backdrops are optional (the code-drawn sky is their fallback); this is only for tests.
+      const [w, h] = entry.size;
+      const img = createImg(w, h);
+      fillRect(img, 0, 0, w, h, rgba('navy-950'));
+      return { img };
+    }
     case 'layer': {
       const [w, h] = entry.size;
       const img = createImg(w, h);

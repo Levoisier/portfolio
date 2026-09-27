@@ -452,3 +452,29 @@ iOS, Android, 120 Hz), and merging `next` into `main` for production (Cristian's
   site; see README → _Branching & deploy_.)
 
 **Files:** various.
+
+---
+
+## Visual refresh — painted scenery & full-screen mobile
+
+### [x] feat(world): moonlit mountain scenery, full-screen touch layout, icon HUD
+
+**Media:** `backdrop-landscape`, `backdrop-portrait`, `terrain`, `bridge`, `tree-start`,
+`tree-decor` (delivered).
+
+**Acceptance criteria**
+
+- The pipeline keys baked checkerboards, snaps scenery to the new scenery ramps (ADR _Scenery
+  palette_), crops a sprite with `sourceCrop`, detects terrain `surface`/`tile`, and pads
+  backdrops (ARCHITECTURE.md → _Asset pipeline_).
+- A painted backdrop per aspect replaces the code sky (which stays as the no-art fallback), pans
+  slowly across the level and warms toward the lookout; terrain spans with two bridges over their
+  gaps; the start tree at the gate and maples between stations (ARCHITECTURE.md → _Scenery_).
+- Both touch modes are full-screen with a translucent pad (◀ ▶ B A, no START) and the ground
+  above it; phone dialogs are full-screen sheets with only B on top (ADR _Full-screen handheld_).
+- HUD buttons are pixel icons + labels (icon-only sound/Map on phones, one row at 390 px); the
+  hint and prompt never overlap.
+
+**Tests:** unit — checker key, palette sets, terrain anchors, backdrop padding, terrain slicing,
+spans, ground anchor, backdrop placement; e2e — `scenery.spec.ts` (backdrop per mode, ground above
+the pad, full-screen sheet with only B, one-row HUD), pad spec (no START; Map opens the menu).

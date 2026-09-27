@@ -39,6 +39,7 @@ export function startGame({ parent, manifest, debug }: BootOptions): Phaser.Game
     camera: { scrollX: 0, scrollY: 0 },
     zone: '',
     vaultOpen: false,
+    backdrop: null,
   };
 
   const game = new Phaser.Game({
@@ -101,6 +102,7 @@ export function startGame({ parent, manifest, debug }: BootOptions): Phaser.Game
         physicsHz: ctx.physicsHz,
         zone: ctx.zone,
         vaultOpen: ctx.vaultOpen,
+        backdrop: ctx.backdrop,
       }),
       setTier: (tier: Tier) => {
         ctx.tier = tier;

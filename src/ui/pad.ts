@@ -14,7 +14,6 @@ const LABEL_KEY: Record<PadButton, UiKey> = {
   right: 'padRight',
   a: 'padJump',
   b: 'padInteract',
-  start: 'padMenu',
 };
 
 /** Android only; iOS Safari has no Vibration API. A blocked or unsupported call is silent. */
@@ -34,7 +33,7 @@ export interface PadOptions {
 }
 
 function isPadButton(v: string | undefined): v is PadButton {
-  return v === 'left' || v === 'right' || v === 'a' || v === 'b' || v === 'start';
+  return v === 'left' || v === 'right' || v === 'a' || v === 'b';
 }
 
 /** Mounts the pad's pointer handling; returns an unsubscribe (there is only ever one pad, but

@@ -68,9 +68,9 @@ src/
     scenes/                   ← BootScene (load), WorldScene (play)
     player/                   ← logic.ts (pure state machine) + PandaSprite.ts
     input/                    ← intent sources: keyboard, wheel, pointer, touch pad, travel; merge.ts (pure)
-    world/                    ← layout.ts (data) + validate.ts (pure) + builders
+    world/                    ← layout.ts (data) + validate.ts / scenery.ts (pure) + builders
     stations/                 ← trigger.ts (pure) + Stations.ts (prop sprites, glyph, click)
-    fx/                       ← sky, parallax, particles, filters (tiered)
+    fx/                       ← scenery (backdrop, terrain, trees), sky, parallax, particles, filters
     travel/                   ← plan.ts (pure walk-to-x + fast-travel run/fade — Phase 7) +
                                 deep-link.ts (pure hash parsing)
   ui/                         ← DOM: main.ts (page entry), loading, fonts, debug overlay, panels,
@@ -184,12 +184,14 @@ and the manifest as arguments; it never queries the DOM. `main.ts` may style its
   `camera.startFollow()` (it resets the camera's `roundPixels` to false and scrolls fractionally,
   per rendered frame). **Refresh:** `render/refresh.ts`'s `RefreshMeter` (fed `game.loop.rawDelta`)
   reports the measured display refresh once; the scene calls `this.physics.world.setFPS(hz)` with
-  it so Arcade steps once per rendered frame at 120/144 Hz too. **Vertically bottom-anchored:** on
-  every resize call `cam.setBounds(0, WORLD_H − viewH, WORLD_W, viewH)` so `scrollY = WORLD_H − viewH`
-  (may be negative) — with bounds of height 480 alone, Phaser pins a taller view to the top. View
-  height is usually ≤ 719 art px on desktop and 240–479 on touch, but can be larger when the 200 px
-  width rule lowers zoom (390×1000@1 → 390×1000): screen-space layers size to the actual view,
-  never to a constant. No vertical follow.
+  it so Arcade steps once per rendered frame at 120/144 Hz too. **Vertically ground-anchored:** on
+  every resize `WorldScene.layout()` sets `scrollY = cameraScrollY(mode, viewH, GROUND_Y)`
+  (`world/scenery.ts`, pure) and `cam.setBounds(0, scrollY, WORLD_W, viewH)` — the ground's top
+  edge sits `belowGround(mode, viewH)` px above the view's bottom: 64 on desktop, 72 in
+  `landscape-touch`, and `max(96, 30 % of viewH)` in the full-screen `handheld` so the panda walks
+  above the pad overlaid on the bottom of the screen. The view may extend past `WORLD_H` (the
+  placeholder ground fill is deep enough; the painted terrain wall and the backdrop's lake show
+  there). Screen-space layers size to the actual view, never to a constant. No vertical follow.
 - **World:** height **480**; ground top **y = 432**; the floor strip spans 432–464 and the game
   fills 464–480 with `ink-900`. Everything positions on integer art px. The sky gradient, stars,
   moon and sun are **screen-space** (`setScrollFactor(0)`) and fill the whole view; `bg-*` layers
@@ -216,32 +218,35 @@ rectangle) and the UI (pad). Touch = `matchMedia('(pointer: coarse)').matches` �
 pointer, so a touchscreen laptop with a mouse stays `desktop` (never `'ontouchstart' in window`,
 which is false under Playwright touch emulation); portrait = `(orientation: portrait)`.
 
-| Mode              | When              | Screen                                              | Controls                |
-| ----------------- | ----------------- | --------------------------------------------------- | ----------------------- |
-| `desktop`         | not touch         | full viewport                                       | keyboard, wheel, click  |
-| `handheld`        | touch + portrait  | top 50 % of the visual viewport (390×844 → 390×420) | DOM D-pad, A, B, START  |
-| `landscape-touch` | touch + landscape | full viewport                                       | translucent pad overlay |
+| Mode              | When              | Screen                                         | Controls                |
+| ----------------- | ----------------- | ---------------------------------------------- | ----------------------- |
+| `desktop`         | not touch         | full viewport                                  | keyboard, wheel, click  |
+| `handheld`        | touch + portrait  | full viewport (390×844 → 234×506 art px at ×5) | translucent pad overlay |
+| `landscape-touch` | touch + landscape | full viewport                                  | translucent pad overlay |
 
 Mode is recomputed on resize/orientation change. Respect `env(safe-area-inset-*)`.
 `html, body { overflow: hidden; overscroll-behavior: none }` — the page itself never scrolls.
 
-**A handheld dialog stays inside the screen's own box.** `section[data-panel]` (a project panel)
-normally covers the full viewport, which in `handheld` mode would sit on top of the pad below it —
-a physical control surface that must stay reachable (`B` closes a panel the same way Esc does). A
-global `shell.css` rule keyed on `html[data-mode='handheld']` constrains it (and `.panel`'s own
-max-height) to the same top-half box as `#screen`, instead — never a scoped `<style>` inside
-`Panels.astro` itself (the same reason `html[data-lang]`'s visibility rule lives in `shell.css`,
-per that component's own comment): an ancestor-qualified selector's extra `html[…]` **type**
-selector out-specifies Astro's injected scope attribute even at equal class/attribute-tier
-specificity, so the global override reliably wins regardless of the two stylesheets' load order —
-but only because the added ancestor makes it so; a same-specificity rule without one would lose to
-source order instead. `landscape-touch` panels stay full-viewport (its pad is a slim, translucent
-bottom strip, not a solid half-screen block, so the visual overlap is minor). This is also why
-`--z-pad` (`tokens.css`) sits above `--z-panel`/`--z-menu`: a `position: fixed` descendant's
-z-index is still capped by any ancestor that itself establishes a stacking context (a specified
-`z-index`) — the `?debug` overlay used to render inside `#hud` and, however high its own z-index
-went, could never paint above a sibling `#pad` outranking `#hud` itself, so `mountDebugOverlay` now
-mounts straight onto `document.body` to escape that ceiling.
+**Both touch modes are full-screen** (DECISIONS.md → _Full-screen handheld_). `#screen` covers the
+viewport (inside the side safe areas) and `components/Pad.astro` overlays the bottom edge: D-pad
+◀ ▶ bottom-left, B and A bottom-right, on a translucent gradient strip whose box has
+`pointer-events: none` (only the buttons take taps). There is no START — the HUD's Map button is
+always on screen. `shell.css` sets `--pad-clearance` per touch mode; the HUD's hint/prompt column
+and dialog content keep that much clear of the bottom edge.
+
+**A handheld dialog is a full-screen sheet.** `section[data-panel]` and `#menu` fill the viewport
+(`html[data-mode='handheld']` rules in the global `shell.css`, which out-specify `panel.css`'s
+plain base rules thanks to the extra `html[…]` ancestor — never a scoped `<style>` in
+`Panels.astro`, whose injected scope attribute would lose that fight only by source order). While
+a dialog is open, `src/ui/main.ts` mirrors `ui:modal` onto `html[data-modal]` and the pad hides
+everything but **B**, which still closes the dialog exactly like Esc; the sheet's bottom padding
+(`--pad-clearance`) keeps its last lines clear of that button. This is also why `--z-pad`
+(`tokens.css`) sits above `--z-panel`/`--z-menu`: a `position: fixed` descendant's z-index is
+still capped by any ancestor that itself establishes a stacking context (a specified `z-index`) —
+the `?debug` overlay used to render inside `#hud` and, however high its own z-index went, could
+never paint above a sibling `#pad` outranking `#hud` itself, so `mountDebugOverlay` mounts
+straight onto `document.body` (and moves under the HUD in touch modes, where the pad owns the
+bottom edge).
 
 ## Quality tiers
 
@@ -291,7 +296,42 @@ bodyH + apex − 4 (≈ 97 px — the head reaches it) above the surface beneath
 on teleport); a change updates `ctx.zone` (read by the debug hook's `getState().zone`) and emits
 `zone:enter` on the bus. The `?debug` overlay appends the zone id to its stats line.
 
-## Sky & parallax
+## Scenery
+
+The level's look (GAME*DESIGN.md → \_Look*) is painted, not drawn in code: pure geometry in
+`src/game/world/scenery.ts` (unit-tested), Phaser placement in `src/game/fx/scenery.ts`
+(`Scenery`, type-only Phaser import). Every piece is optional — without it the code fallbacks
+below (sky, parallax skyline, `floor-plant` strip) draw instead, so a no-assets build still works.
+
+- **Backdrop** (`backdrop-landscape` 960×900, `backdrop-portrait` 288×900; manifest kind
+  `backdrop`): one screen-space image (`setScrollFactor(0)`, depth −120). `pickBackdrop` chooses by
+  aspect (taller than wide → portrait) on every resize. `backdropPlacement` puts the painting's
+  `horizon` anchor (its lake line) a fixed distance under the ground line on screen (78 portrait,
+  16 landscape), clamped so the image always covers the view — the pipeline padded its top with
+  its own sky color for tall views — and pans it across its spare width over the whole level
+  (`x = −spare × scrollX / (worldW − viewW)`): parallax without tiling, so there is never a seam.
+  When a backdrop is present, `SkyRenderer` and `buildParallax` are not built at all. The pan is
+  at most the painting's spare width (≤ 240 px desktop, ≤ 54 px portrait) over the whole 4 620 px
+  level — already near-static — so it is the same under `prefers-reduced-motion`.
+- **Dawn:** the painting is a night scene; a screen-space `amber-600` rectangle (depth −119,
+  additive blend) fades in to 0.32 along `sky.ts`'s `sunAlphaAt(x)` — the same zone-driven curve
+  the code sky's sun uses — so the lookout still reads as sunrise.
+- **Terrain** (`terrain` sprite, anchors `surface` + `tile` detected by the pipeline): the ground
+  is cut into spans by the bridge gaps (`terrainSpans`, the outer spans pushed past the world edges
+  by the cap widths so rounded ends only show at a gap), and each span into a left cap, repeated
+  `tile` columns (the last one cropped to fit) and a right cap (`terrainPieces`). Pieces are images
+  of per-span texture frames, positioned so the `surface` row lands on `GROUND_Y` (depth −30).
+- **Bridges** (`bridge` sprite, deck cropped out of its delivery with `sourceCrop`):
+  `WORLD_LAYOUT.bridges` holds gap centres; each gap is the bridge width minus 6 px per side, so
+  the posts rest on the caps (depth −29). **Visual only** — the ground collider stays one
+  continuous body, so movement and every station are unaffected.
+- **Trees** (`tree-start` at the gate, `tree-decor` in the wide gaps between stations;
+  `WORLD_LAYOUT.trees`, optional `flip` with full vertex rounding): origin-(0, 0) images at
+  integer x, rooted 4 px into the terrain lip, behind it (depth −35) and behind every station.
+
+## Sky & parallax (fallback)
+
+Drawn only when no backdrop was delivered (Scenery, above).
 
 Screen-space (`setScrollFactor(0)`), drawn from palette colors only (ASSETS.md → _Drawn in code_);
 built and updated by `src/game/fx/sky.ts`'s `SkyRenderer` and `src/game/fx/parallax.ts`'s
@@ -398,7 +438,7 @@ false }` the game calls `this.input.keyboard.resetKeys()` and `KeyboardState` dr
   it a moment later — one Esc press never both closes a panel and opens the menu, and a key still
   held through the close needs a fresh `down` (its next auto-repeat) before it counts again.
 - **Esc precedence:** Esc (and **B** on the pad) closes the topmost open panel or the menu. Only
-  when nothing is open do Esc/M/START open the menu and B/E/Enter interact. The pad's half of this
+  when nothing is open do Esc/M (or the HUD's Map button) open the menu and B/E/Enter interact. The pad's half of this
   is decided in `src/ui/pad.ts` itself, **before** a `B` press ever reaches the bus: it calls
   `PanelsApi.closeTopmost()` (returned by `mountPanels`) and only forwards the press as an ordinary
   `input:pad` event when nothing closed — so, unlike the keyboard's Esc (a real `KeyboardEvent`
@@ -430,12 +470,12 @@ false }` the game calls `this.input.keyboard.resetKeys()` and `KeyboardState` dr
   progress still poses/animates normally (`WorldScene` passes `pose: null` while `fastTravel` is
   set, even though `modalOpen` is `true` — only a genuinely idle paused game poses the panda
   `interact`).
-- **Touch pad (done):** DOM D-pad ◀ ▶, A (jump), B (interact/close), START (menu) — `handheld` /
-  `landscape-touch` only (Layout modes, below); `≥ 48 × 48` px targets, `pointer-events: none` on
+- **Touch pad (done):** DOM D-pad ◀ ▶, A (jump), B (interact/close) — no START, the HUD's Map button is always on screen — `handheld` /
+  `landscape-touch` only (Layout modes, below); 64 × 64 px targets (56 in `landscape-touch`), `pointer-events: none` on
   the pad's own box (only its buttons re-enable it), so a translucent `landscape-touch` overlay
   never eats a tap meant for the canvas underneath. `src/components/Pad.astro` is markup only;
   `src/ui/pad.ts` does the pointer handling and is the **only** emitter of `input:pad { button,
-down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b' | 'start'`), the pad's
+down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b'`), the pad's
   equivalent of `ui/wheel.ts` forwarding `input:wheel`. Multi-touch (`hold ▶ + tap A`) falls out of
   each button owning an independent `Set<pointerId>` (`pointerdown`/`pointerup`/`pointercancel`,
   `setPointerCapture` so a finger sliding off a button still delivers its `pointerup`); a later
@@ -636,7 +676,11 @@ alpha < 128; else green (hue 120° ± 22°, s and v > 0.3) for ≥ 95 % → HSV 
 (max channel ≤ 16) for ≥ 95 % → flood-fill from the borders (4-connected) with threshold = the
 source's declared `backgroundThreshold` (slices file, or the manifest entry's override) if present, else
 (max channel of the outer border) + 4 — **never** a global black key (the fur is black too);
-anything else is rejected with a warning.
+else light near-neutral pixels (HSV s ≤ 0.2, v ≥ 0.55) for ≥ 60 % → a **baked checkerboard** (an
+image generator's fake transparency; a lower share because the art may run off the edge):
+flood-fill those from the borders, clear enclosed strictly grey components (s ≤ 0.08, ≥ 16 px —
+canopy holes; a lantern's warm pale core survives), then erode the silhouette by 2 source px to
+drop the light fringe. Anything else is rejected with a warning.
 
 **Edge cleanup** (green sources): after the key, erode the opaque mask by
 `max(1, round(sourcePx / 3))` source px (`sourcePx` = source px per art px) and clear any pixel
@@ -670,7 +714,20 @@ are scaled on their own to exactly `size[0]` wide and aligned `top`/`bottom` in 
 warning if the aspect differs by more than 10 % (native fill items warn when their width differs).
 
 **Per pixel:** snap to `src/design/palette.json` (nearest in OKLab, no dithering) → alpha ≥ 50 % →
-remove 1-px orphan islands.
+remove 1-px orphan islands. An entry with `palette: "scenery"` snaps to the whole palette; every
+other entry to the **core** ramps only (`palette.ts`'s `SCENERY_FAMILIES` / `isSceneryColor`), so a
+character or UI sprite never picks up a moss green (DECISIONS.md → _Scenery palette_).
+
+**Sprites** may declare `sourceCrop` (`[x, y, w, h]` in source px, applied after keying) to use
+part of a delivery. Sprite anchors: `sign` → the navy panel (below); `surface` → the first row
+where ≥ 85 % of the middle 80 % of columns are opaque (a terrain's walking line, under sparse
+tufts), as a line `[0, y, w, 0]`; `tile` → the repeatable middle between the end caps: from the
+darkest wall column near the left cap (a mortar joint) to the column in the right part that best
+matches it.
+
+**Backdrops** (kind `backdrop`, opaque paintings): lanczos to `size[0]` wide → palette → padded at
+the top to `size[1]` with the most frequent color of the scaled image's top row (or cropped from
+the top, with a warning). The `horizon` anchor is measured by an agent and written to the manifest.
 
 **Packing:** strip frames go bottom-up onto the entry's `baseline` (lowest opaque row =
 baseline − 1), centred on the centroid x of the opaque pixels in their lowest 25 % of rows (the

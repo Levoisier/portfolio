@@ -39,6 +39,40 @@
   --c-amber-100: #ffe6a0;
   --c-dusk-700: #3b2352;
   --c-dusk-500: #6e3f6e;
+  /* Scenery ramps (DECISIONS.md → Scenery palette): sampled from the painted backdrops,
+   * terrain and trees; only palette: "scenery" art snaps to them. */
+  --c-night-400: #3d80f7;
+  --c-night-500: #2a58e4;
+  --c-night-550: #1d42cb;
+  --c-night-625: #0d35b0;
+  --c-night-675: #072b97;
+  --c-night-700: #052483;
+  --c-night-725: #042073;
+  --c-night-750: #031b66;
+  --c-night-775: #02185a;
+  --c-night-800: #011450;
+  --c-night-825: #011045;
+  --c-night-850: #010d3b;
+  --c-mist-450: #9351b2;
+  --c-mist-500: #5e48c7;
+  --c-mist-750: #3a0b41;
+  --c-cliff-600: #2b435d;
+  --c-cliff-700: #1e3649;
+  --c-cliff-750: #122b32;
+  --c-cliff-800: #081a2c;
+  --c-cliff-900: #00020b;
+  --c-moss-150: #b0d925;
+  --c-moss-300: #58bb34;
+  --c-leaf-400: #279944;
+  --c-leaf-500: #197b51;
+  --c-leaf-600: #115a51;
+  --c-bark-450: #ab4b3a;
+  --c-bark-650: #5b2c2c;
+  --c-bloom-350: #f55547;
+  --c-bloom-375: #f82339;
+  --c-bloom-450: #be234c;
+  --c-bloom-550: #911045;
+  --c-bloom-650: #640e47;
 
   /* ─── Semantic aliases (DOM only) ─────────────────────────────────────── */
   --color-bg: var(--c-navy-950);
@@ -68,10 +102,10 @@
   --z-hud: 10;
   --z-panel: 30;
   --z-menu: 40;
-  /* Above panels/menu: the pad is a physical control surface (BACKLOG.md Phase 6) — `B`/`START`
-   * must stay reachable to close a panel or the menu the same way Esc does, so it is never the
-   * one thing a modal's full-viewport backdrop covers. `shell.css` also keeps a handheld dialog
-   * within the screen's own top half, so it never fights the pad for the same pixels. */
+  /* Above panels/menu: the pad is a physical control surface (BACKLOG.md Phase 6) — `B` must
+   * stay reachable to close a panel or the menu the same way Esc does, so it is never the one
+   * thing a modal's full-viewport backdrop covers. While a dialog is open the rest of the pad
+   * hides (`Pad.astro`) and the dialog's content keeps clear of B (`shell.css`). */
   --z-pad: 45;
   --z-loading: 50;
 }

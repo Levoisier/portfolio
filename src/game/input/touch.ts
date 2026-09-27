@@ -9,7 +9,7 @@ import type { Intent } from './intent';
 
 export type { PadButton };
 
-type PressButton = 'a' | 'b' | 'start';
+type PressButton = 'a' | 'b';
 type DirButton = 'left' | 'right';
 
 export interface PadEvent {
@@ -20,7 +20,7 @@ export interface PadEvent {
   timeStamp: number;
 }
 
-const isPress = (b: PadButton): b is PressButton => b === 'a' || b === 'b' || b === 'start';
+const isPress = (b: PadButton): b is PressButton => b === 'a' || b === 'b';
 const isDir = (b: PadButton): b is DirButton => b === 'left' || b === 'right';
 
 /** A direction released and pressed again within this window, then held, runs (GAME_DESIGN.md →
@@ -81,7 +81,8 @@ export class TouchPadState {
       jumpPressed: this.pressed.has('a'),
       jumpHeld: this.held.has('a'),
       interactPressed: this.pressed.has('b'),
-      menuPressed: this.pressed.has('start'),
+      // The pad has no menu button: the HUD's Map button is always on screen instead.
+      menuPressed: false,
     };
     this.pressed.clear();
     return intent;

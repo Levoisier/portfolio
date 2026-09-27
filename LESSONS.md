@@ -476,3 +476,32 @@ with placeholders (budget 1.2 / 0.7 MB — re-measure once the real art lands; n
 asset has art yet, so both tiers load the same files).
 **Rule of thumb:** Re-run the measurement after every media wave; the art, not the code, is what
 can blow the mobile budget.
+
+## 2026-09-27 — "Transparent" AI images are a painted checkerboard
+
+**Context:** Cristian's terrain, bridge and tree PNGs looked transparent in the chat preview.
+**Finding:** They were RGB with no alpha at all: the grey/white checkerboard (plus faint grid lines)
+is painted into the pixels, and a baked glow tints it near a lantern. `detectBackground` rejected
+them as `unknown`. Now detected as `checker` (≥ 60 % light near-neutral border — lower than the
+95 % of the other kinds because a bridge's terrain ends run off the canvas) and keyed by a border
+flood-fill plus enclosed strictly-grey holes ≥ 16 px (canopy gaps), then a 2-px erosion.
+**Rule of thumb:** Always check `metadata().hasAlpha` on a delivery before trusting its
+"transparency"; if a new generator paints a different checker, tune `isCheckerLike` against the
+real file, not a synthetic one.
+
+## 2026-09-27 — Pre-existing e2e failures seen during the visual refresh
+
+**Context:** full `pnpm test:e2e` run.
+**Finding:** `menu.spec.ts` → "a stub panel is titled…" expects a `lab` stub panel that Phase 9
+replaced with `stack`; and "recruiter test…" is flaky under parallel load — on the untouched base
+commit it failed 2 of 4 repeats, once with the panda having run _past_ Fiora to Transcolombia
+(the fast-travel run can overshoot its target at low frame rates). Both reproduce on the base
+commit, so neither was caused by this change.
+**Rule of thumb:** Before blaming a change for a red e2e, run the same spec with
+`--repeat-each=4` on the base commit in a `git worktree`.
+
+## 2026-09-27 — Budget re-measured with the first painted scenery
+
+**Finding:** `public/game/` is 260 KB in all (the two backdrops ≈ 180 KB, both loaded on every
+tier; terrain, bridge and trees ≈ 38 KB) — well inside 0.7 MB. Loading only the backdrop for
+the current aspect would save ~45–135 KB if the budget ever gets tight.

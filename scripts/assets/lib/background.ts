@@ -1,8 +1,24 @@
 /** Background detection and removal (ARCHITECTURE.md → Asset pipeline → Background detection). */
-import { isChromaGreen } from './color.ts';
+import { hsv, isChromaGreen } from './color.ts';
 import type { Img } from './img.ts';
 
-export type Background = 'alpha' | 'green' | 'black' | 'unknown';
+export type Background = 'alpha' | 'green' | 'black' | 'checker' | 'unknown';
+
+/**
+ * A light, near-neutral pixel: the baked-in "transparency" checkerboard (and its faint grid
+ * lines) image generators paint when asked for a transparent background. A glow baked over the
+ * checker tints it, hence a saturation margin rather than exact greys.
+ */
+const isCheckerLike = (r: number, g: number, b: number) => {
+  const { s, v } = hsv(r, g, b);
+  return s <= 0.2 && v >= 0.55;
+};
+/** Stricter test for checker holes fully enclosed by the art (canopy gaps): only truly grey. A
+ * lantern's pale core is enclosed too, but warmer than this. */
+const isCheckerGrey = (r: number, g: number, b: number) => {
+  const { s, v } = hsv(r, g, b);
+  return s <= 0.08 && v >= 0.55;
+};
 
 function borderIndices(img: Img): number[] {
   const out: number[] = [];
@@ -25,6 +41,12 @@ export function detectBackground(img: Img): { kind: Background; borderMax: numbe
   )
     return { kind: 'green', borderMax };
   if (share((p) => maxChannel(img, p) <= 16) >= 0.95) return { kind: 'black', borderMax };
+  // The art may run off the canvas edge (a bridge's terrain ends), so a lower share suffices;
+  // no other accepted background is light and neutral, so this cannot be mistaken for one.
+  if (
+    share((p) => isCheckerLike(img.data[p * 4]!, img.data[p * 4 + 1]!, img.data[p * 4 + 2]!)) >= 0.6
+  )
+    return { kind: 'checker', borderMax };
   return { kind: 'unknown', borderMax };
 }
 
@@ -58,6 +80,58 @@ export function floodBlack(img: Img, threshold: number): Img {
     if (p < img.w * (img.h - 1)) stack.push(p + img.w);
   }
   return { ...img, data };
+}
+
+/**
+ * Removes a baked checkerboard: flood-fills checker-like pixels from the borders
+ * (4-connected), then clears enclosed components of strictly grey pixels (holes in a canopy),
+ * then erodes the silhouette by `erode` px to drop the light anti-aliasing fringe.
+ */
+export function keyChecker(img: Img, erode: number): Img {
+  const data = new Uint8Array(img.data);
+  const n = img.w * img.h;
+  const rgb = (p: number) =>
+    [img.data[p * 4]!, img.data[p * 4 + 1]!, img.data[p * 4 + 2]!] as const;
+  const neighbours = (p: number) => {
+    const x = p % img.w;
+    const out: number[] = [];
+    if (x > 0) out.push(p - 1);
+    if (x < img.w - 1) out.push(p + 1);
+    if (p >= img.w) out.push(p - img.w);
+    if (p < n - img.w) out.push(p + img.w);
+    return out;
+  };
+  const seen = new Uint8Array(n);
+  const stack = borderIndices(img);
+  while (stack.length) {
+    const p = stack.pop()!;
+    if (seen[p]) continue;
+    seen[p] = 1;
+    if (!isCheckerLike(...rgb(p))) continue;
+    data[p * 4 + 3] = 0;
+    stack.push(...neighbours(p));
+  }
+  for (let p = 0; p < n; p++) {
+    if (seen[p] || !isCheckerGrey(...rgb(p))) continue;
+    seen[p] = 1;
+    const region = [p];
+    for (let i = 0; i < region.length; i++) {
+      for (const q of neighbours(region[i]!)) {
+        if (!seen[q] && isCheckerGrey(...rgb(q))) {
+          seen[q] = 1;
+          region.push(q);
+        }
+      }
+    }
+    // Specks this small are highlights inside the art, not a see-through gap.
+    if (region.length >= 16) for (const q of region) data[q * 4 + 3] = 0;
+  }
+  const keyed = { ...img, data };
+  if (erode <= 0) return keyed;
+  const dist = distanceToClear(keyed, erode + 1);
+  const out = new Uint8Array(data);
+  for (let p = 0; p < n; p++) if (out[p * 4 + 3] && dist[p]! <= erode) out[p * 4 + 3] = 0;
+  return { ...img, data: out };
 }
 
 /** Chebyshev distance of each opaque pixel to the nearest transparent pixel (capped). */

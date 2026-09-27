@@ -10,7 +10,7 @@ import type { LayoutMode } from './layout-mode';
 export type Tier = 'high' | 'low';
 /** A physical control on the handheld pad (BACKLOG.md Phase 6 — ARCHITECTURE.md → Input →
  * Touch pad). */
-export type PadButton = 'left' | 'right' | 'a' | 'b' | 'start';
+export type PadButton = 'left' | 'right' | 'a' | 'b';
 
 export interface DebugStats {
   fps: number;

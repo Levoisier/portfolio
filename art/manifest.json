@@ -192,6 +192,78 @@
       "scrollFactor": 1.25
     },
     {
+      "id": "backdrop-landscape",
+      "kind": "backdrop",
+      "wave": "B",
+      "required": false,
+      "tier": "all",
+      "palette": "scenery",
+      "size": [960, 900],
+      "anchors": {
+        "horizon": [0, 773, 960, 0]
+      }
+    },
+    {
+      "id": "backdrop-portrait",
+      "kind": "backdrop",
+      "wave": "B",
+      "required": false,
+      "tier": "all",
+      "palette": "scenery",
+      "size": [288, 900],
+      "anchors": {
+        "horizon": [0, 735, 288, 0]
+      }
+    },
+    {
+      "id": "terrain",
+      "kind": "sprite",
+      "wave": "B",
+      "required": false,
+      "tier": "all",
+      "palette": "scenery",
+      "targetHeight": 96,
+      "maxSize": [448, 96],
+      "anchors": {
+        "surface": [0, 19, 426, 0],
+        "tile": [16, 0, 380, 96]
+      }
+    },
+    {
+      "id": "bridge",
+      "kind": "sprite",
+      "wave": "B",
+      "required": false,
+      "tier": "all",
+      "palette": "scenery",
+      "targetHeight": 54,
+      "maxSize": [160, 56],
+      "sourceCrop": [428, 360, 910, 320],
+      "anchors": {
+        "surface": [0, 0, 160, 0]
+      }
+    },
+    {
+      "id": "tree-start",
+      "kind": "sprite",
+      "wave": "D",
+      "required": false,
+      "tier": "all",
+      "palette": "scenery",
+      "targetHeight": 176,
+      "maxSize": [176, 176]
+    },
+    {
+      "id": "tree-decor",
+      "kind": "sprite",
+      "wave": "D",
+      "required": false,
+      "tier": "all",
+      "palette": "scenery",
+      "targetHeight": 128,
+      "maxSize": [128, 128]
+    },
+    {
       "id": "station-spawn-gate",
       "kind": "sprite",
       "wave": "C",
