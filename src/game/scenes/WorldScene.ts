@@ -164,7 +164,9 @@ export class WorldScene extends Phaser.Scene {
       INTERACTIVE_STATIONS,
       this.ctx.manifest,
       GROUND_Y,
-      (station) => this.handleStationClick(station)
+      (station) => this.handleStationClick(station),
+      bus.last('lang:change')?.lang ?? DEFAULT_LANG,
+      this.ctx.mode
     );
     this.story = new Story(
       this,
@@ -260,12 +262,16 @@ export class WorldScene extends Phaser.Scene {
       }),
       bus.on('travel:to', ({ id }) => this.startFastTravel(id)),
       bus.on('skills:reset', () => this.skills.reset()),
-      bus.on('lang:change', ({ lang }) => this.story.drawSign(lang)),
+      bus.on('lang:change', ({ lang }) => {
+        this.story.drawSign(lang);
+        this.stations.drawLabels(lang);
+      }),
       bus.on(
         'fonts:ready',
         () => {
           this.ctx.pixelFont = this.story.drawSign();
           this.classifiedWing.drawSign();
+          this.stations.drawLabels();
         },
         { replay: true }
       ),
@@ -633,6 +639,7 @@ export class WorldScene extends Phaser.Scene {
     this.sky?.resize(width, height);
     this.scenery.resize(width, height, GROUND_Y - scrollY);
     this.ctx.backdrop = this.scenery.backdropId;
+    this.stations?.setMode(this.ctx.mode);
     this.scenery.update(this.followState.scrollX);
     if (this.panda) {
       this.followState = snapFollow({

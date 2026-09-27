@@ -32,6 +32,9 @@ export const ui = {
    * every `ui` entry stays a `Localized<string>`. */
   stationPromptKey: { es: 'E — {title}', en: 'E — {title}' },
   stationPromptTouch: { es: 'Toca — {title}', en: 'Toca — {title}' },
+  /** Drawn on a station's card while the panda is in range (canvas pixel text). */
+  stationHintKey: { es: 'Pulsa E para interactuar', en: 'Press E to interact' },
+  stationHintTouch: { es: 'Pulsa B para interactuar', en: 'Press B to interact' },
   // ─── Handheld pad (Phase 6) ───────────────────────────────────────────────
   padLeft: { es: 'Caminar a la izquierda', en: 'Walk left' },
   padRight: { es: 'Caminar a la derecha', en: 'Walk right' },

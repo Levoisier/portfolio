@@ -505,3 +505,13 @@ commit, so neither was caused by this change.
 **Finding:** `public/game/` is 260 KB in all (the two backdrops ≈ 180 KB, both loaded on every
 tier; terrain, bridge and trees ≈ 38 KB) — well inside 0.7 MB. Loading only the backdrop for
 the current aspect would save ~45–135 KB if the budget ever gets tight.
+
+## 2026-09-27 — "The panda freezes after running" was the interim idle loop
+
+**Context:** Cristian reported the panda stuck in a running frame after stopping.
+**Finding:** The state machine did switch to `idle`, and `panda-idle` kept playing — but the
+interim idle frames cut from the concept sheet are three mid-step poses, so at 6 fps the panda
+looked frozen mid-stride or marching in place. Now idle holds frame 0 (the standing pose) and
+only a delivered idle strip loops, after 2.5 s.
+**Rule of thumb:** When a pose "freezes", compare the reported `anim` with what the strip's frames
+actually depict before debugging the state machine.

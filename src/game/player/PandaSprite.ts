@@ -22,6 +22,8 @@ import { ANIM, initialPlayerState, step } from './logic';
 import type { AirFrame, BodyReport, Pose } from './types';
 
 const PLACEHOLDER_KEY = 'panda-placeholder';
+/** Standing still this long before a delivered idle loop starts (a breath, a blink). */
+const IDLE_LOOP_DELAY_MS = 2500;
 
 /** Air-strip frames this module plays (`crouch` is unused — ARCHITECTURE.md → Player). */
 const AIR_FRAME_ORDER: readonly AirFrame[] = ['takeoff', 'rise', 'apex', 'fall', 'land'];
@@ -52,6 +54,13 @@ export class PandaSprite {
    * air frame (ARCHITECTURE.md → Testing strategy / the player-logic implementer's notes). */
   private forceGrounded = true;
   private lastAnim: string = ANIM.idle;
+  /**
+   * Whether `panda-idle` may loop. Only a delivered strip does: the interim frames cut from the
+   * concept sheet are mid-step poses, so looping them reads as the panda frozen mid-stride (or
+   * marching in place) after every action. Otherwise idle is the rest pose, frame 0, held still.
+   */
+  private readonly idleLoops: boolean;
+  private idleMs = 0;
   private lastFrame: AirFrame | undefined;
 
   constructor(scene: Phaser.Scene, x: number, y: number, manifest: RuntimeManifest | null) {
@@ -72,11 +81,8 @@ export class PandaSprite {
     }
     this.hasAir = !this.usingPlaceholder && scene.textures.exists(ANIM.air);
     this.airFrames = resolveAirFrames(manifest, this.hasAir);
-
-    if (!this.usingPlaceholder && scene.anims.exists(ANIM.idle)) {
-      this.sprite.play(ANIM.idle);
-      this.currentAnim = ANIM.idle;
-    }
+    this.idleLoops = manifest?.assets[ANIM.idle]?.source === 'raw';
+    this.restPose();
   }
 
   get facing(): -1 | 1 {
@@ -117,7 +123,7 @@ export class PandaSprite {
     if (result.vy !== null) body.velocity.y = result.vy;
     if (result.state.sinceJump === 0) bus.emit('sfx', { name: 'jump' });
 
-    this.applyAnim(result.anim, result.frame);
+    this.applyAnim(result.anim, result.frame, dtMs);
     this.sprite.setFlipX(result.flipX);
     this.lockBody();
   }
@@ -132,18 +138,36 @@ export class PandaSprite {
     this.lastAnim = ANIM.idle;
     this.lastFrame = undefined;
     this.forceGrounded = true;
-    if (!this.usingPlaceholder && this.sprite.anims.exists(ANIM.idle)) {
-      this.sprite.play(ANIM.idle);
-      this.currentAnim = ANIM.idle;
-      this.currentAirFrame = -1;
-    }
+    this.restPose();
     this.lockBody();
+  }
+
+  /** Every action ends here: the standing frame, held still (idle's frame 0), with the idle
+   * loop — when there is a delivered one — starting only after `IDLE_LOOP_DELAY_MS`. */
+  private restPose(): void {
+    if (this.usingPlaceholder) return;
+    this.sprite.anims.stop();
+    this.sprite.anims.timeScale = 1;
+    this.sprite.setTexture(ANIM.idle, 0);
+    this.currentAnim = ANIM.idle;
+    this.currentAirFrame = -1;
+    this.idleMs = 0;
   }
 
   /** `panda-air` is never played by fps — it is set to the named frame every step. Everything
    * else is a normal loop; `panda-run` falls back to `panda-walk` sped up when it is missing. */
-  private applyAnim(anim: string, frame?: AirFrame): void {
+  private applyAnim(anim: string, frame: AirFrame | undefined, dtMs: number): void {
     if (this.usingPlaceholder) return;
+
+    if (anim === ANIM.idle) {
+      if (this.currentAnim !== ANIM.idle) this.restPose();
+      else if (this.idleLoops && !this.sprite.anims.isPlaying) {
+        this.idleMs += dtMs;
+        if (this.idleMs >= IDLE_LOOP_DELAY_MS && this.sprite.anims.exists(ANIM.idle))
+          this.sprite.play(ANIM.idle);
+      }
+      return;
+    }
 
     if (anim === ANIM.air) {
       if (!this.hasAir) return;

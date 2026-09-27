@@ -385,6 +385,11 @@ sunrise`); `sky.ts`'s `MOODS` maps each to a 4-color top→horizon ramp, a star 
   `body.blocked.down && body.vy >= 0` (not `blocked.down` alone): on a frame where Arcade runs no
   physics step right after a jump fires, `blocked.down` still reads the previous step's `true`
   while `vy` is already the launch speed, and would otherwise wipe out the jump.
+- **Rest pose:** whenever `step()` returns `idle`, `PandaSprite` stops the running animation
+  and shows `panda-idle` frame 0 held still — every action (walk, run, landing, wave, interact)
+  ends on the standing pose, never on whatever frame it was on. The idle strip loops (after
+  2.5 s standing) only when it is a delivered `raw` strip; the interim frames cut from the
+  concept sheet are mid-step poses and would read as the panda frozen mid-stride.
 - Constants (`config.ts`, tune by feel): gravity 900 px/s², walk 90, run 150, jump velocity −330,
   coyote 90 ms, jump buffer 120 ms, jump-cut ×0.5 on early release. Arcade integrates
   semi-implicitly at a fixed step, so the real apex at 60 Hz is **57.75 px** (not v²/2g = 60.5);
@@ -492,6 +497,15 @@ down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b'`), the pad's
   per-language DOM pair to key visibility off like panels do.
 
 ## Stations & panels
+
+- **Station cards** (`stations/Stations.ts`): until a station's prop art is delivered (`source:
+raw`), it renders as a card at its design size — `night-700` at 62 % opacity with a 1-px
+  `night-400` edge, drawn in code so the backdrop shows through (the gate's card also gets its
+  `sign` plate). A card ≥ 120 px wide shows the project title in pixel text at the top and, while
+  the panda is in its trigger, the interact hint under it (`ui.stationHintKey` "Pulsa E…" on
+  desktop, `ui.stationHintTouch` "Pulsa B…" in touch modes), redrawn on `fonts:ready`,
+  `lang:change` and a layout-mode change. Narrower cards (dossier stands) keep only the glyph and
+  the HUD prompt.
 
 - A station = layout entry (`id`, `kind`, `x`, `asset`, `trigger` width) + (for a `kind` with a
   panel) a matching `data-panel` id. The 6 `project` stations and the 4 `dossier` stands have one;
