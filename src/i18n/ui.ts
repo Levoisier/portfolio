@@ -52,6 +52,14 @@ export const ui = {
     es: 'Esta parada llega en una fase futura del proyecto.',
     en: 'This stop arrives in a later phase of the build.',
   },
+  // ─── Classified wing (Phase 8) ────────────────────────────────────────────
+  /** The code-drawn wing sign — deliberately identical in both languages (a physical bilingual
+   * placard), unlike every other entry here. */
+  classifiedSign: { es: 'CLASIFICADO / CLASSIFIED', en: 'CLASIFICADO / CLASSIFIED' },
+  dossierRole: { es: 'Rol', en: 'Role' },
+  dossierImpact: { es: 'Impacto', en: 'Impact' },
+  dossierDuration: { es: 'Duración', en: 'Duration' },
+  dossierTeamSize: { es: 'Tamaño del equipo', en: 'Team size' },
   hintDesktop: {
     es: '← → o A/D para caminar, Espacio para saltar, E para interactuar — o solo usa la rueda del mouse.',
     en: '← → or A/D to walk, Space to jump, E to interact — or just scroll.',

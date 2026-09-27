@@ -172,10 +172,17 @@ const CONTACT_STATION: Station = {
 };
 
 /** Decorative prop slots (positions only — the owning phase renders them; ASSETS.md → wave D /
- * wave C). Empty except the one the narrative fixes at the gate (GAME_DESIGN.md → _The level_,
- * zone 0). */
+ * wave C). The gate's crate awaits Phase 10's wake beat; the classified wing's fence panels and
+ * beacon (GAME_DESIGN.md → _Classified wing_, `props-zones`) sit in the gaps between its
+ * stations' triggers — clear of the vault (2452–2548) and the four dossier stands. */
 const PROPS: Prop[] = [
   { id: 'gate-crate', asset: 'props-misc', item: 'crate', x: 190, y: GROUND_Y },
+  { id: 'classified-fence-1', asset: 'props-zones', item: 'fence', x: 2426, y: GROUND_Y },
+  { id: 'classified-fence-2', asset: 'props-zones', item: 'fence', x: 2587, y: GROUND_Y },
+  { id: 'classified-beacon-1', asset: 'props-zones', item: 'beacon', x: 2725, y: GROUND_Y },
+  { id: 'classified-fence-3', asset: 'props-zones', item: 'fence', x: 2875, y: GROUND_Y },
+  { id: 'classified-beacon-2', asset: 'props-zones', item: 'beacon', x: 3025, y: GROUND_Y },
+  { id: 'classified-fence-4', asset: 'props-zones', item: 'fence', x: 3162, y: GROUND_Y },
 ];
 
 export const WORLD_LAYOUT: WorldLayout = {

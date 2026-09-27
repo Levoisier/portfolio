@@ -1,0 +1,83 @@
+---
+/**
+ * The 4 confidential-project "dossier" panels (BACKLOG.md Phase 8 — ARCHITECTURE.md → Stations &
+ * panels), pre-rendered at build time from `src/content/confidential.ts`, both languages, same
+ * `[data-panel]` shape every other panel uses (`src/ui/panels.ts` needs no changes to open/close/
+ * focus-trap/visited it).
+ *
+ * AGENTS.md Golden Rule 3 (absolute): renders exactly industry (the title), role, stack, impact,
+ * duration and team size — nothing else. `content.test.ts` guards the data itself; this
+ * component only decides how those same 6 fields are shown, with a CSS redaction-bar reveal
+ * (`styles/panel.css`) standing in for "declassifying" the dossier on open.
+ */
+import '../../styles/panel.css';
+import { LANGS, confidentialProjects, sectionCopy } from '../../content';
+import { HTML_LANG } from '../../i18n/lang';
+import { ui } from '../../i18n/ui';
+---
+
+{
+  confidentialProjects.map((c) => (
+    <section id={`panel-${c.id}`} data-panel={c.id} hidden>
+      {LANGS.map((lang) => (
+        <div
+          class="panel"
+          lang={HTML_LANG[lang]}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`panel-${c.id}-title-${lang}`}
+          tabindex="-1"
+        >
+          <button type="button" class="panel__close" data-panel-close aria-label={ui.close[lang]}>
+            <span aria-hidden="true">×</span>
+          </button>
+          <p class="panel__subheading">{sectionCopy.confidential.heading[lang]}</p>
+          <h2 id={`panel-${c.id}-title-${lang}`} class="panel__title">
+            {c.industry[lang]}
+          </h2>
+          <dl class="dossier__fields">
+            <div class="dossier__field">
+              <dt>{ui.dossierRole[lang]}</dt>
+              <dd>
+                <span class="dossier__redaction" aria-hidden="true" />
+                {c.role[lang]}
+              </dd>
+            </div>
+            <div class="dossier__field">
+              <dt>{ui.stackHeading[lang]}</dt>
+              <dd>
+                <span class="dossier__redaction" aria-hidden="true" />
+                <ul class="panel__stack">
+                  {c.stack.map((s) => (
+                    <li class="panel__chip">{s}</li>
+                  ))}
+                </ul>
+              </dd>
+            </div>
+            <div class="dossier__field">
+              <dt>{ui.dossierImpact[lang]}</dt>
+              <dd>
+                <span class="dossier__redaction" aria-hidden="true" />
+                {c.impact[lang]}
+              </dd>
+            </div>
+            <div class="dossier__field">
+              <dt>{ui.dossierDuration[lang]}</dt>
+              <dd>
+                <span class="dossier__redaction" aria-hidden="true" />
+                {c.duration[lang]}
+              </dd>
+            </div>
+            <div class="dossier__field">
+              <dt>{ui.dossierTeamSize[lang]}</dt>
+              <dd>
+                <span class="dossier__redaction" aria-hidden="true" />
+                {c.teamSize}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      ))}
+    </section>
+  ))
+}

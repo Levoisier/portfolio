@@ -450,3 +450,19 @@ failure as a real regression signal only after ruling this out, not before.
 build` itself), check whether an e2e run or another preview is already serving `dist/`
 (`pgrep -af "preview --host"`) — let it finish, or point the new build at nothing that's currently
 being read from.
+
+## 2026-09-27 — A prompt-text e2e assertion must not hardcode `E —` (Phase 8)
+
+**Context:** Two new Phase 8 e2e tests asserted `[data-slot="prompt"]` equals the literal string
+`E — Ala clasificada` (and a dossier's `E — <industry>`).
+**Problem:** Both passed on the `desktop` Playwright project and failed on `mobile`, which runs
+with `hasTouch: true` (Layout modes → `shared/layout-mode.ts` reads `pointer: coarse`) and so
+shows `ui.stationPromptTouch` (`Toca — …`) instead of `ui.stationPromptKey` (`E — …`) — a fact the
+new tests had nothing to do with (that prefix logic is Phase 5/6's, already covered elsewhere) but
+still broke on.
+**Fix / finding:** Switched both assertions from `toHaveText` to `toContainText(title)`, checking
+only the part the phase actually added (the title resolving at all for a vault/dossier id, not
+just a project) and staying silent on the E/Toca prefix.
+**Rule of thumb:** A new e2e assertion on `[data-slot="prompt"]` (or anything else that reads
+`shared/layout-mode.ts`) must run — or at least be written to tolerate — both the `desktop` and
+`mobile` Playwright projects; assert only the specific thing the change under test added.

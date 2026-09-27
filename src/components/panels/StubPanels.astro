@@ -1,23 +1,23 @@
 ---
 /**
- * Stand-in panels for stops whose own phase has not merged yet (BACKLOG.md Phase 7): the
- * classified wing (Phase 8), the Reagent lab (Phase 9), and each dossier stand (Phase 8) — the
- * menu already lists them (`components/Menu.astro`), so selecting one must open *something*
- * rather than silently do nothing. Titled with the stop's own name; the body is a generic
- * placeholder. A later phase replaces the matching entry here with its real panel — the id stays
- * the same, so nothing else (visited marks, deep links, the menu) needs to change.
+ * Stand-in panel for a stop whose own phase has not merged yet: the Reagent lab (Phase 9) — the
+ * menu already lists it (`components/Menu.astro`), so selecting it must open *something* rather
+ * than silently do nothing. Titled with the stop's own name; the body is a generic placeholder. A
+ * later phase replaces this entry with its real panel — the id stays the same, so nothing else
+ * (visited marks, deep links, the menu) needs to change.
+ *
+ * The classified wing and its 4 dossier stands used to stand in here too (Phase 7); Phase 8
+ * replaced them: the vault (`classified`) opens no DOM panel at all (GAME_DESIGN.md → Canonical
+ * ids — interacting with it rolls its door aside instead, `stations/Vault.ts`), and the 4 dossier
+ * ids now have their real panel (`ConfidentialPanel.astro`).
  */
 import '../../styles/panel.css';
-import { LANGS, confidentialProjects } from '../../content';
+import { LANGS } from '../../content';
 import { HTML_LANG } from '../../i18n/lang';
 import { ui } from '../../i18n/ui';
 import type { Localized } from '../../content/types';
 
-const stubs: { id: string; title: Localized }[] = [
-  { id: 'classified', title: ui.menuClassified },
-  { id: 'lab', title: ui.menuLab },
-  ...confidentialProjects.map((c) => ({ id: c.id, title: c.industry })),
-];
+const stubs: { id: string; title: Localized }[] = [{ id: 'lab', title: ui.menuLab }];
 ---
 
 {

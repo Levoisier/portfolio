@@ -4,7 +4,8 @@
  * Golden Rule 7); this module decides whether a panel exists for an id, shows/hides it, owns
  * `ui:modal`, focus, the HUD prompt text, visited marks and the URL hash.
  */
-import { projects } from '../content';
+import { confidentialProjects, projects } from '../content';
+import type { Lang } from '../content/types';
 import { hashFor } from '../game/travel/deep-link';
 import { getLang, safeLocalStorage } from '../i18n/lang';
 import { ui } from '../i18n/ui';
@@ -128,14 +129,28 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
   const panelSection = (id: string): HTMLElement | null =>
     root.querySelector<HTMLElement>(`[data-panel="${id}"]`);
 
+  /** A station's own title for the prompt (`E — {title}`) — a project's fixed name, a dossier's
+   * industry (localized), or the vault's own fixed label (BACKLOG.md Phase 8: the vault has no
+   * `data-panel` of its own, GAME_DESIGN.md → Canonical ids, but it still gets the same
+   * approach/prompt/interact loop as every other station). `null` for an id with neither (gate,
+   * lab, contact, a skill block — still a future phase). */
+  function promptTitle(id: string, lang: Lang): string | null {
+    const project = projects.find((p) => p.id === id);
+    if (project) return project.title;
+    const dossier = confidentialProjects.find((c) => c.id === id);
+    if (dossier) return dossier.industry[lang];
+    if (id === 'classified') return ui.menuClassified[lang];
+    return null;
+  }
+
   function promptText(id: string | null): string {
     if (!id) return '';
-    const project = projects.find((p) => p.id === id);
-    if (!project) return '';
     const lang = getLang();
+    const title = promptTitle(id, lang);
+    if (title === null) return '';
     const touch = document.documentElement.dataset.mode !== 'desktop';
     const template = touch ? ui.stationPromptTouch[lang] : ui.stationPromptKey[lang];
-    return template.replace('{title}', project.title);
+    return template.replace('{title}', title);
   }
 
   function updatePrompt(): void {

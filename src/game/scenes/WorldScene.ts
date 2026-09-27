@@ -20,6 +20,7 @@ import {
 } from '../config';
 import { REGISTRY_KEY, type GameContext } from '../context';
 import { applyParallaxMotion, buildParallax, type ParallaxHandle } from '../fx/parallax';
+import { blinkBeacons, ClassifiedWing } from '../fx/classified';
 import { SkyRenderer } from '../fx/sky';
 import type { SourcedIntent } from '../input/intent';
 import { KeyboardSource } from '../input/keyboard';
@@ -32,6 +33,7 @@ import { follow, snapFollow, type FollowState } from '../render/follow';
 import { RefreshMeter } from '../render/refresh';
 import { Stations } from '../stations/Stations';
 import { stationAt } from '../stations/trigger';
+import { Vault } from '../stations/Vault';
 import { PIXEL_FONT, PIXEL_FONT_SIZE, registerPixelFont } from '../text/bitmap-font';
 import { parseDeepLink } from '../travel/deep-link';
 import {
@@ -42,11 +44,26 @@ import {
   travelTargetX,
   type TravelPlan,
 } from '../travel/plan';
+import { buildProps } from '../world/props';
 import { WORLD_LAYOUT, zoneAt, type PlatformSize, type Station } from '../world/layout';
 
-/** The 6 project stations only (BACKLOG.md Phase 5); the gate/vault/dossiers/blocks/contact
- * kinds have no panel yet — later phases build those without touching this filter. */
-const PROJECT_STATIONS: Station[] = WORLD_LAYOUT.stations.filter((s) => s.kind === 'project');
+/** Stations rendered by the generic single-sprite adapter (BACKLOG.md Phase 5's 6 project
+ * stations, plus Phase 8's 4 dossier stands — `confidential-dossier` is a `sprite` asset too);
+ * the gate/blocks/contact kinds have no panel yet — later phases build those without touching
+ * this filter. The vault (`kind: 'vault'`) is a different shape (`stations/Vault.ts`, below). */
+const INTERACTIVE_STATIONS: Station[] = WORLD_LAYOUT.stations.filter(
+  (s) => s.kind === 'project' || s.kind === 'dossier'
+);
+const VAULT_STATION: Station | null = WORLD_LAYOUT.stations.find((s) => s.kind === 'vault') ?? null;
+/** Every station tracked for triggers/prompt (`stations/trigger.ts`'s `stationAt`): the ones
+ * above plus the vault, which shares the same approach/prompt/interact loop despite opening no
+ * DOM panel of its own. */
+const TRIGGER_STATIONS: Station[] = VAULT_STATION
+  ? [...INTERACTIVE_STATIONS, VAULT_STATION]
+  : INTERACTIVE_STATIONS;
+/** Decorative props this scene renders so far (BACKLOG.md Phase 8's classified wing); a later
+ * phase widens this (or drops the filter) as it adds its own (`world/props.ts` is generic). */
+const CLASSIFIED_PROPS = WORLD_LAYOUT.props.filter((p) => p.id.startsWith('classified-'));
 
 const SPAWN_X = 160;
 const FLOOR_ID = 'floor-plant';
@@ -87,6 +104,8 @@ export class WorldScene extends Phaser.Scene {
   private statsIn = 0;
   private zoneId = '';
   private stations!: Stations;
+  private vault: Vault | null = null;
+  private classifiedWing!: ClassifiedWing;
   private stationId: string | null = null;
   /** Click/tap-to-open (ARCHITECTURE.md → Input → Pointer/tap): a plain walk toward the clicked
    * station, cleared on arrival (then opened) or by any manual movement/jump/interact. */
@@ -113,13 +132,33 @@ export class WorldScene extends Phaser.Scene {
 
     this.buildGround();
     const platforms = this.buildPlatforms();
-    this.stations = new Stations(this, PROJECT_STATIONS, this.ctx.manifest, GROUND_Y, (station) =>
-      this.handleStationClick(station)
+    this.stations = new Stations(
+      this,
+      INTERACTIVE_STATIONS,
+      this.ctx.manifest,
+      GROUND_Y,
+      (station) => this.handleStationClick(station)
     );
+    if (VAULT_STATION) {
+      this.vault = new Vault(this, VAULT_STATION, this.ctx.manifest, GROUND_Y, (station) =>
+        this.handleStationClick(station)
+      );
+    }
+    const classifiedZone = WORLD_LAYOUT.zones.find((z) => z.id === 'classified')!;
+    this.classifiedWing = new ClassifiedWing(
+      this,
+      classifiedZone.x0,
+      classifiedZone.x1,
+      GROUND_Y,
+      VAULT_STATION?.x ?? Math.round((classifiedZone.x0 + classifiedZone.x1) / 2),
+      this.ctx.tier
+    );
+    blinkBeacons(this, buildProps(this, this.ctx.manifest, CLASSIFIED_PROPS));
 
     // Deep link (GAME_DESIGN.md → Deep links): `/#<id>` spawns at that station's x. An id with
-    // no panel yet (gate/vault/dossier/block/contact) still resolves — `station:open` below is a
-    // no-op until its phase adds the panel.
+    // no panel yet (gate/block/contact) still resolves — `station:open` below is a no-op until
+    // its phase adds the panel; `classified` resolves too and stays a no-op UI-side (it has no
+    // panel of its own), but still runs the vault's own local open() (below).
     const deepLink = parseDeepLink(
       location.hash,
       WORLD_LAYOUT.stations.map((s) => s.id)
@@ -166,9 +205,22 @@ export class WorldScene extends Phaser.Scene {
         if (!this.modalOpen) this.touch.handle(e);
       }),
       bus.on('travel:to', ({ id }) => this.startFastTravel(id)),
-      bus.on('fonts:ready', () => this.addLabel(), { replay: true }),
-      bus.on('tier:change', ({ tier }) => (this.ctx.tier = tier)),
-      onReducedMotionChange((reduced) => applyParallaxMotion(this.parallax, reduced)),
+      bus.on(
+        'fonts:ready',
+        () => {
+          this.addLabel();
+          this.classifiedWing.drawSign();
+        },
+        { replay: true }
+      ),
+      bus.on('tier:change', ({ tier }) => {
+        this.ctx.tier = tier;
+        this.classifiedWing.refresh(tier, prefersReducedMotion());
+      }),
+      onReducedMotionChange((reduced) => {
+        applyParallaxMotion(this.parallax, reduced);
+        this.classifiedWing.refresh(this.ctx.tier, reduced);
+      }),
       () => this.keyboard.destroy()
     );
 
@@ -189,7 +241,7 @@ export class WorldScene extends Phaser.Scene {
     });
     this.layout();
     this.setZone(zoneAt(this.panda.sprite.x).id);
-    this.setStation(stationAt(this.panda.sprite.x, PROJECT_STATIONS));
+    this.setStation(stationAt(this.panda.sprite.x, TRIGGER_STATIONS));
     this.sky.update(this.panda.sprite.x);
     this.updateDebugState();
 
@@ -298,7 +350,7 @@ export class WorldScene extends Phaser.Scene {
     });
     this.applyCamera();
     this.setZone(zoneAt(this.panda.sprite.x).id);
-    this.setStation(stationAt(this.panda.sprite.x, PROJECT_STATIONS));
+    this.setStation(stationAt(this.panda.sprite.x, TRIGGER_STATIONS));
     this.sky.update(this.panda.sprite.x);
     if (this.ctx.debug) this.updateDebugState();
   }
@@ -355,12 +407,20 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** Only the bus knows what happens next (AGENTS.md Golden Rule 7): the UI opens the matching
-   * DOM panel (if one exists) and flips `ui:modal`, which is what actually pauses input and
-   * poses the panda — this is a no-op here for a station id with no panel yet (e.g. a skill
-   * block, still Phase 9). */
+  /** Only the bus knows what happens next UI-side (AGENTS.md Golden Rule 7): the UI opens the
+   * matching DOM panel (if one exists) and flips `ui:modal`, which is what actually pauses input
+   * and poses the panda — this is a no-op UI-side for a station id with no panel yet (e.g. a
+   * skill block, still Phase 9) or with no panel at all (the vault, below). Every "the player
+   * reached/activated station `id`" path (interact, click, walk/fast-travel arrival) funnels
+   * through here, so the vault's own local, game-side reaction (Golden Rule 7 again: the UI is
+   * never told) lives in this one choke point instead of at each call site. */
   private openStation(id: string): void {
     bus.emit('station:open', { id });
+    if (VAULT_STATION && id === VAULT_STATION.id) {
+      this.vault?.open();
+      this.classifiedWing.shiftLightToScarlet();
+      this.ctx.vaultOpen = true;
+    }
   }
 
   /** Debug hook only (`window.__PORTFOLIO__.teleport`, also used by `openStation` and
@@ -377,7 +437,7 @@ export class WorldScene extends Phaser.Scene {
     });
     this.applyCamera();
     this.setZone(zoneAt(x).id);
-    this.setStation(stationAt(x, PROJECT_STATIONS));
+    this.setStation(stationAt(x, TRIGGER_STATIONS));
     this.sky.update(x);
     this.updateDebugState();
   }
@@ -405,7 +465,9 @@ export class WorldScene extends Phaser.Scene {
       this.stationId = id;
       if (id) bus.emit('station:enter', { id });
     }
-    this.stations.setActive(this.modalOpen ? null : this.stationId);
+    const activeId = this.modalOpen ? null : this.stationId;
+    this.stations.setActive(activeId);
+    this.vault?.setActive(activeId !== null && activeId === VAULT_STATION?.id);
   }
 
   private starCount(): number {

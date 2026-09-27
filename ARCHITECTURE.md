@@ -454,18 +454,26 @@ down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b' | 'start'`),
 ## Stations & panels
 
 - A station = layout entry (`id`, `kind`, `x`, `asset`, `trigger` width) + (for a `kind` with a
-  panel) a matching `data-panel` id. The 6 `project` stations, `gate`, `contact`, `classified`,
-  `lab` and the 4 `dossier` stands all have one (Phase 7); `block` (a skill category) is still
-  Phase 9. Nothing here is project-specific — the mechanism is generic.
+  panel) a matching `data-panel` id. The 6 `project` stations and the 4 `dossier` stands have one;
+  `gate`, `contact` and `lab` still open Phase 7's generic stand-in (`StubPanels.astro`) until
+  Phase 9/10 add their real panels; `classified` (the vault) has **no panel of its own**
+  (GAME_DESIGN.md → Canonical ids) — interacting with it rolls its door aside instead, a purely
+  local game-side reaction (below); `block` (a skill category) is still Phase 9. Nothing here is
+  project-specific — the mechanism is generic.
 - **Trigger tracking:** `game/stations/trigger.ts`'s `stationAt(x, stations)` is pure (unit-tested)
-  and only considers stations with a filter the caller applies (`WorldScene` currently passes the 6
-  project stations); it is called from the same `POST_UPDATE`/teleport step that tracks the zone,
-  emitting `station:enter`/`station:leave` only on a change.
+  and only considers stations with a filter the caller applies (`WorldScene` passes the 6 project
+  stations, the 4 dossier stands and the vault — `TRIGGER_STATIONS`); it is called from the same
+  `POST_UPDATE`/teleport step that tracks the zone, emitting `station:enter`/`station:leave` only
+  on a change.
 - **Prompt:** entering a trigger shows a small pixel "interact here" badge above the prop
-  (`game/stations/Stations.ts`: flat `ink-900`/`amber-400` rects, no words, no rotation — crisp at
-  any zoom) and the localized prompt bottom-centre in `#hud` (DOM, `aria-live="polite"`, e.g.
-  `E — Fiora` on desktop, `Toca — Fiora` on a touch layout mode — read from `html[data-mode]`, set
-  by `shared/layout-mode.ts`, never inspected ad hoc). Both hide while a panel is open.
+  (`game/stations/Stations.ts`'s `drawGlyph`, exported and reused as-is by `stations/Vault.ts`:
+  flat `ink-900`/`amber-400` rects, no words, no rotation — crisp at any zoom) and the localized
+  prompt bottom-centre in `#hud` (DOM, `aria-live="polite"`, e.g. `E — Fiora` on desktop,
+  `Toca — Fiora` on a touch layout mode — read from `html[data-mode]`, set by
+  `shared/layout-mode.ts`, never inspected ad hoc). `src/ui/panels.ts`'s `promptTitle(id, lang)`
+  resolves the `{title}`: a project's fixed name, a dossier's localized `industry`, or the vault's
+  own fixed label (`ui.menuClassified`) — a station kind with no title yet (gate/lab/contact/
+  block) shows no prompt. Both prompt and glyph hide while a panel is open.
 - **Opening:** interacting (`E`/Enter while inside a trigger) or clicking/tapping the station's
   prop (Pointer / tap, above) makes the game emit `station:open { id }` on the bus — nothing else;
   the UI (`src/ui/panels.ts`) resolves `id` through `panelIdFor` (a stop whose panel is filed under
@@ -473,8 +481,13 @@ down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b' | 'start'`),
   `<section data-panel>` exists, un-hides it, traps focus and emits `ui:modal { open: true }`,
   which is what actually pauses game input and poses the panda (`WorldScene` passes `pose:
 'interact'` to `panda.update()` while `modalOpen` **and not mid fast-travel** — see Input, above).
-  An id with no panel yet (e.g. a skill block, still Phase 9) is a silent no-op — Golden Rule 7:
-  the game never knows which ids have DOM content.
+  An id with no panel yet (e.g. a skill block, still Phase 9) — or with no panel at all, ever (the
+  vault) — is a silent no-op UI-side: Golden Rule 7, the UI's job here, the game never knows which
+  ids have DOM content. `WorldScene.openStation(id)` is the one choke point every "the player
+  reached/activated station `id`" path funnels through (interact, click, walk arrival, fast-travel
+  arrival), so it is also where a station's own **local, game-side** reaction lives when it has
+  one — today, only the vault's (Classified wing, below); the bus emission and that reaction are
+  independent of each other.
 - **Panels** are Astro components rendered at build time, both languages always in the DOM inside
   one `<section data-panel="<id>" hidden>`: a `<div lang="es-419">`/`<div lang="en">` pair, each its
   own `role="dialog" aria-modal="true" aria-labelledby aria-modal tabindex="-1"`; `shell.css`'s
@@ -486,15 +499,22 @@ down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b' | 'start'`),
   grid while it is open — Esc closes the lightbox first and only closes the panel on a second
   press). `IntroPanel.astro`/`ContactPanel.astro` (Phase 7) build `intro` (name, roles, tagline,
   summary) and `contact` (`profile.callToAction`) from `src/content/profile.ts`, both sharing one
-  `ContactLinks.astro` partial for `profile.contact`. `StubPanels.astro` (Phase 7) stands in for
-  every stop whose own phase has not merged yet — `classified`, `lab`, and the 4 dossier ids —
-  titled with the stop's own name (`ui.menuClassified`/`ui.menuLab`, or a dossier's `industry`) over
-  a generic `ui.stubBody`; a later phase replaces the matching entry with its real panel under the
-  same id, so nothing else (visited marks, deep links, the menu) needs to change. Every one of
-  these renders through the exact same `[data-panel]` shape, so `src/ui/panels.ts`'s open/close/
-  focus-trap/visited logic (below) needed no changes to support them — Golden Rule 7 again: the
-  mechanism is id-agnostic.
-  All five components (`section[data-panel]`/`.panel`/`.panel__*`) share one chrome, defined once
+  `ContactLinks.astro` partial for `profile.contact`. `ConfidentialPanel.astro` (Phase 8) builds
+  the 4 dossier panels from `src/content/confidential.ts`: the industry is the title, and a
+  `<dl>` of `role`/`stack`/`impact`/`duration`/`teamSize` is the only other content — **Golden
+  Rule 3, absolute**. Each field's `<dd>` carries a `.dossier__redaction` bar (`styles/panel.css`)
+  that scales away on open (a CSS animation, staggered per field; instant under
+  `prefers-reduced-motion`) — "declassifying" the dossier; opening it again replays the animation,
+  since a `[data-panel]` going from `hidden` (`display: none !important`, `shell.css`) to visible
+  is a fresh box as far as CSS animations are concerned. `StubPanels.astro` (Phase 7) stands in
+  for every stop whose own phase has not merged yet — only `lab` now (Phase 8 replaced its
+  `classified` and 4-dossier entries with the vault's own behavior and `ConfidentialPanel.astro`,
+  respectively) — titled with the stop's own name (`ui.menuLab`) over a generic `ui.stubBody`; a
+  later phase replaces it with its real panel under the same id, so nothing else (visited marks,
+  deep links, the menu) needs to change. Every one of these renders through the exact same
+  `[data-panel]` shape, so `src/ui/panels.ts`'s open/close/focus-trap/visited logic (below) needed
+  no changes to support them — Golden Rule 7 again: the mechanism is id-agnostic.
+  All six components (`section[data-panel]`/`.panel`/`.panel__*`) share one chrome, defined once
   in the plain, unscoped `styles/panel.css` (DECISIONS.md has the "why not repeat it per
   component" ADR); `#menu` (below) reuses the same look.
 - **Focus:** opening focuses the visible language `<div>` (its `aria-labelledby` announces the
@@ -512,6 +532,51 @@ down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b' | 'start'`),
   `panelIdFor`, so `gate` and `intro` share one mark), language and sound live in `localStorage`
   (wrapped in try/catch, same pattern as `i18n/lang.ts`'s `initialLang`/`persistLang` — pure
   functions over an injected store, so they are unit-tested without a real browser).
+
+## Classified wing
+
+BACKLOG.md Phase 8. GAME_DESIGN.md → Classified wing: fence panels + a beacon, a code-drawn sign,
+the vault door, and the 4 dossier panels (above).
+
+- **`stations/Vault.ts`** is a different shape from `Stations.ts`'s generic single-`sprite`
+  adapter — `confidential-vault` is a `set` asset (`wall` + `door` items, the wall's `doorway`
+  anchor) — so it gets its own: the wall renders at the station's `x`/`groundY` like any other
+  prop and owns the click/tap hit area; the door renders at `wallTopLeft + doorway.xy`, sized to
+  the `door` item, exactly covering the doorway. Both resolve to the documented `set`-item
+  placeholder when the pipeline hasn't run (`navy-700`/`navy-400` box; the doorway additionally
+  punches a `navy-950` rect into the wall's placeholder, same convention as every other anchor
+  placeholder). `Vault.open()` (idempotent — a second interact, or arriving again by menu/deep
+  link, is a no-op) tweens the door's `x` past the wall's edge — an integer-pixel translation, so
+  the default `vertexRoundMode: 'safeAuto'` already rounds it, no `setVertexRoundMode('full')`
+  needed (that's only for flips) — instant under reduced motion; and gives the camera a small
+  nudge via Phaser's own `camera.shake()` (orthogonal to `render/follow.ts`'s manual `scrollX`,
+  which it offsets on top of — not a replacement for the custom follow), skipped entirely under
+  reduced motion.
+- **`WorldScene.openStation(id)`** is where `Vault.open()` is actually called: every "the player
+  reached/activated station `id`" path funnels through it (Stations & panels, above), so the vault
+  reacts identically whether the player interacted, clicked, walked up, or fast-travelled there
+  from the menu (`classified`'s menu entry has no panel to open on arrival, GAME_DESIGN.md →
+  Canonical ids, but the vault still opens) — a single choke point instead of four call sites each
+  knowing about the vault.
+- **`fx/classified.ts`**'s `ClassifiedWing` owns the wing's own ambience, all screen-agnostic
+  world-space objects: the `CLASIFICADO / CLASSIFIED` sign (a code-drawn plate + `PIXEL_FONT`
+  text, `ui.classifiedSign` — deliberately identical in both languages, a fixed bilingual placard,
+  so unlike every other panel/HUD string it never re-renders on `lang:change`; drawn once
+  `fonts:ready` fires, same pattern as `WorldScene.addLabel`), the wing's ambient light overlay
+  (`shiftLightToScarlet()`, called from `openStation`'s vault branch — tweens toward a low-alpha
+  scarlet tint over the whole zone, instant under reduced motion), and the sweeping scanner beam
+  (`refresh(tier, reducedMotion)`: built only on the high tier and only without reduced motion —
+  BACKLOG.md Phase 8 — torn down and rebuilt whenever either input changes, called from the
+  `tier:change` bus handler and `onReducedMotionChange`). `blinkBeacons()` is a separate function,
+  not a method: it just tweens the alpha of whichever images `world/props.ts` handed back whose id
+  starts `classified-beacon`, regardless of tier (a single cheap tween each).
+- **`world/props.ts`**'s `buildProps(scene, manifest, props)` is the generic decorative-prop
+  renderer `world/layout.ts`'s `props[]` has needed since Phase 4 — one bottom-anchored image per
+  prop from a named `set`-asset item, or the documented placeholder box, keyed by the prop's own
+  id so a caller can attach extra behavior (the beacons' blink) by id. First used here, for the
+  classified wing's own props (`WorldScene` filters `props[].id.startsWith('classified-')`); the
+  gate's crate stays unrendered until Phase 10's wake beat actually needs it on screen, a later
+  phase's own call to the same function.
 
 ## Menu, HUD & first-visit hint
 

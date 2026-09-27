@@ -10,6 +10,7 @@ import Hud from '../components/Hud.astro';
 import Loading from '../components/Loading.astro';
 import Menu from '../components/Menu.astro';
 import Pad from '../components/Pad.astro';
+import ConfidentialPanel from '../components/panels/ConfidentialPanel.astro';
 import ContactPanel from '../components/panels/ContactPanel.astro';
 import IntroPanel from '../components/panels/IntroPanel.astro';
 import Panels from '../components/panels/Panels.astro';
@@ -58,6 +59,7 @@ const roles = (lang: 'es' | 'en') => profile.roles.map((r) => r[lang]).join(' ·
       <Panels />
       <IntroPanel />
       <ContactPanel />
+      <ConfidentialPanel />
       <StubPanels />
     </div>
     <Menu />

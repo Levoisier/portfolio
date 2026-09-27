@@ -240,3 +240,23 @@ than played at zero duration, the same "instant under reduced motion" pattern as
 tween/camera effect in this codebase.
 **Trade-off:** 1.5 is a judgment call, not a measured one; it can move if a real run ever feels too
 long or a fade ever feels too abrupt for a "nearby" stop.
+
+## The vault opens no panel; its own reaction lives in `WorldScene.openStation`
+
+**Status:** Accepted (2026-09-27, BACKLOG.md Phase 8)
+**Why:** GAME_DESIGN.md → Canonical ids already said `classified` has "no panel of its own" — the
+menu's 4 dossier sub-entries are the real content, the vault is scenery — but Phase 7 (before
+anything else existed for that id) filled it with the same generic `StubPanels.astro` placeholder
+every other not-yet-built stop got, so the id briefly did open a DOM panel. Phase 8 removes that
+stub instead of giving the vault a real one: interacting with it rolls the door aside, a purely
+local, game-side reaction (`stations/Vault.ts`) that never needs the UI to know anything, and
+`station:open` for `classified` reverts to the ordinary silent no-op every id-with-no-panel gets
+(Golden Rule 7). That local reaction is called from `WorldScene.openStation(id)` itself — the one
+choke point every "the player reached/activated station `id`" path (interact, click, walk arrival,
+fast-travel arrival) already funnels through — rather than duplicated at each of those four call
+sites, or carried on a dedicated bus event.
+**Trade-off:** `openStation`'s job is no longer purely "tell the UI" (its own doc comment says so):
+a station kind can now also have a local reaction of its own, decided inside the same function.
+That is one more thing to check when reading it, but the alternative — every call site knowing on
+its own "oh, and if this is the vault, also open it" — drifts the moment one of the four is
+missed; a future station with its own local reaction (none planned yet) follows the same pattern.

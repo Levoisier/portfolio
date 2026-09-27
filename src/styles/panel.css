@@ -120,3 +120,68 @@ section[data-panel] {
 .panel__link:focus-visible {
   background: var(--c-scarlet-700);
 }
+
+/* ─── Confidential dossier fields (BACKLOG.md Phase 8 — ConfidentialPanel.astro) ───────────────
+   A CSS redaction-bar reveal stands in for "declassifying" the dossier: each field's black bar
+   scales away from the right on open. Replaying it every open needs no JS — a `[data-panel]`
+   going from `hidden` (display: none !important, shell.css) to visible is a fresh box as far as
+   CSS animations are concerned, so the keyframes restart from 0% each time. */
+.dossier__fields {
+  margin: 0 0 var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+}
+
+.dossier__field dt {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dossier__field dd {
+  position: relative;
+  margin: 0;
+  padding: var(--space-1) 0;
+  overflow: hidden;
+}
+
+.dossier__redaction {
+  position: absolute;
+  inset: 0;
+  background: var(--c-ink-900);
+  transform-origin: right center;
+  animation: dossier-redaction-reveal 480ms ease-out forwards;
+}
+
+.dossier__field:nth-child(2) .dossier__redaction {
+  animation-delay: 80ms;
+}
+.dossier__field:nth-child(3) .dossier__redaction {
+  animation-delay: 160ms;
+}
+.dossier__field:nth-child(4) .dossier__redaction {
+  animation-delay: 240ms;
+}
+.dossier__field:nth-child(5) .dossier__redaction {
+  animation-delay: 320ms;
+}
+
+@keyframes dossier-redaction-reveal {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dossier__redaction {
+    animation: none;
+    transform: scaleX(0);
+  }
+}

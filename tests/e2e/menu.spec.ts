@@ -54,6 +54,12 @@ test('every stop opens its own panel (or stub), then the menu stays closed', asy
     await page.evaluate(() => window.__PORTFOLIO__!.emit('menu:open', {}));
     await page.locator(`#menu [lang="es-419"] [data-menu-entry="${id}"]`).click();
     await expect(page.locator('#menu')).toBeHidden();
+    if (id === 'classified') {
+      // GAME_DESIGN.md → Canonical ids: the vault has no panel of its own (BACKLOG.md Phase 8) —
+      // arriving just reveals the vault (tests/e2e/classified.spec.ts covers that).
+      await expect(page.locator('[data-panel="classified"]')).toHaveCount(0);
+      continue;
+    }
     const panelId = panelIdFor(id);
     await expect(page.locator(`[data-panel="${panelId}"]`)).toBeVisible();
     await page.keyboard.press('Escape');

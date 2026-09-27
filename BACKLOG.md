@@ -324,9 +324,9 @@ switches panel + HUD text; keyboard-only run-through; the recruiter test timed; 
 
 ---
 
-## Phase 8 — Classified wing
+## Phase 8 — Classified wing ✅
 
-### [ ] feat(confidential): vault door, redacted dossiers, NDA-safe panels
+### [x] feat(confidential): vault door, redacted dossiers, NDA-safe panels
 
 **Depends on:** P7. **Media:** confidential-vault, confidential-dossier, props-zones (placeholders
 until then).

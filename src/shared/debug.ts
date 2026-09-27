@@ -43,6 +43,10 @@ export interface GameState {
   physicsHz: number;
   /** The zone the player is currently in (Phase 4 — `world/layout.ts` id), e.g. `"fiora"`. */
   zone: string;
+  /** Whether the classified wing's vault door has rolled aside yet (Phase 8 — `stations/
+   * Vault.ts`); the vault has no DOM panel of its own, so e2e reads this instead of a
+   * `[data-panel]`. */
+  vaultOpen: boolean;
 }
 
 /**

@@ -1,9 +1,12 @@
 /**
- * Phaser adapter for the 6 project stations (BACKLOG.md Phase 5 — ARCHITECTURE.md → Stations &
- * panels): the prop sprite (or the documented placeholder box when the art has not landed yet),
- * the click/tap-to-open hit area, and the small pixel "interact" glyph that floats above the one
- * the panda is currently near. Trigger-zone math stays pure in `trigger.ts`; this module only
- * ever calls methods on the `Phaser.Scene`/objects it is handed.
+ * Phaser adapter for every station whose prop is a single `sprite`-kind asset — the 6 project
+ * stations (BACKLOG.md Phase 5) and, since Phase 8, the 4 confidential-project dossier stands
+ * (`confidential-dossier` is a `sprite` too): the prop image (or the documented placeholder box
+ * when the art has not landed yet), the click/tap-to-open hit area, and the small pixel
+ * "interact" glyph that floats above the one the panda is currently near. The vault (`kind:
+ * 'vault'`, a multi-item `set` asset with its own door animation) is a different shape and gets
+ * its own adapter, `stations/Vault.ts`. Trigger-zone math stays pure in `trigger.ts`; this module
+ * only ever calls methods on the `Phaser.Scene`/objects it is handed.
  */
 import type Phaser from 'phaser';
 import { getAsset } from '../../assets/registry';
@@ -46,8 +49,9 @@ function resolveStation(
 }
 
 /** A small amber "interact here" badge with a dark cut-in "!" — flat palette rects only, no
- * rotation or antialiasing, so it stays crisp at any zoom (AGENTS.md Golden Rule 6). */
-function drawGlyph(g: Phaser.GameObjects.Graphics): void {
+ * rotation or antialiasing, so it stays crisp at any zoom (AGENTS.md Golden Rule 6). Exported:
+ * `stations/Vault.ts` (Phase 8) draws the same glyph over its own, non-`sprite`-kind station. */
+export function drawGlyph(g: Phaser.GameObjects.Graphics): void {
   g.clear();
   g.fillStyle(num('ink-900')).fillRect(-6, -12, 12, 12);
   g.fillStyle(num('amber-400')).fillRect(-5, -11, 10, 10);

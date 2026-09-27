@@ -25,6 +25,9 @@ export interface GameContext {
   camera: { scrollX: number; scrollY: number };
   /** The zone the player is currently in (`world/layout.ts` id), also emitted as `zone:enter`. */
   zone: string;
+  /** Whether the classified wing's vault has rolled its door aside yet (Phase 8 — the vault has
+   * no DOM panel of its own, so the debug hook's `getState()` reads this directly). */
+  vaultOpen: boolean;
   /** Set by `WorldScene.create()`; the debug hook's `teleport(x)` calls through it. */
   teleport?: (x: number) => void;
   /** Set by `WorldScene.create()`; the debug hook's `openStation(id)` calls through it —
