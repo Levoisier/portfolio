@@ -47,6 +47,9 @@ export interface Events {
    * close precedence (GAME_DESIGN.md → Controls) is decided in `ui/pad.ts` before this ever
    * fires, so a press that closes a panel is never also forwarded as an interact. */
   'input:pad': { button: PadButton; down: boolean; timeStamp: number };
+  /** The first manual move/jump/interact of the session (BACKLOG.md Phase 7 — the first-visit
+   * controls hint hides on this and never comes back). Fires once. */
+  'input:first-move': Record<string, never>;
   'fonts:ready': Record<string, never>;
   'tier:change': { tier: Tier };
   /** Emitted about twice a second, only in debug mode. */

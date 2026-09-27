@@ -1,0 +1,46 @@
+---
+/**
+ * Stand-in panels for stops whose own phase has not merged yet (BACKLOG.md Phase 7): the
+ * classified wing (Phase 8), the Reagent lab (Phase 9), and each dossier stand (Phase 8) — the
+ * menu already lists them (`components/Menu.astro`), so selecting one must open *something*
+ * rather than silently do nothing. Titled with the stop's own name; the body is a generic
+ * placeholder. A later phase replaces the matching entry here with its real panel — the id stays
+ * the same, so nothing else (visited marks, deep links, the menu) needs to change.
+ */
+import '../../styles/panel.css';
+import { LANGS, confidentialProjects } from '../../content';
+import { HTML_LANG } from '../../i18n/lang';
+import { ui } from '../../i18n/ui';
+import type { Localized } from '../../content/types';
+
+const stubs: { id: string; title: Localized }[] = [
+  { id: 'classified', title: ui.menuClassified },
+  { id: 'lab', title: ui.menuLab },
+  ...confidentialProjects.map((c) => ({ id: c.id, title: c.industry })),
+];
+---
+
+{
+  stubs.map((stub) => (
+    <section id={`panel-${stub.id}`} data-panel={stub.id} hidden>
+      {LANGS.map((lang) => (
+        <div
+          class="panel"
+          lang={HTML_LANG[lang]}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`panel-${stub.id}-title-${lang}`}
+          tabindex="-1"
+        >
+          <button type="button" class="panel__close" data-panel-close aria-label={ui.close[lang]}>
+            <span aria-hidden="true">×</span>
+          </button>
+          <h2 id={`panel-${stub.id}-title-${lang}`} class="panel__title">
+            {stub.title[lang]}
+          </h2>
+          <p class="panel__desc">{ui.stubBody[lang]}</p>
+        </div>
+      ))}
+    </section>
+  ))
+}

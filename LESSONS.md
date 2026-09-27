@@ -354,3 +354,99 @@ the page root, where its own z-index is finally compared against the right eleme
 ancestor between it and the root already sets a z-index (or `opacity`/`transform`/`filter` —
 anything that creates a stacking context) — that ancestor's position among _its_ siblings is the
 real ceiling, and no descendant value can lift it.
+
+## 2026-09-27 — Menu fast travel silently didn't move the panda: `pose: 'interact'` zeroes `moveX`
+
+**Context:** Wiring the menu's fast travel (Phase 7): `ui:modal` stays `true` the whole time a
+selection runs/fades to its target (`merge.ts` already documented this: "an active travel source
+replaces everything, even while a modal is open"), so `WorldScene.update()` still called
+`this.panda.update(intent, delta, this.modalOpen ? 'interact' : null)` exactly as it did before —
+`modalOpen` was `true`, so the pose was always `'interact'`.
+**Problem:** `player/logic.ts`'s `step()` has `const posed = grounded && pose !== null; const
+moveX = posed ? 0 : clampMove(intent.moveX);` — a non-null pose zeroes `moveX` outright, on the
+theory that a posed panda (playing `panda-interact` while a panel is open) should never also
+slide around. That is exactly right when the game is genuinely paused, and exactly wrong during a
+fast-travel run: the intent's `moveX`/`run` were correct (`mergeIntents` already lets an active
+`travel` source through the modal gate), but the pose then discarded them a step later — the
+panda stood still playing `panda-interact` while its x silently ticked toward the target with
+`vx: 0` (an e2e test's `≤ 10s` recruiter timing check caught it as "the panel just never opens",
+not as an obviously-wrong pose; only logging `player.state`/`vx` mid-travel showed the panda
+never actually moved).
+**Fix / finding:** Pose only when the game is genuinely idle-paused: `this.modalOpen &&
+!this.fastTravel ? 'interact' : null`. A fade-teleport never sets `this.fastTravel` (it teleports
+in one jumpcut, not frame-by-frame), so it is unaffected either way.
+**Rule of thumb:** `modalOpen`/`ui:modal` answers "is a panel or the menu open"; it does not mean
+"nothing is currently allowed to move the panda" — an active `travel` source is a second,
+independent reason movement can happen while it's `true`, and BOTH the intent merge AND the pose
+computation need to agree on that, not just the one you're actively touching.
+
+## 2026-09-27 — Naming a helper `rgb`/`rgba` trips the "no hardcoded colors" scanner even as code
+
+**Context:** Adding `palette.ts`'s channel-splitting helper for `Camera.fadeOut`/`fadeIn`
+(Phase 7's fade-teleport), first named `rgb`.
+**Problem:** `palette.test.ts`'s "no hardcoded colors" scanner matches `\brgba?\(` against every
+source line, full stop — it has no idea `rgb('ink-900')` is a call to this codebase's own helper
+rather than a literal CSS `rgb(...)` function, and correctly has no way to tell the two apart from
+text alone. The JSDoc comment explaining the rename tripped the same regex the first time it was
+worded with a literal `rgb(` inside it, too.
+**Fix / finding:** Renamed to `rgbChannels`; reworded the comment to describe the scanner without
+spelling out the pattern it matches.
+**Rule of thumb:** Never name a helper (or word a comment) so it contains `rgb(`/`rgba(`/`hsl(`/
+`hsla(`/a bare `0xRRGGBB` — the palette scanner is deliberately dumb text matching, not an AST
+check, and it does not special-case your own module.
+
+## 2026-09-27 — A wall-clock UX budget assertion needs its own, longer Playwright wait
+
+**Context:** The recruiter test's "a project panel opens in ≤ 10 s" (Phase 7), measured with
+`Date.now()` around `await expect(locator).toBeVisible()`.
+**Problem:** Under two parallel Playwright workers, the fast-travel run/fade animation this
+assertion waits on can take noticeably longer in wall-clock time than it does running alone (CPU/
+GPU contention, `WebGL` software-fallback warnings in the container) — enough, intermittently, to
+exceed Playwright's own default `expect` retry timeout (5000 ms) even while comfortably inside the
+actual 10 s business budget the test is supposed to enforce. The test then failed on a Playwright
+timeout that had nothing to do with the thing it was asserting.
+**Fix / finding:** Gave both `toBeVisible()` calls in that test `{ timeout: 15_000 }` — generous
+headroom over the 10 s the `Date.now()` diff actually gates. If the real operation ever takes
+longer than 10 s, the `Date.now()` check still fails it correctly; the Playwright-level wait no
+longer fails it for an unrelated reason first.
+**Rule of thumb:** When a test's own assertion is "this took ≤ N", give the Playwright locator
+wait it depends on more than N — otherwise a slow-but-passing run can fail on the wrong check, and
+a flake there reads as a business-rule regression instead of infrastructure noise.
+
+## 2026-09-27 — A stop's canonical id and its panel's id can differ; alias once, on the way in
+
+**Context:** GAME_DESIGN.md → Canonical ids: `gate` → `intro` (the menu/deep-link/finale id is
+`gate`; the actual panel content — name, roles, tagline — lives under `intro`, opened directly by
+the HUD badge too).
+**Problem:** The menu's `gate` entry travels to the gate station and emits `station:open { id:
+'gate' }`, same as any other stop; naively looking up `[data-panel="gate"]` finds nothing (the
+markup is `data-panel="intro"`), so the entry silently failed to open anything, and — if the
+alias were instead applied only at the DOM-lookup call site — visited marks and the hash would
+have been keyed by whichever id happened to reach `openPanel` first (`gate` via the menu, `intro`
+via the badge), splitting one stop's visited state into two.
+**Fix / finding:** `src/ui/panels.ts` exports `panelIdFor(stopId)` (a small `Record`, today just
+`{ gate: 'intro' }`) and resolves it once, at the top of `openPanel`, before anything — including
+`openId` itself — is assigned from it, so the DOM lookup, the hash and the visited mark all agree
+regardless of which route (badge, menu, deep link) opened it. `src/ui/menu.ts` imports the same
+function to check a menu entry's visited mark.
+**Rule of thumb:** When a canonical id and its content's id can differ, resolve the alias in
+exactly one place, before the resolved id is stored anywhere — never at each call site, and never
+after the id has already been used as a key for something else (visited, the hash, a Set).
+
+## 2026-09-27 — Never `pnpm build` while a `pnpm test:e2e`/manual preview is serving `dist/`
+
+**Context:** Re-verifying a small CSS fix (Phase 7) with a throwaway screenshot script while a
+full `pnpm test:e2e` run was already in progress in the background.
+**Problem:** `pnpm test:e2e`'s own `webServer` runs `astro build` once, then serves that `dist/`
+for the rest of the run; a manual `pnpm preview` pointed at the same `dist/` does the same. Running
+`pnpm build` again while either is still serving requests overwrites files on disk mid-response —
+two mobile `shell.spec.ts` checks (canvas backing size, "boots the game") failed with no code
+change of their own, then passed cleanly the moment they were re-run in isolation with no build
+racing them.
+**Fix / finding:** Confirmed by re-running just those two tests alone (clean pass) and then a full,
+untouched `pnpm test:e2e` (own build, nothing else running) — 0 failures. Treated the first
+failure as a real regression signal only after ruling this out, not before.
+**Rule of thumb:** Before rebuilding for any reason (a manual preview, a screenshot script, `pnpm
+build` itself), check whether an e2e run or another preview is already serving `dist/`
+(`pgrep -af "preview --host"`) — let it finish, or point the new build at nothing that's currently
+being read from.

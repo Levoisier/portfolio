@@ -61,11 +61,13 @@ html[data-mode='landscape-touch'] #screen {
 
 /* Handheld: a dialog is conceptually "on the screen", so it stays inside the screen's own box —
  * the pad below it (BACKLOG.md Phase 6) is a physical control surface and is never the thing a
- * modal's full-viewport backdrop covers, so `B` (and a second Esc) can always reach it. These
- * beat `components/panels/Panels.astro`'s own scoped `inset: 0`/`max-height` because the extra
- * `html[data-mode=…]` ancestor adds a type-selector tie-breaker over Astro's injected scope
- * attribute (equal attribute/class specificity either way). */
-html[data-mode='handheld'] section[data-panel] {
+ * modal's full-viewport backdrop covers, so `B` (and a second Esc) can always reach it. `#menu`
+ * (Phase 7) gets the exact same treatment as a project panel's `section[data-panel]`; its own
+ * dialog already carries class `.panel` (`components/Menu.astro`), so the `max-height` rule below
+ * covers it for free. These out-specify `styles/panel.css`'s plain, unscoped base rules (an extra
+ * `html[data-mode=…]` ancestor beats them regardless of file/rule order). */
+html[data-mode='handheld'] section[data-panel],
+html[data-mode='handheld'] #menu {
   top: env(safe-area-inset-top);
   right: 0;
   bottom: 50dvh;

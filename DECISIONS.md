@@ -195,3 +195,48 @@ scrolls internally past that, `.panel`'s existing `overflow-y: auto`); the galle
 second, nested modal `B` still closes first, same as Esc) was left visually unconstrained to the
 same box, since its own z-index already sits below the pad — only a cosmetic overlap in the rare
 case its enlarged image reaches the very bottom of a short viewport.
+
+## Dialog chrome moved to a shared, unscoped stylesheet (`styles/panel.css`)
+
+**Status:** Accepted (2026-09-27, BACKLOG.md Phase 7)
+**Why:** `components/panels/Panels.astro`'s `<style>` (Phase 5) was the only place `section[data-
+panel]`/`.panel`/`.panel__*` existed. Phase 7 adds four more consumers of the exact same dialog
+look — `IntroPanel`, `ContactPanel`, `StubPanels` and the menu (`Menu.astro`, which reuses `.panel`
+for its own dialog box) — and Astro scopes a component's `<style>` block to the elements _that
+component_ renders, not to markup with the same class names in a sibling file. Re-declaring ~150
+lines of chrome in four more files would drift the moment one of them changed. The chrome moved,
+verbatim, into `styles/panel.css`, a plain (unscoped) stylesheet every one of the five components
+imports; `#menu` joins `section[data-panel]` in its shared base rule (same look, its own z-index).
+`Panels.astro` keeps its own scoped `<style>` for the Fiora screenshot gallery, which nothing else
+uses.
+**Trade-off:** One more file to open when touching panel chrome; `shell.css`'s handheld-mode
+override rules now out-specify a plain, unscoped base rule by ancestor selector alone (an
+`html[data-mode=…]` ancestor is strictly higher specificity either way), which is simpler than the
+Astro-scope-attribute tie-breaker the previous, single-file version relied on.
+
+## `@axe-core/playwright` for the Phase 7 accessibility scan
+
+**Status:** Accepted (2026-09-27, BACKLOG.md Phase 7)
+**Why:** Phase 7 is the recruiter/keyboard-only path through the whole game (the menu, the HUD,
+every panel) — the phase BACKLOG.md names for an automated accessibility scan, not spot checks.
+`@axe-core/playwright` (MIT, from the axe-core maintainers) drives the same axe-core engine
+Playwright's own docs recommend, scoped with `.include()`/`.analyze()` against a live page (real
+DOM, real computed styles — a static analysis tool cannot see focus-trap or `aria-live` behavior).
+**Trade-off:** One more devDependency (test-only, not shipped); it inspects markup the browser
+already rendered, so it still needs deliberate manual keyboard/screen-reader checks alongside it,
+not instead of them.
+
+## Menu fast travel: run under 1.5 screens, fade-teleport beyond it or under reduced motion
+
+**Status:** Accepted (2026-09-27, BACKLOG.md Phase 7)
+**Why:** GAME*DESIGN.md asks the menu to "auto-run" the panda to a nearby stop but fade-teleport a
+far one; a run across the \_entire* 4620 px level would take too long to feel like fast travel.
+1.5 screens (`travelTargetX`'s view width, `game/travel/plan.ts`'s `shouldFadeTravel`) keeps a
+"nearby" run inside roughly what the visitor can already see becoming what they're arriving at,
+while anything farther cuts straight there. Under `prefers-reduced-motion`, every selection
+fade-teleports (GAME_DESIGN.md → Ambience tiers: "fast-travel uses fades instead of pans" — even a
+short run is still a camera pan), and the fade itself is skipped entirely (an instant cut) rather
+than played at zero duration, the same "instant under reduced motion" pattern as every other
+tween/camera effect in this codebase.
+**Trade-off:** 1.5 is a judgment call, not a measured one; it can move if a real run ever feels too
+long or a fade ever feels too abrupt for a "nearby" stop.

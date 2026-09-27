@@ -13,24 +13,40 @@ import { markVisited } from '../shared/visited';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/** A stop whose panel is filed under a different id (GAME_DESIGN.md → Canonical ids: "Stop →
+ * panel" — only `gate` → `intro` today; `classified`/`lab` still open their own stub id until
+ * Phase 8/9 add the real vault/stack panels and this mapping). Applied once, on the way in, so
+ * `openId` (and the hash/visited mark it drives) is always the real `[data-panel]` id — `gate`
+ * and `intro` end up sharing one visited mark, matching GAME_DESIGN.md's "`/#gate` = `/#intro`".
+ * Exported: `src/ui/menu.ts` (Phase 7) checks the same id when it reads a menu entry's visited
+ * mark. */
+export const PANEL_FOR_STOP: Record<string, string> = { gate: 'intro' };
+
+export function panelIdFor(stopId: string): string {
+  return PANEL_FOR_STOP[stopId] ?? stopId;
+}
+
 /** Skips elements hidden by CSS (`offsetParent === null`) or made non-interactive with `inert`
- * (the gallery grid, while its lightbox is open). */
-function focusablesIn(container: Element): HTMLElement[] {
+ * (the gallery grid, while its lightbox is open). Exported: `src/ui/menu.ts` (Phase 7) traps
+ * focus inside the menu dialog the same way. */
+export function focusablesIn(container: Element): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
     (el) => el.offsetParent !== null && !el.closest('[inert]')
   );
 }
 
-/** The two `[lang]` children of a panel section are both always in the DOM; `shell.css`'s
- * `html[data-lang]` rule hides one of them with `display: none`. */
-function visibleLangEl(section: HTMLElement): HTMLElement | null {
+/** The two `[lang]` children of a dialog section are both always in the DOM; `shell.css`'s
+ * `html[data-lang]` rule hides one of them with `display: none`. Exported: `src/ui/menu.ts`
+ * (Phase 7) focuses its own dialog the same way. */
+export function visibleLangEl(section: HTMLElement): HTMLElement | null {
   for (const el of section.querySelectorAll<HTMLElement>(':scope > [lang]')) {
     if (getComputedStyle(el).display !== 'none') return el;
   }
   return null;
 }
 
-function focusCanvas(): boolean {
+/** Exported: `src/ui/menu.ts` (Phase 7) restores focus to the canvas the same way on close. */
+export function focusCanvas(): boolean {
   const canvas = document.querySelector<HTMLCanvasElement>('#screen canvas');
   if (!canvas) return false;
   // Programmatically focusable without joining the page's tab order.
@@ -89,6 +105,15 @@ export interface PanelsApi {
    * calls this before ever forwarding a `B` press, so the same press that closes a panel is
    * never also read as an interact. */
   closeTopmost(): boolean;
+  /** Opens `id`'s panel (HUD badge/Contact — BACKLOG.md Phase 7) if none is open yet; a no-op,
+   * reported by its `false` return, while a panel is already open — the caller (`src/ui/hud.ts`)
+   * decides whether to close it first (it does not: "from anywhere" means anywhere in the
+   * world, not "interrupting whatever else is open"). */
+  open(id: string): boolean;
+  /** Whether a panel (or its gallery lightbox) is currently open — `src/ui/main.ts` (Phase 7)
+   * composes this with the menu's own `isOpen` so HUD actions never open a second thing on top
+   * of the menu. */
+  isOpen(): boolean;
 }
 
 export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
@@ -96,6 +121,9 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
   let currentStationId: string | null = null;
   let openId: string | null = null;
   let lastFocus: HTMLElement | null = null;
+  /** Mirrors the bus's `ui:modal` regardless of source (a panel here, or the menu — `src/ui/
+   * menu.ts`, Phase 7) so the prompt hides for either, not only this module's own `openId`. */
+  let modalOpen = false;
 
   const panelSection = (id: string): HTMLElement | null =>
     root.querySelector<HTMLElement>(`[data-panel="${id}"]`);
@@ -111,12 +139,13 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
   }
 
   function updatePrompt(): void {
-    if (promptEl) promptEl.textContent = openId ? '' : promptText(currentStationId);
+    if (promptEl) promptEl.textContent = modalOpen ? '' : promptText(currentStationId);
   }
 
-  function openPanel(id: string): void {
+  function openPanel(rawId: string): boolean {
+    const id = panelIdFor(rawId);
     const section = panelSection(id);
-    if (!section || openId) return;
+    if (!section || openId) return false;
     lastFocus = document.activeElement as HTMLElement | null;
     openId = id;
     section.hidden = false;
@@ -124,6 +153,7 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
     history.replaceState(null, '', hashFor(id));
     bus.emit('ui:modal', { open: true });
     visibleLangEl(section)?.focus();
+    return true;
   }
 
   function closePanel(): void {
@@ -167,6 +197,13 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
   });
   bus.on('lang:change', updatePrompt);
   bus.on('station:open', ({ id }) => openPanel(id));
+  // The menu (Phase 7) also sets `ui:modal`; the prompt must hide for it too, not only for a
+  // panel this module opened itself (`openPanel` already emits the same event, so this doubles
+  // as its own `open`/`close` handling — a harmless, idempotent extra `updatePrompt()` call).
+  bus.on('ui:modal', ({ open }) => {
+    modalOpen = open;
+    updatePrompt();
+  });
 
   root.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
@@ -238,5 +275,5 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
     }
   });
 
-  return { closeTopmost };
+  return { closeTopmost, open: openPanel, isOpen: () => openId !== null };
 }

@@ -32,6 +32,34 @@ export const ui = {
   padJump: { es: 'Saltar', en: 'Jump' },
   padInteract: { es: 'Interactuar', en: 'Interact' },
   padMenu: { es: 'Menú', en: 'Menu' },
+  // ─── Menu, HUD & accessibility (Phase 7) ─────────────────────────────────
+  /** The HUD's menu button text/aria-label AND the menu dialog's own title. */
+  menuLabel: { es: 'Mapa', en: 'Map' },
+  menuGate: { es: 'Portón', en: 'Gate' },
+  menuClassified: { es: 'Ala clasificada', en: 'Classified wing' },
+  menuLab: { es: 'Laboratorio de reactivos', en: 'Reagent lab' },
+  /** The HUD's Contact button AND the menu's Contact entry. */
+  contactLabel: { es: 'Contacto', en: 'Contact' },
+  /** Screen-reader-only suffix on a visited menu entry (the ✓ glyph itself is decorative). */
+  menuVisitedLabel: { es: ', visitado', en: ', visited' },
+  /** The HUD name badge's aria-label (opens the `intro` panel). */
+  profileLabel: { es: 'Ver perfil', en: 'View profile' },
+  langSwitchLabel: { es: 'Cambiar idioma', en: 'Switch language' },
+  soundOnLabel: { es: 'Sonido activado', en: 'Sound on' },
+  soundOffLabel: { es: 'Sonido desactivado', en: 'Sound off' },
+  /** A stop whose own phase has not merged yet opens this generic stand-in panel. */
+  stubBody: {
+    es: 'Esta parada llega en una fase futura del proyecto.',
+    en: 'This stop arrives in a later phase of the build.',
+  },
+  hintDesktop: {
+    es: '← → o A/D para caminar, Espacio para saltar, E para interactuar — o solo usa la rueda del mouse.',
+    en: '← → or A/D to walk, Space to jump, E to interact — or just scroll.',
+  },
+  hintTouch: {
+    es: 'Usa el control de abajo para moverte, saltar e interactuar.',
+    en: 'Use the pad below to move, jump and interact.',
+  },
 } satisfies Record<string, Localized>;
 
 export type UiKey = keyof typeof ui;

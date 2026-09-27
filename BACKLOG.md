@@ -293,9 +293,9 @@ playing, no horizontal page overflow.
 
 ---
 
-## Phase 7 — Menu, fast travel, HUD & accessibility
+## Phase 7 — Menu, fast travel, HUD & accessibility ✅
 
-### [ ] feat(ui): map/fast-travel menu, HUD, intro & contact panels, keyboard/screen-reader path
+### [x] feat(ui): map/fast-travel menu, HUD, intro & contact panels, keyboard/screen-reader path
 
 **Depends on:** P5.
 

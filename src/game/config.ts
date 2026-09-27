@@ -55,6 +55,11 @@ export const CAMERA_LOOKAHEAD = 24;
 /** Gap (art px) between a station's top edge and the interact-prompt glyph above it. */
 export const STATION_GLYPH_GAP = 6;
 
+// ─── Fast travel (Phase 7 — the menu) ────────────────────────────────────────
+/** Camera fade-out/in duration, ms, for a fade-teleport (`travel/plan.ts`'s `shouldFadeTravel`).
+ * Instant (skipped entirely) under `prefers-reduced-motion`. */
+export const FADE_TRAVEL_MS = 220;
+
 // ─── Wheel / trackpad walking ────────────────────────────────────────────────
 /** Pixels per line for `deltaMode === 1`, and per page for `deltaMode === 2`. */
 export const WHEEL_LINE_PX = 16;

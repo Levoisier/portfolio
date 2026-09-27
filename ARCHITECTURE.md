@@ -51,7 +51,8 @@ src/
   assets/runtime.ts           ← types of public/game/assets.json — pipeline ↔ game contract (exists)
   policy/                     ← repo-policy tests, e.g. not-a-PWA (exists)
   i18n/                       ← lang.ts (default/persistence) + ui.ts (UI strings) (exists)
-  shared/                     ← bus, motion preference, layout-mode, debug hook types (exists)
+  shared/                     ← bus, motion preference, layout-mode, debug hook types, visited,
+                                hint, sound (exists)
   game/                       ← everything Phaser (shell exists; Phase 3+ adds the rest)
     boot.ts                   ← NO static import of phaser (or anything importing it); after first
                                 paint runs `const { startGame } = await import('./main')`
@@ -70,10 +71,12 @@ src/
     world/                    ← layout.ts (data) + validate.ts (pure) + builders
     stations/                 ← trigger.ts (pure) + Stations.ts (prop sprites, glyph, click)
     fx/                       ← sky, parallax, particles, filters (tiered)
-    travel/                   ← plan.ts (pure walk-to-x) + deep-link.ts (pure hash parsing); menu
-                                fast-travel/fade-teleport (Phase 7) add to the same folder
-  ui/                         ← DOM: main.ts (page entry), loading, fonts, debug overlay, panels, pad; later menu
-  components/                 ← Astro components: Loading, Hud, panels/Panels.astro (exist)
+    travel/                   ← plan.ts (pure walk-to-x + fast-travel run/fade — Phase 7) +
+                                deep-link.ts (pure hash parsing)
+  ui/                         ← DOM: main.ts (page entry), loading, fonts, debug overlay, panels,
+                                pad, menu, hud, hint (exist)
+  components/                 ← Astro: Loading, Hud, Pad, Menu, panels/{Panels,IntroPanel,
+                                ContactPanel,StubPanels,ContactLinks} (exist)
   pages/index.astro           ← the single page
 public/
   media/projects/…            ← content media (Fiora screenshots) — referenced from src/content
@@ -116,7 +119,7 @@ index.astro (static HTML)
 adding an event = adding a key with its payload type. Known events: `game:progress`, `game:ready`,
 `zone:enter`, `station:enter`, `station:leave`, `station:open`, `panel:closed`, `ui:modal`
 `{ open: boolean }`, `menu:open`, `travel:to`, `travel:arrived`, `lang:change`, `sound:toggle`,
-`input:wheel`, `input:pad`, `fonts:ready`, `tier:change`, `debug:stats`. No `window` custom events for game↔UI
+`input:wheel`, `input:pad`, `input:first-move`, `fonts:ready`, `tier:change`, `debug:stats`. No `window` custom events for game↔UI
 traffic. The bus remembers each event's last payload: `on(event, fn, { replay: true })` also
 receives it immediately (the lazy game chunk subscribes after `fonts:ready` and the initial
 `lang:change` have already fired).
@@ -372,7 +375,7 @@ sunrise`); `sky.ts`'s `MOODS` maps each to a 4-color top→horizon ramp, a star 
   right after construction and after `teleportTo()` (the debug hook's `teleport(x)`), which also
   zeroes velocity and resets the state machine.
 
-## Input **(Phase 7)**
+## Input
 
 Every source writes into one per-frame `Intent` (`moveX ∈ [−1, 1]`, `run`, `jumpPressed`,
 `jumpHeld`, `interactPressed`, `menuPressed`); merging is pure (`input/merge.ts`) and unit-tested.
@@ -412,8 +415,21 @@ false }` the game calls `this.input.keyboard.resetKeys()` and `KeyboardState` dr
 - **Pointer / tap:** click or tap a station's prop → already inside its trigger opens it right
   away; otherwise `game/travel/plan.ts`'s `planWalk`/`autoWalkStep` (pure) drive a plain walk
   toward it as an ordinary `pointer`-sourced intent (`WorldScene.update()`), opening it on arrival;
-  any manual move/jump/interact cancels the plan. **Travel (P7)** adds menu fast-travel and
-  fade-teleport, overriding other sources while active.
+  any manual move/jump/interact cancels the plan.
+- **Menu fast travel (Phase 7):** selecting a menu entry (`src/ui/menu.ts`) emits `travel:to { id
+}`; `WorldScene.startFastTravel` resolves `id` to an x (`travel/plan.ts`'s `travelTargetX`: a
+  station's own x, or — for a stop with no station yet, e.g. `lab` — the centre of its zone) and
+  either runs there (`planFastTravel`/`autoWalkStep`, a `{ source: 'travel', active: true }`
+  `SourcedIntent` that `mergeIntents` lets override every other source **even while `ui:modal` is
+  still `true`** — the menu never flips it back to `false` on a selection, only on a genuine
+  cancel, so the run plays with the game otherwise paused) or fade-teleports
+  (`shouldFadeTravel`: farther than 1.5 view-widths, or `prefers-reduced-motion` — DECISIONS.md has
+  the threshold's rationale) via `Camera.fadeOut`/`fadeIn` (`FADE_TRAVEL_MS`, `palette.ts`'s
+  `rgbChannels('ink-900')`; skipped entirely — an instant cut — under reduced motion). Either way,
+  arrival emits `travel:arrived { id }` then the ordinary `station:open { id }`. A fast travel in
+  progress still poses/animates normally (`WorldScene` passes `pose: null` while `fastTravel` is
+  set, even though `modalOpen` is `true` — only a genuinely idle paused game poses the panda
+  `interact`).
 - **Touch pad (done):** DOM D-pad ◀ ▶, A (jump), B (interact/close), START (menu) — `handheld` /
   `landscape-touch` only (Layout modes, below); `≥ 48 × 48` px targets, `pointer-events: none` on
   the pad's own box (only its buttons re-enable it), so a translucent `landscape-touch` overlay
@@ -438,9 +454,9 @@ down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b' | 'start'`),
 ## Stations & panels
 
 - A station = layout entry (`id`, `kind`, `x`, `asset`, `trigger` width) + (for a `kind` with a
-  panel) a matching `data-panel` id. So far only the 6 `project` stations have one; `gate` /
-  `vault` / `dossier` / `block` / `contact` resolve through the same mechanism once Phase 7–10 add
-  their panels — nothing here is project-specific.
+  panel) a matching `data-panel` id. The 6 `project` stations, `gate`, `contact`, `classified`,
+  `lab` and the 4 `dossier` stands all have one (Phase 7); `block` (a skill category) is still
+  Phase 9. Nothing here is project-specific — the mechanism is generic.
 - **Trigger tracking:** `game/stations/trigger.ts`'s `stationAt(x, stations)` is pure (unit-tested)
   and only considers stations with a filter the caller applies (`WorldScene` currently passes the 6
   project stations); it is called from the same `POST_UPDATE`/teleport step that tracks the zone,
@@ -452,20 +468,35 @@ down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b' | 'start'`),
   by `shared/layout-mode.ts`, never inspected ad hoc). Both hide while a panel is open.
 - **Opening:** interacting (`E`/Enter while inside a trigger) or clicking/tapping the station's
   prop (Pointer / tap, above) makes the game emit `station:open { id }` on the bus — nothing else;
-  the UI (`src/ui/panels.ts`) decides whether a panel exists for that id and, if so, un-hides its
-  `<section data-panel>`, traps focus and emits `ui:modal { open: true }`, which is what actually
-  pauses game input and poses the panda (`WorldScene` passes `pose: 'interact'` to `panda.update()`
-  exactly while `modalOpen`). An id with no panel yet is a silent no-op — Golden Rule 7: the game
-  never knows which ids have DOM content.
-- **Panels** are Astro components (`src/components/panels/Panels.astro`) rendered at build time
-  from `src/content/projects.ts`, both languages always in the DOM inside one
-  `<section data-panel="<id>" hidden>`: a `<div lang="es-419">`/`<div lang="en">` pair, each its own
-  `role="dialog" aria-modal="true" aria-labelledby aria-modal tabindex="-1"`; `shell.css`'s existing
-  `html[data-lang]` rule shows only the active one — panels never re-implement language visibility.
-  A project with an empty `stack` (Transcolombia, until Cristian sends it) renders no stack heading
-  or list at all. Fiora's screenshots become an accessible gallery: a thumbnail grid of `<button>`s
-  opens a lightbox (arrows, a focus trap of its own via `inert` on the grid while it is open); Esc
-  closes the lightbox first and only closes the panel on a second press.
+  the UI (`src/ui/panels.ts`) resolves `id` through `panelIdFor` (a stop whose panel is filed under
+  a different id — only `gate` → `intro` today, GAME_DESIGN.md → Canonical ids) and, if a matching
+  `<section data-panel>` exists, un-hides it, traps focus and emits `ui:modal { open: true }`,
+  which is what actually pauses game input and poses the panda (`WorldScene` passes `pose:
+'interact'` to `panda.update()` while `modalOpen` **and not mid fast-travel** — see Input, above).
+  An id with no panel yet (e.g. a skill block, still Phase 9) is a silent no-op — Golden Rule 7:
+  the game never knows which ids have DOM content.
+- **Panels** are Astro components rendered at build time, both languages always in the DOM inside
+  one `<section data-panel="<id>" hidden>`: a `<div lang="es-419">`/`<div lang="en">` pair, each its
+  own `role="dialog" aria-modal="true" aria-labelledby aria-modal tabindex="-1"`; `shell.css`'s
+  existing `html[data-lang]` rule shows only the active one — panels never re-implement language
+  visibility. `components/panels/Panels.astro` builds the 6 project panels from
+  `src/content/projects.ts` (a project with an empty `stack` — Transcolombia, until Cristian sends
+  it — renders no stack heading or list at all; Fiora's screenshots become an accessible gallery: a
+  thumbnail grid of `<button>`s opens a lightbox, arrows, a focus trap of its own via `inert` on the
+  grid while it is open — Esc closes the lightbox first and only closes the panel on a second
+  press). `IntroPanel.astro`/`ContactPanel.astro` (Phase 7) build `intro` (name, roles, tagline,
+  summary) and `contact` (`profile.callToAction`) from `src/content/profile.ts`, both sharing one
+  `ContactLinks.astro` partial for `profile.contact`. `StubPanels.astro` (Phase 7) stands in for
+  every stop whose own phase has not merged yet — `classified`, `lab`, and the 4 dossier ids —
+  titled with the stop's own name (`ui.menuClassified`/`ui.menuLab`, or a dossier's `industry`) over
+  a generic `ui.stubBody`; a later phase replaces the matching entry with its real panel under the
+  same id, so nothing else (visited marks, deep links, the menu) needs to change. Every one of
+  these renders through the exact same `[data-panel]` shape, so `src/ui/panels.ts`'s open/close/
+  focus-trap/visited logic (below) needed no changes to support them — Golden Rule 7 again: the
+  mechanism is id-agnostic.
+  All five components (`section[data-panel]`/`.panel`/`.panel__*`) share one chrome, defined once
+  in the plain, unscoped `styles/panel.css` (DECISIONS.md has the "why not repeat it per
+  component" ADR); `#menu` (below) reuses the same look.
 - **Focus:** opening focuses the visible language `<div>` (its `aria-labelledby` announces the
   title immediately); Tab traps inside it (`focusablesIn` skips anything hidden or under
   `[inert]`); closing restores focus to the canvas (`tabIndex = -1`, focusable without joining the
@@ -477,9 +508,43 @@ down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b' | 'start'`),
   reads `location.hash` once at `create()` to pick the spawn station (falling back to the usual
   spawn) and emits `station:open` for it after `game:ready`. Opening a panel (by any route) also
   sets `location.hash` to its id (`history.replaceState`, no navigation); closing clears it.
-- Visited marks (`shared/visited.ts`, closing a panel marks its id), language and sound live in
-  `localStorage` (wrapped in try/catch, same pattern as `i18n/lang.ts`'s `initialLang`/`persistLang`
-  — pure functions over an injected store, so they are unit-tested without a real browser).
+- Visited marks (`shared/visited.ts`, closing a panel marks `openId` — already resolved through
+  `panelIdFor`, so `gate` and `intro` share one mark), language and sound live in `localStorage`
+  (wrapped in try/catch, same pattern as `i18n/lang.ts`'s `initialLang`/`persistLang` — pure
+  functions over an injected store, so they are unit-tested without a real browser).
+
+## Menu, HUD & first-visit hint
+
+- **The menu** (`components/Menu.astro` + `src/ui/menu.ts`, `#menu`) lists every stop in world
+  order — `gate`, the 6 projects, `classified`, `lab`, `contact` — plus the 4 dossier ids as
+  indented sub-entries under `classified`, each a real `<button data-menu-entry="<id>">` (both
+  languages pre-rendered, same pair-of-`[lang]`-divs shape as a panel). Opening
+  (`bus.on('menu:open', …)`, itself only ever emitted while nothing else is open — `intent
+.menuPressed` is gated by `modalOpen` like every other keyboard/pad intent) shows it, traps focus
+  (reusing `panels.ts`'s `focusablesIn`/`visibleLangEl`/`focusCanvas`) and emits `ui:modal { open:
+true }`. Selecting an entry hides the menu **without** flipping `ui:modal` back to `false` — it
+  emits `travel:to { id }` and lets the game's fast travel (Input, above) carry `ui:modal` through
+  to the destination panel opening; a genuine cancel (Escape, the close button) is what actually
+  emits `ui:modal { open: false }`. Visited ✓ marks are read from `shared/visited.ts` client-side
+  (`localStorage` can change between page loads; a build-time mark would go stale) each time the
+  menu opens, through the same `panelIdFor` alias `panels.ts` uses.
+- **The HUD's interactive chrome** (`components/Hud.astro` + `src/ui/hud.ts`): the name badge
+  (opens `intro`), Contact (opens `contact`), the ES · EN toggle (`i18n/lang.ts`'s `setLang` —
+  instant, no reload; `html[data-lang]` alone highlights the active code, no JS needed for that
+  part) and sound (`shared/sound.ts`, off by default, state only until Phase 11) and menu buttons.
+  Every dynamic label (aria-labels, Contact/menu/sound text) is applied client-side and re-applied
+  on `lang:change`, the same pattern `src/ui/pad.ts` already uses for its own buttons. The badge
+  and Contact button call `src/ui/panels.ts`'s `open(id)` directly — a no-op while a panel or the
+  menu is already open (Golden Rule: "from anywhere" means anywhere in the _world_, not on top of
+  whatever else is open); the menu button shares the Esc/B precedence (close the topmost open
+  panel/menu, else open the menu — `src/ui/main.ts` composes `panelsApi.closeTopmost()` and
+  `menuApi.close()` into one `closeTopmost`, reused by the pad's `B` too).
+- **First-visit hint** (`src/ui/hint.ts` + `shared/hint.ts`, `#hud`'s `.hud__hint`): shown once,
+  input-aware (`html[data-mode]`: keys + "or just scroll" on desktop, "use the pad" on touch),
+  hidden by the first manual move/jump/interact (`input:first-move`, emitted once by `WorldScene`
+  off the same raw per-source booleans that already cancel an in-flight click-to-open walk) or by
+  any panel/menu opening, and never shown again once dismissed (`localStorage`, same
+  store-injection pattern as visited/lang/sound).
 
 ## i18n
 

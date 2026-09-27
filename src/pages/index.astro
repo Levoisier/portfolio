@@ -8,8 +8,12 @@ import '../styles/tokens.css';
 import '../styles/shell.css';
 import Hud from '../components/Hud.astro';
 import Loading from '../components/Loading.astro';
+import Menu from '../components/Menu.astro';
 import Pad from '../components/Pad.astro';
+import ContactPanel from '../components/panels/ContactPanel.astro';
+import IntroPanel from '../components/panels/IntroPanel.astro';
 import Panels from '../components/panels/Panels.astro';
+import StubPanels from '../components/panels/StubPanels.astro';
 import { inlineJson, readRuntimeManifest } from '../assets/inline';
 import { profile } from '../content';
 import { DEFAULT_LANG, HTML_LANG, LANG_STORAGE_KEY } from '../i18n/lang';
@@ -48,12 +52,15 @@ const roles = (lang: 'es' | 'en') => profile.roles.map((r) => r[lang]).join(' ·
     <script is:inline type="application/json" id="assets" set:html={inlineJson(manifest)} />
     <Loading manifest={manifest} />
     <div id="screen"></div>
-    <Hud />
+    <Hud manifest={manifest} />
     <Pad />
     <div id="panels">
       <Panels />
+      <IntroPanel />
+      <ContactPanel />
+      <StubPanels />
     </div>
-    <div id="menu" hidden></div>
+    <Menu />
     <noscript>
       <p class="noscript">
         <span lang="es-419">{ui.noscript.es}</span><span lang="en">{ui.noscript.en}</span>

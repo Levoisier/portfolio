@@ -1,0 +1,122 @@
+/*
+ * Shared dialog chrome for every DOM panel AND the menu (BACKLOG.md Phase 5 — moved out of
+ * `components/panels/Panels.astro` in Phase 7 once `IntroPanel`/`ContactPanel`/`StubPanels`/
+ * `Menu` needed the exact same look: a plain, unscoped stylesheet is how several Astro
+ * components share one look without each re-declaring it — Astro's per-component style scoping
+ * would otherwise apply only to the file that defines the markup). `Panels.astro` keeps its own
+ * scoped `<style>` for the Fiora screenshot gallery only, which nothing else uses.
+ */
+
+section[data-panel],
+#menu {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--c-navy-950) 72%, transparent);
+}
+
+section[data-panel] {
+  z-index: var(--z-panel);
+}
+
+#menu {
+  z-index: var(--z-menu);
+}
+
+.panel {
+  position: relative;
+  width: min(92vw, 640px);
+  max-height: min(86dvh, 720px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: var(--pixel-border) solid var(--c-ink-900);
+  box-shadow: 0 0 0 var(--pixel-border) var(--c-navy-400);
+  font-family: var(--font-body);
+}
+
+.panel:focus-visible {
+  outline: var(--pixel-border) solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.panel__close {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: var(--space-8);
+  height: var(--space-8);
+  border: 2px solid var(--c-navy-400);
+  background: var(--c-navy-700);
+  color: var(--color-text);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.panel__close:hover {
+  background: var(--c-navy-500);
+}
+
+.panel__title {
+  margin: 0 var(--space-8) var(--space-2) 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--color-text);
+}
+
+.panel__desc {
+  margin: 0 0 var(--space-4);
+  line-height: 1.5;
+}
+
+.panel__subheading {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.panel__stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.panel__chip {
+  padding: var(--space-1) var(--space-3);
+  background: var(--c-navy-700);
+  color: var(--c-paper-100);
+  font-size: 0.85rem;
+  border: 1px solid var(--c-navy-400);
+}
+
+.panel__platform {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.panel__link {
+  display: inline-block;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent);
+  color: var(--c-white);
+  font-family: var(--font-display);
+  text-decoration: none;
+}
+
+.panel__link:hover,
+.panel__link:focus-visible {
+  background: var(--c-scarlet-700);
+}

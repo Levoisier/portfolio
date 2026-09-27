@@ -96,6 +96,13 @@ test('B opens a station and closes it (no stray interact on the same press)', as
   await expect(page.locator('[data-panel="fiora"]')).toBeHidden();
 });
 
+test('START opens the menu (BACKLOG.md Phase 7)', async ({ page }) => {
+  await page.goto('/?debug');
+  await waitForGame(page);
+  await page.locator('[data-pad-btn="start"]').click();
+  await expect(page.locator('#menu')).toBeVisible();
+});
+
 test('rotating to landscape keeps the game playing with the pad as an overlay', async ({
   page,
 }) => {

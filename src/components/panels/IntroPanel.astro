@@ -1,0 +1,41 @@
+---
+/**
+ * The `intro` panel (BACKLOG.md Phase 7 — GAME_DESIGN.md → Canonical ids: opened by the HUD name
+ * badge and by the menu's `gate` entry): name, roles, tagline, summary and contact links, from
+ * `src/content/profile.ts` only. Same generic `[data-panel]` shape `src/ui/panels.ts` already
+ * drives for the project panels (open/close/focus-trap/visited need no changes for this id).
+ */
+import '../../styles/panel.css';
+import { LANGS, profile } from '../../content';
+import { HTML_LANG } from '../../i18n/lang';
+import { ui } from '../../i18n/ui';
+import ContactLinks from './ContactLinks.astro';
+
+const roles = (lang: 'es' | 'en') => profile.roles.map((r) => r[lang]).join(' · ');
+---
+
+<section id="panel-intro" data-panel="intro" hidden>
+  {
+    LANGS.map((lang) => (
+      <div
+        class="panel"
+        lang={HTML_LANG[lang]}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`panel-intro-title-${lang}`}
+        tabindex="-1"
+      >
+        <button type="button" class="panel__close" data-panel-close aria-label={ui.close[lang]}>
+          <span aria-hidden="true">×</span>
+        </button>
+        <h2 id={`panel-intro-title-${lang}`} class="panel__title">
+          {profile.name}
+        </h2>
+        <p class="panel__desc">{roles(lang)}</p>
+        <p class="panel__desc">{profile.tagline[lang]}</p>
+        <p class="panel__desc">{profile.summary[lang]}</p>
+        <ContactLinks lang={lang} />
+      </div>
+    ))
+  }
+</section>

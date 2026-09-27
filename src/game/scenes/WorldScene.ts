@@ -6,10 +6,18 @@
  */
 import Phaser from 'phaser';
 import { profile } from '../../content';
-import { num } from '../../design/palette';
+import { num, rgbChannels } from '../../design/palette';
 import { bus } from '../../shared/bus';
 import { onReducedMotionChange, prefersReducedMotion } from '../../shared/motion';
-import { DEBUG_STATS_MS, GROUND_Y, LAYOUT_STEP_HZ, PANDA_ART_H, WORLD_H, WORLD_W } from '../config';
+import {
+  DEBUG_STATS_MS,
+  FADE_TRAVEL_MS,
+  GROUND_Y,
+  LAYOUT_STEP_HZ,
+  PANDA_ART_H,
+  WORLD_H,
+  WORLD_W,
+} from '../config';
 import { REGISTRY_KEY, type GameContext } from '../context';
 import { applyParallaxMotion, buildParallax, type ParallaxHandle } from '../fx/parallax';
 import { SkyRenderer } from '../fx/sky';
@@ -26,7 +34,14 @@ import { Stations } from '../stations/Stations';
 import { stationAt } from '../stations/trigger';
 import { PIXEL_FONT, PIXEL_FONT_SIZE, registerPixelFont } from '../text/bitmap-font';
 import { parseDeepLink } from '../travel/deep-link';
-import { autoWalkStep, planWalk, type TravelPlan } from '../travel/plan';
+import {
+  autoWalkStep,
+  planFastTravel,
+  planWalk,
+  shouldFadeTravel,
+  travelTargetX,
+  type TravelPlan,
+} from '../travel/plan';
 import { WORLD_LAYOUT, zoneAt, type PlatformSize, type Station } from '../world/layout';
 
 /** The 6 project stations only (BACKLOG.md Phase 5); the gate/vault/dossiers/blocks/contact
@@ -76,6 +91,14 @@ export class WorldScene extends Phaser.Scene {
   /** Click/tap-to-open (ARCHITECTURE.md → Input → Pointer/tap): a plain walk toward the clicked
    * station, cleared on arrival (then opened) or by any manual movement/jump/interact. */
   private travel: { plan: TravelPlan; stationId: string } | null = null;
+  /** Menu fast-travel (BACKLOG.md Phase 7): an active `travel`-sourced run that overrides every
+   * other input (`mergeIntents`) even while `ui:modal` stays `true` the whole time — the menu
+   * never flips it back to `false` on a selection, only on a genuine cancel. Cleared on arrival
+   * (`openStation` then runs) or by `fadeTravelTo` taking the fade branch instead. */
+  private fastTravel: { plan: TravelPlan; stationId: string } | null = null;
+  /** The first-visit hint hides on the first real move/jump/interact (`input:first-move`,
+   * BACKLOG.md Phase 7); fires once per session. */
+  private hintDismissed = false;
   private cleanup: (() => void)[] = [];
   private groundBody!: Phaser.Physics.Arcade.StaticBody;
 
@@ -142,6 +165,7 @@ export class WorldScene extends Phaser.Scene {
       bus.on('input:pad', (e) => {
         if (!this.modalOpen) this.touch.handle(e);
       }),
+      bus.on('travel:to', ({ id }) => this.startFastTravel(id)),
       bus.on('fonts:ready', () => this.addLabel(), { replay: true }),
       bus.on('tier:change', ({ tier }) => (this.ctx.tier = tier)),
       onReducedMotionChange((reduced) => applyParallaxMotion(this.parallax, reduced)),
@@ -191,19 +215,22 @@ export class WorldScene extends Phaser.Scene {
     const keyboardIntent = this.keyboard.read();
     const wheelMoveX = this.wheel.update(delta);
     const padIntent = this.touch.read();
+    const manualInput =
+      keyboardIntent.moveX !== 0 ||
+      keyboardIntent.jumpPressed ||
+      keyboardIntent.interactPressed ||
+      wheelMoveX !== 0 ||
+      padIntent.moveX !== 0 ||
+      padIntent.jumpPressed ||
+      padIntent.interactPressed;
     // Any manual input cancels an in-flight click-to-open walk (ARCHITECTURE.md → Input →
     // Pointer/tap): the player took over.
-    if (
-      this.travel &&
-      (keyboardIntent.moveX !== 0 ||
-        keyboardIntent.jumpPressed ||
-        keyboardIntent.interactPressed ||
-        wheelMoveX !== 0 ||
-        padIntent.moveX !== 0 ||
-        padIntent.jumpPressed ||
-        padIntent.interactPressed)
-    ) {
-      this.travel = null;
+    if (this.travel && manualInput) this.travel = null;
+    // First-visit controls hint (BACKLOG.md Phase 7 — GAME_DESIGN.md → HUD): fires once, off the
+    // same raw sources (not the merged intent, which a menu fast-travel can drive on its own).
+    if (!this.hintDismissed && manualInput) {
+      this.hintDismissed = true;
+      bus.emit('input:first-move', {});
     }
 
     const sources: SourcedIntent[] = [
@@ -220,12 +247,25 @@ export class WorldScene extends Phaser.Scene {
         this.openStation(stationId);
       }
     }
+    if (this.fastTravel) {
+      const step = autoWalkStep(this.panda.sprite.x, this.fastTravel.plan);
+      if (step) sources.push({ source: 'travel', intent: step, active: true });
+      else {
+        const { stationId } = this.fastTravel;
+        this.fastTravel = null;
+        bus.emit('travel:arrived', { id: stationId });
+        this.openStation(stationId);
+      }
+    }
 
     const intent = mergeIntents(sources, { modalOpen: this.modalOpen });
     if (intent.menuPressed) bus.emit('menu:open', {});
     if (intent.interactPressed && this.stationId) this.openStation(this.stationId);
 
-    this.panda.update(intent, delta, this.modalOpen ? 'interact' : null);
+    // A menu fast-travel keeps `modalOpen` true throughout (merge.ts) but must still walk/run
+    // and animate normally — only a genuinely paused game (a panel/menu open, nothing driving
+    // the panda) poses it as `interact`.
+    this.panda.update(intent, delta, this.modalOpen && !this.fastTravel ? 'interact' : null);
     // Snapshot now: `world.postUpdate()` (already queued for this frame) resets it to 0.
     this.stepsThisFrame = this.physics.world.stepsLastFrame;
 
@@ -274,17 +314,60 @@ export class WorldScene extends Phaser.Scene {
     this.travel = { plan: planWalk(this.panda.sprite.x, station.x), stationId: station.id };
   }
 
+  /** A menu selection (`travel:to`, BACKLOG.md Phase 7 — GAME_DESIGN.md → Menu / map): run there
+   * (close) or fade-teleport (far, or reduced motion) then open it. `ui:modal` is already `true`
+   * from the menu and stays that way throughout — an active `travel` source overrides it
+   * (`mergeIntents`), so the run still plays while the game otherwise stays paused. An unknown id
+   * (neither a station nor a zone) is silently ignored. */
+  private startFastTravel(id: string): void {
+    const targetX = travelTargetX(id);
+    if (targetX === null) return;
+    this.travel = null;
+    this.fastTravel = null;
+    const fromX = this.panda.sprite.x;
+    if (shouldFadeTravel(fromX, targetX, this.ctx.viewport.backingW, prefersReducedMotion())) {
+      this.fadeTravelTo(targetX, id);
+    } else {
+      this.fastTravel = { plan: planFastTravel(fromX, targetX), stationId: id };
+    }
+  }
+
+  /** Fade to `ink-900`, teleport, fade back in, then open — instant (no tween at all) under
+   * reduced motion, the same "instant under reduced motion" pattern as every other camera/tween
+   * effect in this codebase. */
+  private fadeTravelTo(targetX: number, id: string): void {
+    if (prefersReducedMotion()) {
+      this.teleport(targetX);
+      bus.emit('travel:arrived', { id });
+      this.openStation(id);
+      return;
+    }
+    const cam = this.cameras.main;
+    const [r, g, b] = rgbChannels('ink-900');
+    cam.fadeOut(FADE_TRAVEL_MS, r, g, b);
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.teleport(targetX);
+      cam.fadeIn(FADE_TRAVEL_MS, r, g, b);
+      cam.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
+        bus.emit('travel:arrived', { id });
+        this.openStation(id);
+      });
+    });
+  }
+
   /** Only the bus knows what happens next (AGENTS.md Golden Rule 7): the UI opens the matching
-   * DOM panel (if one exists yet) and flips `ui:modal`, which is what actually pauses input and
-   * poses the panda — this is a no-op here for a station id with no panel (Phase 7–10 add more). */
+   * DOM panel (if one exists) and flips `ui:modal`, which is what actually pauses input and
+   * poses the panda — this is a no-op here for a station id with no panel yet (e.g. a skill
+   * block, still Phase 9). */
   private openStation(id: string): void {
     bus.emit('station:open', { id });
   }
 
-  /** Debug hook only (`window.__PORTFOLIO__.teleport`, also used by `openStation`): feet on the
-   * ground, camera snapped, any pending click-to-open walk cancelled. */
+  /** Debug hook only (`window.__PORTFOLIO__.teleport`, also used by `openStation` and
+   * `fadeTravelTo`): feet on the ground, camera snapped, any pending walk-to-x cancelled. */
   private teleport(x: number): void {
     this.travel = null;
+    this.fastTravel = null;
     this.panda.teleportTo(x, GROUND_Y);
     this.followState = snapFollow({
       targetX: x,
