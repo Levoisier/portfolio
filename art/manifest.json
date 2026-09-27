@@ -1,5 +1,5 @@
 {
-  "$comment": "Asset registry. Every game media file has exactly one entry here and one row in ASSETS.md. Raw sources live in art/raw/<id>.png (user-provided); `pnpm assets` writes normalized output + public/game/assets.json (generated, never committed). All sizes are final art pixels. Strips: `baseline` = y of the line the art stands on (lowest opaque row = baseline - 1); `ruler: true` = green-screen deliveries carry one extra size-reference frame on the far left. Sets: items in reading order (rows top→bottom, left→right), each fitted into its `size`. `anchors` = [x, y, w, h] rects (w = h = 0 for a point) where the game draws on the art; values here are the placeholder geometry, the pipeline re-detects them on delivered art.",
+  "$comment": "Asset registry. Every game media file has exactly one entry here and one row in ASSETS.md. Raw sources live in art/raw/<id>.png (user-provided); `pnpm assets` writes normalized output + public/game/assets.json (generated, never committed). All sizes are final art pixels. Strips: `baseline` = y of the line the art stands on (lowest opaque row = baseline - 1); `ruler: true` = when the source is green-screen, its leftmost frame is a size reference that is dropped (transparent sources never carry one). `backgroundThreshold` overrides the black flood-fill threshold for a raw file. Sets: items in reading order (rows top→bottom, left→right), each fitted into its `size` (or, with `fill`, scaled to its exact width and aligned top/bottom); item `anchors` are relative to the item box. `anchors` = [x, y, w, h] rects (w = h = 0 for a point) where the game draws on the art; values here are the placeholder geometry, the pipeline re-detects them on delivered art.",
   "version": 1,
   "grid": 16,
   "assets": [
@@ -143,15 +143,18 @@
       "items": [
         {
           "name": "platform-s",
-          "size": [48, 16]
+          "size": [48, 16],
+          "fill": "top"
         },
         {
           "name": "platform-m",
-          "size": [80, 16]
+          "size": [80, 16],
+          "fill": "top"
         },
         {
           "name": "platform-l",
-          "size": [128, 16]
+          "size": [128, 16],
+          "fill": "top"
         }
       ]
     },
@@ -207,10 +210,7 @@
       "required": true,
       "tier": "all",
       "targetHeight": 128,
-      "maxSize": [160, 160],
-      "anchors": {
-        "screen": [60, 16, 40, 64]
-      }
+      "maxSize": [160, 160]
     },
     {
       "id": "station-japaniracer",
@@ -246,10 +246,16 @@
       "required": true,
       "tier": "all",
       "targetHeight": 136,
-      "maxSize": [176, 160],
-      "anchors": {
-        "screen": [48, 12, 80, 44]
-      }
+      "maxSize": [176, 160]
+    },
+    {
+      "id": "station-transcolombia",
+      "kind": "sprite",
+      "wave": "C",
+      "required": true,
+      "tier": "all",
+      "targetHeight": 128,
+      "maxSize": [176, 160]
     },
     {
       "id": "confidential-vault",
@@ -260,7 +266,10 @@
       "items": [
         {
           "name": "wall",
-          "size": [160, 144]
+          "size": [160, 144],
+          "anchors": {
+            "doorway": [32, 48, 96, 96]
+          }
         },
         {
           "name": "door",
@@ -317,7 +326,8 @@
       "items": [
         {
           "name": "fence",
-          "size": [48, 40]
+          "size": [48, 40],
+          "fill": "bottom"
         },
         {
           "name": "beacon",

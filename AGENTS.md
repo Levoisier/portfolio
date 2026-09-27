@@ -24,9 +24,9 @@ you are working on → the ASSETS.md rows it names → related LESSONS.md entrie
 
 ### Project Overview
 
-The personal portfolio of **Cristian Zapata Cartagena** — Full Stack Developer & Chemical
+The personal portfolio of **Cristian Cartagena** — Full Stack Developer & Chemical
 Engineer — is a **2D pixel-art side-scrolling game**. The visitor plays a panda with a red scarf
-through one level, a chemical plant at night that turns into sunrise: five project stations, a
+through one level, a chemical plant at night that turns into sunrise: six project stations, a
 classified wing for NDA work, a reagent lab for the tech stack, and a contact lookout. There is
 no classic page view by design.
 

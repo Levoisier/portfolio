@@ -48,7 +48,7 @@ P0 foundation ✅
 | ---- | --------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------- |
 | A    | panda-idle, walk, air, interact, wave (+ optional run); portrait ✅                                                   | P3         | interim panda from the sheet                                          |
 | B    | floor-plant, platforms, bg-far, bg-mid                                                                                | P4         | placeholder skyline + floor                                           |
-| C    | **gate first**, then 5 stations, vault, dossier, skill-block, contact-post, props-zones (+ optional sleep, celebrate) | P5, P8–P10 | placeholder boxes with anchors, same size; intro/finale use idle/wave |
+| C    | **gate first**, then 6 stations, vault, dossier, skill-block, contact-post, props-zones (+ optional sleep, celebrate) | P5, P8–P10 | placeholder boxes with anchors, same size; intro/finale use idle/wave |
 | D    | props-misc, flask-bubbling (+ optional bg-fore, flare-flame)                                                          | P11        | placeholders, same size (props-misc and flask are required)           |
 
 ---
@@ -66,9 +66,9 @@ import boundary; not-a-PWA policy tests; docs rewritten and reviewed.
 
 ---
 
-## Phase 1 — Asset pipeline
+## Phase 1 — Asset pipeline ✅
 
-### [ ] feat(assets): `pnpm assets` — normalize art/raw into public/game
+### [x] feat(assets): `pnpm assets` — normalize art/raw into public/game
 
 **Goal:** any image Cristian drops in `art/raw/<id>.png` (Nano Banana green-screen or PixelLab
 transparent) becomes a clean, palette-snapped, correctly packed game asset, and every missing
@@ -115,9 +115,9 @@ field — update ARCHITECTURE.md with it), `art/manifest.json` (data only), `ARC
 
 ---
 
-## Phase 2 — Game shell
+## Phase 2 — Game shell ✅
 
-### [ ] feat(shell): page, loading screen, Phaser boot, pixel-perfect zoom, tiers, bus, i18n
+### [x] feat(shell): page, loading screen, Phaser boot, pixel-perfect zoom, tiers, bus, i18n
 
 **Goal:** a page that paints instantly and boots Phaser lazily into a pixel-perfect canvas at the
 right integer zoom on every screen, with the plumbing every later phase uses.
@@ -154,7 +154,9 @@ right integer zoom on every screen, with the plumbing every later phase uses.
 - Pauses the game loop when the tab is hidden.
 
 **Tests:** unit — zoom math, layout mode, tier decision, lang default/persistence; e2e — no console
-errors and no failed requests (with and without `public/game/`), canvas non-blank (screenshot
+errors and no failed requests, both with the pipeline's manifest and with none (a second
+Playwright project builds with `PORTFOLIO_NO_ASSETS=1`, which `index.astro` treats as a `null`
+manifest; a unit test covers manifest → request list), canvas non-blank (screenshot
 variance), `#loading` disappears, canvas `getBoundingClientRect()` × dpr within 0.1 px of an
 integer multiple of the backing size (desktop + mobile).
 
@@ -167,9 +169,9 @@ integer multiple of the backing size (desktop + mobile).
 
 ---
 
-## Phase 3 — Panda controller
+## Phase 3 — Panda controller ✅
 
-### [ ] feat(player): responsive platformer movement, animations, camera, keyboard + wheel
+### [x] feat(player): responsive platformer movement, animations, camera, keyboard + wheel
 
 **Goal:** moving the panda feels great and never jitters.
 
@@ -186,8 +188,9 @@ integer multiple of the backing size (desktop + mobile).
 - Input per ARCHITECTURE.md → _Input_: keys via `addKey(code, false)` (← → A D, Shift, Space W ↑,
   E Enter, M Esc), `ui:modal` gating, wheel/trackpad walking (`deltaY` and `deltaX`, `deltaMode`,
   decay, `input:wheel` forwarding). Pure `input/merge.ts`.
-- Camera per the rendering contract via pure `render/follow.ts` (integer scroll, dt-based smoothing
-  - deadzone, clamped) and bottom anchoring with `cam.setBounds(0, WORLD_H − viewH, WORLD_W, viewH)`.
+- Camera per the rendering contract via pure `render/follow.ts` (integer scroll, dt-based
+  smoothing with a deadzone, clamped) and bottom anchoring with
+  `cam.setBounds(0, WORLD_H − viewH, WORLD_W, viewH)`.
 - A temporary flat ground (placeholder floor) and one test platform; landing shows the `land`
   frame; no jitter between panda and ground at any zoom, facing either way, at 60 and 120 Hz.
 
@@ -204,9 +207,9 @@ panda standing still facing left and right show no sub-pixel shimmer.
 
 ---
 
-## Phase 4 — World: layout, ground, sky, parallax
+## Phase 4 — World: layout, ground, sky, parallax ✅
 
-### [ ] feat(world): the level from data — ground, platforms, night→dawn sky, parallax
+### [x] feat(world): the level from data — ground, platforms, night→dawn sky, parallax
 
 **Depends on:** P3. **Media:** wave B (placeholders until then).
 
@@ -233,15 +236,15 @@ each zone via the hook, screenshot, `zone:enter` fires.
 
 ---
 
-## Phase 5 — Stations & project panels
+## Phase 5 — Stations & project panels ✅
 
-### [ ] feat(stations): project stations, prompts, DOM panels, visited, deep links
+### [x] feat(stations): project stations, prompts, DOM panels, visited, deep links
 
-**Depends on:** P4. **Media:** the 5 project stations of wave C (placeholders until then).
+**Depends on:** P4. **Media:** the 6 project stations of wave C (placeholders until then).
 
 **Acceptance criteria**
 
-- Station objects for the 5 projects at their layout slots, trigger zones, and the prompt per
+- Station objects for the 6 projects at their layout slots, trigger zones, and the prompt per
   ARCHITECTURE.md → _Stations & panels_ (pixel glyph above the prop + DOM live-region text,
   localized, input-aware).
 - Panels pre-rendered at build from `src/content/projects.ts`, both languages
@@ -257,16 +260,17 @@ each zone via the hook, screenshot, `zone:enter` fires.
 
 **Tests:** unit — trigger enter/leave, hash parsing, walk-to-x target; e2e — teleport to each
 station, open, title text in ES and EN, close with Esc, deep link `/#japaniracer`, Fiora gallery,
-Enter/Space activate links inside an open panel.
+Enter/Space activate links inside an open panel, Esc on an open panel closes it and the game doesn't
+react to that key press.
 
 **Files:** `src/game/stations/`, `src/game/travel/`, `src/components/panels/`, `src/ui/panels.ts`,
 `tests/e2e/`.
 
 ---
 
-## Phase 6 — Mobile: handheld mode & touch
+## Phase 6 — Mobile: handheld mode & touch ✅
 
-### [ ] feat(mobile): handheld layout, touch pad, tap-to-interact
+### [x] feat(mobile): handheld layout, touch pad, tap-to-interact
 
 **Depends on:** P5. **Media:** none (controls are CSS/SVG).
 
@@ -289,16 +293,16 @@ playing, no horizontal page overflow.
 
 ---
 
-## Phase 7 — Menu, fast travel, HUD & accessibility
+## Phase 7 — Menu, fast travel, HUD & accessibility ✅
 
-### [ ] feat(ui): map/fast-travel menu, HUD, intro & contact panels, keyboard/screen-reader path
+### [x] feat(ui): map/fast-travel menu, HUD, intro & contact panels, keyboard/screen-reader path
 
 **Depends on:** P5.
 
 **Acceptance criteria**
 
 - Menu (M / Esc / HUD button / START, precedence per ARCHITECTURE → _Input_): every stop in world
-  order with visited ✓; choosing one auto-runs the panda there (fade-teleport if > 1.5 screens
+  order plus the dossier sub-entries, mapped per `GAME_DESIGN.md` → _Canonical ids_, with visited ✓; choosing one auto-runs the panda there (fade-teleport if > 1.5 screens
   away), then opens its panel. Stops whose phase hasn't merged open a stub panel titled with the
   stop name. Pure `travel/plan.ts`.
 - HUD per `GAME_DESIGN.md`: name badge (opens the `intro` panel: name, roles, tagline, summary,
@@ -311,7 +315,8 @@ playing, no horizontal page overflow.
 - Recruiter test: from page load, a project panel is open in ≤ 10 s using only the mouse, and
   using only the keyboard.
 
-**Tests:** unit — travel planner; e2e — menu → each stop opens its panel (or stub); language toggle
+**Tests:** unit — travel planner; e2e — menu → each stop opens its panel (or stub); Esc on an
+open panel closes it and the menu stays closed; language toggle
 switches panel + HUD text; keyboard-only run-through; the recruiter test timed; an axe-core scan
 (`@axe-core/playwright`, add with an ADR) has no serious violations.
 
@@ -319,9 +324,9 @@ switches panel + HUD text; keyboard-only run-through; the recruiter test timed; 
 
 ---
 
-## Phase 8 — Classified wing
+## Phase 8 — Classified wing ✅
 
-### [ ] feat(confidential): vault door, redacted dossiers, NDA-safe panels
+### [x] feat(confidential): vault door, redacted dossiers, NDA-safe panels
 
 **Depends on:** P7. **Media:** confidential-vault, confidential-dossier, props-zones (placeholders
 until then).
@@ -344,9 +349,9 @@ the content test still guards the data.
 
 ---
 
-## Phase 9 — Reagent lab (stack)
+## Phase 9 — Reagent lab (stack) ✅
 
-### [ ] feat(skills): element blocks, periodic board, stack panel
+### [x] feat(skills): element blocks, periodic board, stack panel
 
 **Depends on:** P7. **Media:** skill-block, props-zones (placeholders until then).
 
@@ -370,16 +375,17 @@ the hook, board complete, panel lists all 34 skills in ES and EN.
 
 ---
 
-## Phase 10 — Gate intro & sunrise contact
+## Phase 10 — Gate intro & sunrise contact ✅
 
-### [ ] feat(story): gate intro, contact post, finale, meta/OG basics
+### [x] feat(story): gate intro, contact post, finale, meta/OG basics
 
 **Depends on:** P7. **Media:** station-spawn-gate, contact-post, props-misc crate (+ optional
 panda-sleep, panda-celebrate).
 
 **Acceptance criteria**
 
-- Gate: name, roles and tagline in pixel text inside the `sign` anchor (localized); intro beat —
+- Gate: name and roles in pixel text inside the `sign` anchor (localized; measure that three lines
+  fit at the chosen pixel-font size — if not, report it so the sign art can grow); intro beat —
   panda asleep on the crate (`panda-sleep`, or idle if `missing`, with code-drawn "Z"s) → wakes →
   waves; skippable by any input; plays once per session.
 - Contact post at the lookout: `idle` → `active` frame on approach; interact opens the `contact`
@@ -389,15 +395,17 @@ panda-sleep, panda-celebrate).
 - `<title>`, meta description, OG/Twitter tags, JSON-LD `Person` from `src/content/profile.ts`.
 
 **Tests:** e2e — intro skippable, contact post opens the panel with the correct hrefs, meta tags
-present.
+present; with the visited keys for the 6 projects, one dossier and `stack` seeded in
+`localStorage`, arriving at the lookout plays the finale (visited keys are canonical ids, so this
+works before P8/P9 merge).
 
 **Files:** `src/game/stations/`, `src/pages/`, `src/components/`.
 
 ---
 
-## Phase 11 — Ambience & audio
+## Phase 11 — Ambience & audio ✅
 
-### [ ] feat(fx): desktop diorama ambience, lean mobile, optional audio
+### [x] feat(fx): desktop diorama ambience, lean mobile, optional audio
 
 **Depends on:** P6, P7, P8, P9, P10. **Media:** wave D.
 
@@ -423,6 +431,10 @@ disables shake/flash.
 ## Phase 12 — Launch
 
 ### [ ] chore(launch): budgets, polish, share assets, cross-device QA, go live
+
+**Status (2026-09-27):** done — share assets (`pnpm share`: favicons + OG image), OG/Twitter image
+tags, budgets measured (LESSONS.md). Remaining: Lighthouse run, real-device QA (Safari/Firefox,
+iOS, Android, 120 Hz), and merging `next` into `main` for production (Cristian's call).
 
 **Depends on:** everything.
 

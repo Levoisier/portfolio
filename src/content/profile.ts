@@ -1,7 +1,7 @@
 import type { Profile } from './types';
 
 export const profile: Profile = {
-  name: 'Cristian Zapata Cartagena',
+  name: 'Cristian Cartagena',
   roles: [
     { es: 'Full Stack Developer', en: 'Full Stack Developer' },
     { es: 'Ingeniero Químico', en: 'Chemical Engineer' },

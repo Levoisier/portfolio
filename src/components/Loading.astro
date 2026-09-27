@@ -1,0 +1,157 @@
+---
+/**
+ * The first paint: name + pixel progress bar; with a manifest also the portrait and the
+ * walking panda (CSS steps() over the resolved walk frames). Everything is sized in art px ×
+ * --px (a whole number of device px, set by the pre-paint script).
+ */
+import type { RuntimeManifest } from '../assets/runtime';
+import { versioned } from '../game/load-plan';
+import { profile } from '../content';
+import { ui } from '../i18n/ui';
+
+interface Props {
+  manifest: RuntimeManifest | null;
+}
+const { manifest } = Astro.props;
+const portrait = manifest?.assets['panda-portrait'];
+const walk = manifest?.assets['panda-walk'];
+const img =
+  portrait && portrait.source !== 'missing' && portrait.kind === 'sprite' ? portrait : null;
+const runner = walk && walk.source !== 'missing' && walk.kind === 'strip' ? walk : null;
+---
+
+<div id="loading" class="loading">
+  <div class="loading__stage">
+    {
+      img && manifest && (
+        <img
+          class="loading__portrait"
+          src={versioned(img.url, manifest.hash)}
+          alt=""
+          width={img.width}
+          height={img.height}
+          style={`--w: ${img.width}; --h: ${img.height}`}
+        />
+      )
+    }
+    <p class="loading__name" aria-hidden="true">{profile.name}</p>
+    <div
+      class="loading__bar"
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="0"
+      aria-labelledby="loading-label"
+    >
+      <span class="loading__fill"></span>
+    </div>
+    <p id="loading-label" class="loading__label">
+      <span lang="es-419">{ui.loading.es}</span><span lang="en">{ui.loading.en}</span>
+    </p>
+    {
+      runner && manifest && (
+        <div
+          class="loading__runner"
+          aria-hidden="true"
+          style={`--fw: ${runner.frameWidth}; --fh: ${runner.frameHeight}; --frames: ${runner.frames}; --fps: ${runner.fps}; background-image: url('${versioned(runner.url, manifest.hash)}')`}
+        />
+      )
+    }
+  </div>
+</div>
+
+<style>
+  .loading {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-loading);
+    display: grid;
+    place-items: center;
+    background: var(--c-navy-950);
+    color: var(--color-text);
+    transition: opacity 400ms steps(4);
+  }
+
+  .loading[data-state='leaving'] {
+    opacity: 0;
+  }
+
+  .loading__stage {
+    display: grid;
+    justify-items: center;
+    gap: calc(4 * var(--px));
+  }
+
+  .loading__portrait,
+  .loading__runner {
+    image-rendering: pixelated;
+  }
+
+  .loading__portrait {
+    width: calc(var(--w) * var(--px));
+    height: calc(var(--h) * var(--px));
+  }
+
+  .loading__name {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: calc(11 * var(--px));
+    line-height: 1;
+    text-align: center;
+  }
+
+  .loading__bar {
+    --progress: 0;
+    width: calc(96 * var(--px));
+    height: calc(6 * var(--px));
+    padding: var(--px);
+    border: var(--px) solid var(--c-paper-100);
+    box-sizing: content-box;
+  }
+
+  .loading__fill {
+    display: block;
+    height: 100%;
+    /* Whole art px of fill: 24 steps of 4 px. */
+    width: calc(round(down, var(--progress) * 24, 1) * 4 * var(--px));
+    background: var(--c-scarlet-500);
+  }
+
+  .loading__label {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: calc(7 * var(--px));
+    color: var(--color-text-muted);
+  }
+
+  .loading__runner {
+    width: calc(var(--fw) * var(--px));
+    height: calc(var(--fh) * var(--px));
+    background-repeat: no-repeat;
+    background-size: calc(var(--fw) * var(--frames) * var(--px)) calc(var(--fh) * var(--px));
+    animation: walk calc(var(--frames) / var(--fps) * 1s) steps(var(--frames)) infinite;
+  }
+
+  @keyframes walk {
+    to {
+      background-position-x: calc(var(--fw) * var(--frames) * var(--px) * -1);
+    }
+  }
+
+  /* Landscape phones: the portrait would not fit above the bar. */
+  @media (max-height: 480px) {
+    .loading__portrait {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loading__runner {
+      animation: none;
+    }
+
+    .loading {
+      transition: none;
+    }
+  }
+</style>

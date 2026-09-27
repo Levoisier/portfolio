@@ -1,0 +1,208 @@
+---
+/**
+ * The 6 project panels (BACKLOG.md Phase 5 — ARCHITECTURE.md → Stations & panels), pre-rendered
+ * at build time from `src/content/projects.ts`, once per language. `src/ui/panels.ts` un-hides
+ * `<section data-panel>`, traps focus and wires Esc/close; the global `[lang]` visibility rule in
+ * `shell.css` picks the active language — this component never reads `html[data-lang]` itself.
+ *
+ * Transcolombia's `stack` is intentionally empty until Cristian sends it (AGENTS.md): the stack
+ * heading/list is only rendered when a project actually has one.
+ */
+import '../../styles/panel.css';
+import { LANGS, projects } from '../../content';
+import { HTML_LANG } from '../../i18n/lang';
+import { ui } from '../../i18n/ui';
+---
+
+{
+  projects.map((project) => (
+    <section id={`panel-${project.id}`} data-panel={project.id} hidden>
+      {LANGS.map((lang) => (
+        <div
+          class="panel"
+          lang={HTML_LANG[lang]}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`panel-${project.id}-title-${lang}`}
+          tabindex="-1"
+        >
+          <button type="button" class="panel__close" data-panel-close aria-label={ui.close[lang]}>
+            <span aria-hidden="true">×</span>
+          </button>
+          <h2 id={`panel-${project.id}-title-${lang}`} class="panel__title">
+            {project.title}
+          </h2>
+          <p class="panel__desc">{project.description[lang]}</p>
+          {project.stack.length > 0 && (
+            <>
+              <h3 class="panel__subheading">{ui.stackHeading[lang]}</h3>
+              <ul class="panel__stack">
+                {project.stack.map((s) => (
+                  <li class="panel__chip">{s}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          {project.platformNote && <p class="panel__platform">{project.platformNote[lang]}</p>}
+          {project.liveUrl && (
+            <a
+              class="panel__link"
+              href={project.liveUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={project.liveAriaLabel?.[lang]}
+            >
+              {ui.viewLive[lang]} ↗
+            </a>
+          )}
+          {project.screenshots && project.screenshots.length > 0 && (
+            <div class="gallery" data-gallery>
+              <ul class="gallery__grid">
+                {project.screenshots.map((shot, i) => (
+                  <li>
+                    <button
+                      type="button"
+                      class="gallery__thumb"
+                      data-gallery-open
+                      data-index={i}
+                      data-src={shot.src}
+                      data-alt={shot.alt[lang]}
+                    >
+                      <img
+                        src={shot.thumb}
+                        alt={shot.alt[lang]}
+                        width={shot.width}
+                        height={shot.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div
+                class="gallery__lightbox"
+                data-gallery-lightbox
+                role="dialog"
+                aria-modal="true"
+                aria-label={ui.galleryClose[lang]}
+                hidden
+              >
+                <button
+                  type="button"
+                  class="gallery__nav gallery__nav--prev"
+                  data-gallery-prev
+                  aria-label={ui.galleryPrev[lang]}
+                >
+                  ‹
+                </button>
+                <img class="gallery__full" data-gallery-image alt="" />
+                <button
+                  type="button"
+                  class="gallery__nav gallery__nav--next"
+                  data-gallery-next
+                  aria-label={ui.galleryNext[lang]}
+                >
+                  ›
+                </button>
+                <button
+                  type="button"
+                  class="gallery__close"
+                  data-gallery-close
+                  aria-label={ui.galleryClose[lang]}
+                >
+                  <span aria-hidden="true">×</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </section>
+  ))
+}
+
+<style>
+  /* ─── Fiora's gallery (only this component uses it; the shared dialog chrome that every
+     panel/menu needs lives in styles/panel.css, imported above) ────────────────────────────── */
+  .gallery__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gallery__thumb {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 2px solid var(--c-navy-400);
+    background: var(--c-navy-950);
+    cursor: pointer;
+    line-height: 0;
+  }
+
+  .gallery__thumb:hover,
+  .gallery__thumb:focus-visible {
+    border-color: var(--color-focus);
+  }
+
+  .gallery__thumb img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .gallery__lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-panel) + 1);
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--c-navy-950) 92%, transparent);
+  }
+
+  .gallery__full {
+    max-width: min(90vw, 480px);
+    max-height: 86dvh;
+    width: auto;
+    height: auto;
+    border: var(--pixel-border) solid var(--c-ink-900);
+  }
+
+  .gallery__nav {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: var(--space-8);
+    height: calc(var(--space-8) * 2);
+    border: 2px solid var(--c-navy-400);
+    background: var(--c-navy-700);
+    color: var(--color-text);
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  .gallery__nav--prev {
+    left: var(--space-4);
+  }
+
+  .gallery__nav--next {
+    right: var(--space-4);
+  }
+
+  .gallery__close {
+    position: fixed;
+    top: var(--space-4);
+    right: var(--space-4);
+    width: var(--space-8);
+    height: var(--space-8);
+    border: 2px solid var(--c-navy-400);
+    background: var(--c-navy-700);
+    color: var(--color-text);
+    font-size: 1.25rem;
+    cursor: pointer;
+  }
+</style>

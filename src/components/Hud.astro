@@ -1,0 +1,159 @@
+---
+/**
+ * HUD chrome (BACKLOG.md Phase 7 — GAME_DESIGN.md → HUD): a profile badge, Contact, the ES · EN
+ * toggle, the sound toggle and the menu button, plus the interact prompt (Phase 5) and the
+ * first-visit controls hint (Phase 7). Markup only — `src/ui/hud.ts`/`src/ui/hint.ts` do the
+ * wiring; every dynamic label (aria-labels, Contact/menu/sound text) is applied client-side, the
+ * same pattern `src/ui/pad.ts` already uses.
+ */
+import { versioned } from '../game/load-plan';
+import type { RuntimeManifest } from '../assets/runtime';
+
+interface Props {
+  manifest: RuntimeManifest | null;
+}
+const { manifest } = Astro.props;
+const portrait = manifest?.assets['panda-portrait'];
+const img =
+  portrait && portrait.source !== 'missing' && portrait.kind === 'sprite' ? portrait : null;
+---
+
+<div id="hud" class="hud">
+  <div class="hud__slot hud__slot--left" data-slot="badge">
+    <button type="button" class="hud__badge" data-hud-badge>
+      {
+        img && manifest && (
+          <img
+            class="hud__badge-img"
+            src={versioned(img.url, manifest.hash)}
+            alt=""
+            width={img.width}
+            height={img.height}
+          />
+        )
+      }
+    </button>
+  </div>
+  <div class="hud__slot hud__slot--right" data-slot="actions">
+    <button type="button" class="hud__action" data-hud-contact></button>
+    <button type="button" class="hud__action hud__action--lang" data-hud-lang>
+      <span data-lang-code="es">ES</span> · <span data-lang-code="en">EN</span>
+    </button>
+    <button type="button" class="hud__action" data-hud-sound aria-pressed="false"></button>
+    <button type="button" class="hud__action" data-hud-menu></button>
+  </div>
+  <p class="hud__hint" data-slot="hint" hidden></p>
+  <p class="hud__prompt" data-slot="prompt" aria-live="polite"></p>
+</div>
+
+<style>
+  .hud {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-hud);
+    pointer-events: none;
+    padding: max(var(--space-2), env(safe-area-inset-top))
+      max(var(--space-2), env(safe-area-inset-right))
+      max(var(--space-2), env(safe-area-inset-bottom))
+      max(var(--space-2), env(safe-area-inset-left));
+  }
+
+  .hud > * {
+    pointer-events: auto;
+  }
+
+  .hud__slot--left {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+  }
+
+  .hud__slot--right {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    /* Narrow phones can't fit 4 buttons on one line ("Sonido desactivado" alone runs long) —
+     * wrap instead of overflowing past the badge on the opposite side. The subtracted amount
+     * clears the badge (40px) + its own inset + a visible gap. */
+    max-width: calc(100vw - 72px);
+  }
+
+  .hud__badge {
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    border: 2px solid var(--c-ink-900);
+    background: var(--c-navy-700);
+    cursor: pointer;
+  }
+
+  .hud__badge-img {
+    display: block;
+    width: auto;
+    height: 36px;
+    image-rendering: pixelated;
+  }
+
+  .hud__action {
+    box-sizing: border-box;
+    min-height: 40px;
+    padding: var(--space-1) var(--space-3);
+    border: 2px solid var(--c-ink-900);
+    background: var(--c-navy-700);
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  .hud__action:hover,
+  .hud__action:focus-visible {
+    background: var(--c-navy-500);
+  }
+
+  .hud__action--lang [data-lang-code] {
+    opacity: 0.6;
+  }
+
+  html[data-lang='es'] .hud__action--lang [data-lang-code='es'],
+  html[data-lang='en'] .hud__action--lang [data-lang-code='en'] {
+    color: var(--c-amber-400);
+    opacity: 1;
+  }
+
+  .hud__hint {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--space-6) + 1.6em);
+    max-width: min(90vw, 480px);
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    transform: translateX(-50%);
+    background: color-mix(in srgb, var(--c-navy-950) 72%, transparent);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .hud__prompt {
+    position: absolute;
+    left: 50%;
+    bottom: var(--space-6);
+    margin: 0;
+    transform: translateX(-50%);
+    font-family: var(--font-display);
+    color: var(--color-text);
+  }
+
+  .hud__prompt:empty {
+    display: none;
+  }
+</style>

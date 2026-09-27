@@ -1,0 +1,57 @@
+---
+/**
+ * The contact-links row (BACKLOG.md Phase 7): shared by `IntroPanel.astro` and
+ * `ContactPanel.astro` so `profile.contact` (AGENTS.md Golden Rule 2: content lives only in
+ * `src/content`) is rendered in exactly one place.
+ */
+import { profile } from '../../content';
+import type { Lang } from '../../content/types';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+---
+
+<ul class="contact-list">
+  {
+    profile.contact.map((link) => (
+      <li>
+        <a
+          class="contact-list__link"
+          href={link.href}
+          target={link.external ? '_blank' : undefined}
+          rel={link.external ? 'noopener noreferrer' : undefined}
+          aria-label={link.ariaLabel[lang]}
+        >
+          {link.label}
+        </a>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .contact-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .contact-list__link {
+    display: inline-block;
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-accent);
+    color: var(--c-white);
+    font-family: var(--font-display);
+    text-decoration: none;
+  }
+
+  .contact-list__link:hover,
+  .contact-list__link:focus-visible {
+    background: var(--c-scarlet-700);
+  }
+</style>

@@ -17,7 +17,14 @@ const PHASER_ALLOWED = [
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', '.astro/**', 'public/game/**', 'test-results/**'],
+    ignores: [
+      'dist/**',
+      'dist-no-assets/**',
+      'node_modules/**',
+      '.astro/**',
+      'public/game/**',
+      'test-results/**',
+    ],
   },
   ...eslintPluginAstro.configs.recommended,
   {
@@ -35,6 +42,8 @@ export default [
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // With verbatimModuleSyntax, `import { type X } from 'm'` still emits `import {} from 'm'`.
+      '@typescript-eslint/no-import-type-side-effects': 'error',
     },
   },
   {
@@ -49,6 +58,22 @@ export default [
               name: 'phaser',
               message:
                 'Only main.ts, scenes/, PandaSprite.ts, stations/ and fx/ may import phaser at runtime (use `import type`).',
+              allowTypeImports: true,
+            },
+          ],
+          patterns: [
+            {
+              group: [
+                '**/game/main',
+                '**/game/main.ts',
+                '**/game/scenes/**',
+                '**/game/player/PandaSprite',
+                '**/game/player/PandaSprite.ts',
+                '**/game/stations/**',
+                '**/game/fx/**',
+              ],
+              message:
+                'This module imports phaser at runtime; import it only from the allow-list (boot.ts loads main.ts lazily with import()).',
               allowTypeImports: true,
             },
           ],

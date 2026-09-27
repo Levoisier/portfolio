@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { PALETTE, SKILL_CATEGORY_COLOR, num } from './palette';
+import { PALETTE, SKILL_CATEGORY_COLOR, num, rgbChannels } from './palette';
 import { SKILL_CATEGORIES } from '../content/types';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -17,6 +17,10 @@ describe('palette', () => {
 
   it('converts to Phaser numbers', () => {
     expect(num('scarlet-500')).toBe(0xe11d2a);
+  });
+
+  it('converts to RGB channels', () => {
+    expect(rgbChannels('scarlet-500')).toEqual([0xe1, 0x1d, 0x2a]);
   });
 
   it('is mirrored exactly by src/styles/tokens.css as --c-<name>', () => {

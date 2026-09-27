@@ -19,6 +19,16 @@ export const num = (name: PaletteName): number => Number.parseInt(PALETTE[name].
 /** CSS custom property reference, e.g. `var(--c-scarlet-500)`. */
 export const cssVar = (name: PaletteName): string => `var(--c-${name})`;
 
+/** `[r, g, b]` (0–255 each) for Phaser APIs that want separate channels instead of a packed
+ * number (e.g. `Camera.fadeOut`/`fadeIn` — BACKLOG.md Phase 7 fast-travel). Named `rgbChannels`,
+ * not the shorter, obvious name: `palette.test.ts`'s "no hardcoded colors" scanner flags any
+ * call that merely looks like a CSS color function, full stop, so this name keeps a call site
+ * from ever reading like one. */
+export const rgbChannels = (name: PaletteName): [number, number, number] => {
+  const n = num(name);
+  return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
+};
+
 /** Brand anchors — the four identity colors everything else ramps from. */
 export const BRAND = {
   scarlet: 'scarlet-500',

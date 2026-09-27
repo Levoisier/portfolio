@@ -1,23 +1,22 @@
 import { expect, test } from '@playwright/test';
+import { watchErrors } from './helpers';
 
 test('page loads with the profile name and no console errors', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') errors.push(msg.text());
-  });
-  page.on('pageerror', (err) => errors.push(err.message));
-
+  const errors = watchErrors(page);
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Cristian Zapata Cartagena');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Cristian Cartagena');
+  await page.waitForLoadState('networkidle');
   expect(errors).toEqual([]);
 });
 
-test('no horizontal overflow', async ({ page }) => {
+test('no horizontal overflow and the page never scrolls', async ({ page }) => {
   await page.goto('/');
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth > window.innerWidth
-  );
+  const [overflow, bodyOverflow] = await page.evaluate(() => [
+    document.documentElement.scrollWidth > window.innerWidth,
+    getComputedStyle(document.body).overflow,
+  ]);
   expect(overflow).toBe(false);
+  expect(bodyOverflow).toBe('hidden');
 });
 
 test('is not installable: no web app manifest, no service worker', async ({ page }) => {
