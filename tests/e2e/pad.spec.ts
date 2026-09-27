@@ -96,10 +96,11 @@ test('B opens a station and closes it (no stray interact on the same press)', as
   await expect(page.locator('[data-panel="fiora"]')).toBeHidden();
 });
 
-test('START opens the menu (BACKLOG.md Phase 7)', async ({ page }) => {
+test('the pad has no START: the HUD Map button opens the menu', async ({ page }) => {
   await page.goto('/?debug');
   await waitForGame(page);
-  await page.locator('[data-pad-btn="start"]').click();
+  await expect(page.locator('[data-pad-btn="start"]')).toHaveCount(0);
+  await page.locator('[data-hud-menu]').click();
   await expect(page.locator('#menu')).toBeVisible();
 });
 

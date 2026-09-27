@@ -30,19 +30,29 @@ export function mountHud(
   const langBtn = hud.querySelector<HTMLButtonElement>('[data-hud-lang]');
   const soundBtn = hud.querySelector<HTMLButtonElement>('[data-hud-sound]');
   const menuBtn = hud.querySelector<HTMLButtonElement>('[data-hud-menu]');
+  const label = (btn: HTMLElement | null, key: string) =>
+    btn?.querySelector<HTMLElement>(`[data-hud-${key}-label]`) ?? null;
+  const contactLabel = label(contact, 'contact');
+  const soundLabel = label(soundBtn, 'sound');
+  const menuLabel = label(menuBtn, 'menu');
 
   let soundOn = readSoundOn(store);
 
   function applyLabels(): void {
     const lang = getLang();
     badge?.setAttribute('aria-label', ui.profileLabel[lang]);
-    if (contact) contact.textContent = ui.contactLabel[lang];
+    if (contactLabel) contactLabel.textContent = ui.contactLabel[lang];
     langBtn?.setAttribute('aria-label', ui.langSwitchLabel[lang]);
     if (soundBtn) {
-      soundBtn.textContent = (soundOn ? ui.soundOnLabel : ui.soundOffLabel)[lang];
+      // A toggle keeps one name; its state is `aria-pressed` (and the speaker glyph).
+      const state = (soundOn ? ui.soundOnLabel : ui.soundOffLabel)[lang];
+      soundBtn.setAttribute('aria-label', ui.soundLabel[lang]);
       soundBtn.setAttribute('aria-pressed', String(soundOn));
+      soundBtn.title = state;
+      if (soundLabel) soundLabel.textContent = ui.soundLabel[lang];
     }
-    if (menuBtn) menuBtn.textContent = ui.menuLabel[lang];
+    if (menuBtn) menuBtn.setAttribute('aria-label', ui.menuLabel[lang]);
+    if (menuLabel) menuLabel.textContent = ui.menuLabel[lang];
   }
 
   const onBadge = () => openPanelIfFree('intro');

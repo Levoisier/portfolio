@@ -28,6 +28,8 @@ export interface GameContext {
   /** Whether the classified wing's vault has rolled its door aside yet (Phase 8 — the vault has
    * no DOM panel of its own, so the debug hook's `getState()` reads this directly). */
   vaultOpen: boolean;
+  /** The painted backdrop on screen (`fx/scenery.ts`), or null when the code sky draws. */
+  backdrop: string | null;
   /** Set by `WorldScene.create()`; the debug hook's `teleport(x)` calls through it. */
   teleport?: (x: number) => void;
   /** Set by `WorldScene.create()`; the debug hook's `openStation(id)` calls through it —

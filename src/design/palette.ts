@@ -29,6 +29,24 @@ export const rgbChannels = (name: PaletteName): [number, number, number] => {
   return [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
 };
 
+/**
+ * Ramps sampled from the painted scenery (backdrops, terrain, trees — DECISIONS.md → _Scenery
+ * palette_). Only manifest entries with `palette: "scenery"` snap to them; everything else snaps
+ * to the core ramps, so a character or UI sprite never picks up a moss green.
+ */
+export const SCENERY_FAMILIES = [
+  'night',
+  'mist',
+  'cliff',
+  'moss',
+  'leaf',
+  'bark',
+  'bloom',
+] as const;
+
+export const isSceneryColor = (name: string): boolean =>
+  SCENERY_FAMILIES.some((family) => name.startsWith(`${family}-`));
+
 /** Brand anchors — the four identity colors everything else ramps from. */
 export const BRAND = {
   scarlet: 'scarlet-500',

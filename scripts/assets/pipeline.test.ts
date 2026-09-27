@@ -5,9 +5,16 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { ASSET_MANIFEST, type AssetEntry, type StripAsset } from '../../src/assets/registry.ts';
-import { detectHole, detectPanel } from './lib/anchors.ts';
-import { cleanGreenEdges, detectBackground, floodBlack, keyGreen } from './lib/background.ts';
-import { paletteRgb, snap } from './lib/color.ts';
+import { detectHole, detectPanel, detectSurface, detectTile } from './lib/anchors.ts';
+import {
+  cleanGreenEdges,
+  detectBackground,
+  floodBlack,
+  keyChecker,
+  keyGreen,
+} from './lib/background.ts';
+import { isSceneryColor, PALETTE } from '../../src/design/palette.ts';
+import { hexToRgb, paletteRgb, snap } from './lib/color.ts';
 import { groupComponents, labelComponents } from './lib/components.ts';
 import { createImg, fillRect, opaqueBounds, type Img } from './lib/img.ts';
 import { encodePng, isPaletteExact } from './lib/output.ts';
@@ -363,5 +370,109 @@ describe('sets: fill items and item anchors', () => {
       throw new Error('strip expected');
     expect(out.runtime.frames).toBe(6);
     expect(out.runtime.frameNames).toHaveLength(6);
+  });
+});
+
+/** An image generator's baked "transparency": 8-px light-grey/white squares. */
+function checkerboard(w: number, h: number): Img {
+  const img = createImg(w, h);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const v = ((x >> 3) + (y >> 3)) % 2 ? 238 : 255;
+      img.data.set([v, v, v, 255], (y * w + x) * 4);
+    }
+  return img;
+}
+
+describe('baked checkerboard backgrounds', () => {
+  const art = () => {
+    const img = checkerboard(96, 96);
+    fillRect(img, 16, 16, 64, 64, rgba('navy-700'));
+    // A see-through gap fully enclosed by the art (a canopy hole) keeps the checker's greys…
+    const hole = checkerboard(16, 16);
+    for (let y = 0; y < 16; y++)
+      img.data.set(hole.data.subarray(y * 64, y * 64 + 64), ((24 + y) * 96 + 24) * 4);
+    // …while a lantern's pale, warm core is light too, but must survive.
+    fillRect(img, 56, 56, 12, 12, [252, 252, 204, 255]);
+    return img;
+  };
+
+  it('is detected and keyed: outside and enclosed gaps clear, warm highlights kept', () => {
+    const img = art();
+    expect(detectBackground(img).kind).toBe('checker');
+    const keyed = keyChecker(img, 0);
+    expect(at(keyed, 2, 2)[3]).toBe(0);
+    expect(at(keyed, 30, 30)[3]).toBe(0);
+    expect(at(keyed, 60, 60)[3]).toBe(255);
+    expect(at(keyed, 20, 60)[3]).toBe(255);
+  });
+
+  it('erodes the light fringe off the silhouette', () => {
+    const keyed = keyChecker(art(), 2);
+    expect(at(keyed, 16, 50)[3]).toBe(0);
+    expect(at(keyed, 18, 50)[3]).toBe(255);
+  });
+});
+
+describe('palette sets', () => {
+  const moss = hexToRgb(PALETTE['moss-300']);
+
+  it('core art never snaps to a scenery ramp', () => {
+    const core = snap(...moss).rgb.join(',');
+    const sceneryHexes = Object.entries(PALETTE)
+      .filter(([name]) => isSceneryColor(name))
+      .map(([, hex]) => hexToRgb(hex).join(','));
+    expect(sceneryHexes).not.toContain(core);
+  });
+
+  it('scenery art snaps to its own ramps exactly', () => {
+    expect(snap(...moss, 'scenery')).toEqual({ rgb: moss, de: 0 });
+  });
+});
+
+describe('terrain anchors', () => {
+  /** 200×40: sparse tufts on rows 0–9, a solid wall below with rounded 10-px caps and a dark
+   * mortar column every 40 px. */
+  const terrain = () => {
+    const img = createImg(200, 40);
+    for (let x = 20; x < 180; x += 16) fillRect(img, x, 4, 2, 6, rgba('moss-300'));
+    fillRect(img, 10, 10, 180, 30, rgba('cliff-600'));
+    for (let y = 10; y < 40; y++) {
+      const inset = Math.max(0, Math.round(10 - (40 - y) / 3));
+      fillRect(img, 10 - (10 - inset), y, 10 - inset, 1, rgba('cliff-600'));
+      fillRect(img, 190, y, 10 - inset, 1, rgba('cliff-600'));
+    }
+    for (let x = 30; x < 190; x += 40) fillRect(img, x, 10, 1, 30, rgba('cliff-900'));
+    return img;
+  };
+
+  it('finds the walking surface under the tufts', () => {
+    expect(detectSurface(terrain())).toEqual([0, 10, 200, 0]);
+  });
+
+  it('finds a repeatable tile between the caps whose seams fall on mortar', () => {
+    const tile = detectTile(terrain(), 10)!;
+    expect(tile).not.toBeNull();
+    const [x, , w] = tile;
+    expect(x).toBe(30);
+    expect((x + w - 30) % 40).toBe(0);
+    expect(x + w).toBeLessThanOrEqual(190);
+  });
+});
+
+describe('backdrops', () => {
+  it("scales to the width and pads the top with the painting's own sky", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'backdrop-'));
+    const src = createImg(96, 192);
+    fillRect(src, 0, 0, 96, 192, rgba('night-850'));
+    fillRect(src, 0, 150, 96, 42, rgba('night-500'));
+    const raw = join(dir, 'backdrop-portrait.png');
+    writeFileSync(raw, await encodePng(src));
+    const out = await processEntry(entry('backdrop-portrait'), { rawPath: () => raw });
+    expect(out.runtime.source).toBe('raw');
+    const img = out.png!;
+    expect([img.w, img.h]).toEqual([288, 900]);
+    expect(at(img, 10, 0)).toEqual(rgba('night-850'));
+    expect(at(img, 10, 899)).toEqual(rgba('night-500'));
   });
 });

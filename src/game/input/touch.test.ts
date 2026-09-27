@@ -17,7 +17,7 @@ describe('TouchPadState', () => {
     expect(s.read().moveX).toBe(0);
   });
 
-  it('A/B/START are edges: pressed exactly once, cleared by the next read', () => {
+  it('A/B are edges: pressed exactly once, cleared by the next read', () => {
     const s = new TouchPadState();
     s.handle({ button: 'a', down: true, timeStamp: 0 });
     expect(s.read().jumpPressed).toBe(true);
@@ -33,7 +33,7 @@ describe('TouchPadState', () => {
     expect(s.read().jumpHeld).toBe(false);
   });
 
-  it('B and START read independently of any held direction', () => {
+  it('B reads independently of any held direction', () => {
     const s = new TouchPadState();
     s.handle({ button: 'left', down: true, timeStamp: 0 });
     s.handle({ button: 'b', down: true, timeStamp: 0 });

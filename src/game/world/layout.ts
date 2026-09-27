@@ -61,6 +61,16 @@ export interface Prop {
   y: number;
 }
 
+/** A painted tree standing on the ground, behind the terrain lip (decoration only). */
+export interface Tree {
+  id: string;
+  asset: 'tree-start' | 'tree-decor';
+  /** Trunk x (the sprite is bottom-centred here). */
+  x: number;
+  /** Mirror it, so repeated trees don't read as copies. */
+  flip?: boolean;
+}
+
 export interface WorldLayout {
   width: number;
   height: number;
@@ -69,6 +79,12 @@ export interface WorldLayout {
   stations: Station[];
   platforms: Platform[];
   props: Prop[];
+  /**
+   * Centres of the gaps in the painted terrain, each spanned by a `bridge` at ground level.
+   * Visual only: the ground collider stays continuous, so walking over one never changes.
+   */
+  bridges: number[];
+  trees: Tree[];
 }
 
 /** `x0…x1` in art px, in world order (GAME_DESIGN.md → _The level_). */
@@ -185,8 +201,8 @@ const PROPS: Prop[] = [
   { id: 'classified-fence-4', asset: 'props-zones', item: 'fence', x: 3162, y: GROUND_Y },
   { id: 'lab-fume-hood', asset: 'props-zones', item: 'fume-hood', x: 3226, y: GROUND_Y },
   { id: 'lab-shelf', asset: 'props-zones', item: 'lab-shelf', x: 3972, y: GROUND_Y },
-  // Ambience (Phase 11, `props-misc`): dressing in the gaps between stations.
-  { id: 'misc-gate-lamp', asset: 'props-misc', item: 'lamp-post', x: 40, y: GROUND_Y },
+  // Ambience (Phase 11, `props-misc`): dressing in the gaps between stations. (The gate's lamp
+  // post gave way to the start tree, which carries its own lantern.)
   { id: 'misc-fiora-bench', asset: 'props-misc', item: 'bench', x: 540, y: GROUND_Y },
   { id: 'misc-japaniracer-toolbox', asset: 'props-misc', item: 'toolbox', x: 858, y: GROUND_Y },
   { id: 'misc-japaniracer-barrel', asset: 'props-misc', item: 'barrel', x: 1082, y: GROUND_Y },
@@ -197,6 +213,20 @@ const PROPS: Prop[] = [
   { id: 'misc-transcolombia-gas', asset: 'props-misc', item: 'gas-cylinder', x: 2372, y: GROUND_Y },
   { id: 'misc-contact-bench', asset: 'props-misc', item: 'bench', x: 4460, y: GROUND_Y },
   { id: 'misc-contact-lamp', asset: 'props-misc', item: 'lamp-post', x: 4580, y: GROUND_Y },
+];
+
+/** Two crossings, each in the widest station-free gap (clear of every station sprite): gate →
+ * Fiora, and the Reagent lab → the sunrise lookout. Used sparingly on purpose. */
+const BRIDGES = [448, 4100];
+
+/** The start tree frames the spawn on the left (GAME_DESIGN.md → _The level_, zone 0); maples
+ * dress the widest gaps between stations, mirrored alternately. */
+const TREES: Tree[] = [
+  { id: 'tree-gate', asset: 'tree-start', x: 56 },
+  { id: 'tree-fiora', asset: 'tree-decor', x: 800, flip: true },
+  { id: 'tree-le-parche', asset: 'tree-decor', x: 1440 },
+  { id: 'tree-orquestia', asset: 'tree-decor', x: 2080, flip: true },
+  { id: 'tree-contact', asset: 'tree-decor', x: 4470 },
 ];
 
 export const WORLD_LAYOUT: WorldLayout = {
@@ -214,6 +244,8 @@ export const WORLD_LAYOUT: WorldLayout = {
   ],
   platforms: LAB_PLATFORMS,
   props: PROPS,
+  bridges: BRIDGES,
+  trees: TREES,
 };
 
 /** The zone containing `x` (clamped to the world). */

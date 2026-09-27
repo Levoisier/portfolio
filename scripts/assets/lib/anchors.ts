@@ -67,3 +67,70 @@ export function detectHole(img: Img): Rect | null {
   const rect = largestRect(img, (p) => clear(p) && !outside[p]);
   return rect && rect[2] >= 2 && rect[3] >= 2 ? rect : null;
 }
+
+/**
+ * Terrain `surface`: the first row where ≥ 85 % of the middle 80 % of columns are opaque — the
+ * top of the moss the panda walks on (grass tufts above it are sparse). A line `[0, y, w, 0]`.
+ */
+export function detectSurface(img: Img): Rect | null {
+  const x0 = Math.floor(img.w * 0.1);
+  const x1 = Math.ceil(img.w * 0.9);
+  for (let y = 0; y < img.h; y++) {
+    let opaque = 0;
+    for (let x = x0; x < x1; x++) if (img.data[(y * img.w + x) * 4 + 3]) opaque++;
+    if (opaque >= (x1 - x0) * 0.85) return [0, y, img.w, 0];
+  }
+  return null;
+}
+
+const luma = (img: Img, p: number) =>
+  0.2126 * img.data[p * 4]! + 0.7152 * img.data[p * 4 + 1]! + 0.0722 * img.data[p * 4 + 2]!;
+
+/**
+ * Terrain `tile`: the repeatable middle `[s, 0, e − s, h]` between the rounded end caps. The caps
+ * end where columns become opaque the whole way down from the surface. `s` is the darkest column
+ * (a mortar joint) near the left cap; `e` is the column in the right part that best matches `s`,
+ * so repeating `[s, e)` puts every seam on a joint instead of through a boulder.
+ */
+export function detectTile(img: Img, surfaceY: number): Rect | null {
+  const depth = img.h - surfaceY;
+  const full: number[] = [];
+  for (let x = 0; x < img.w; x++) {
+    let opaque = 0;
+    for (let y = surfaceY; y < img.h; y++) if (img.data[(y * img.w + x) * 4 + 3]) opaque++;
+    if (opaque >= depth * 0.95) full.push(x);
+  }
+  if (full.length < 8) return null;
+  const left = full[0]!;
+  const right = full.at(-1)!;
+  const span = right - left;
+  const wallLuma = (x: number) => {
+    let sum = 0;
+    for (let y = surfaceY; y < img.h; y++) sum += luma(img, y * img.w + x);
+    return sum / depth;
+  };
+  let s = left;
+  for (let x = left; x <= left + Math.floor(span * 0.15); x++) if (wallLuma(x) < wallLuma(s)) s = x;
+  const columnDelta = (a: number, b: number) => {
+    let sum = 0;
+    for (let y = 0; y < img.h; y++) {
+      const pa = y * img.w + a;
+      const pb = y * img.w + b;
+      const aa = img.data[pa * 4 + 3]!;
+      const ab = img.data[pb * 4 + 3]!;
+      if (!aa && !ab) continue;
+      sum += aa && ab ? Math.abs(luma(img, pa) - luma(img, pb)) : 255;
+    }
+    return sum / img.h;
+  };
+  let e = right;
+  let best = Infinity;
+  for (let x = s + Math.floor((right - s) * 0.6); x <= right; x++) {
+    const d = columnDelta(s, x);
+    if (d < best) {
+      best = d;
+      e = x;
+    }
+  }
+  return e - s >= 16 ? [s, 0, e - s, img.h] : null;
+}

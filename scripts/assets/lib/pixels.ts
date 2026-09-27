@@ -1,5 +1,5 @@
 /** Per-pixel normalization: binary alpha, palette snap, orphan cleanup, native-art detection. */
-import { snap } from './color.ts';
+import { snap, type PaletteSet } from './color.ts';
 import { createImg, type Img } from './img.ts';
 
 export interface SnapStats {
@@ -8,7 +8,7 @@ export interface SnapStats {
 }
 
 /** Alpha ≥ 50 % → opaque, else fully transparent; opaque pixels snap to the palette (OKLab). */
-export function snapToPalette(img: Img): { img: Img; stats: SnapStats } {
+export function snapToPalette(img: Img, set: PaletteSet = 'core'): { img: Img; stats: SnapStats } {
   const data = new Uint8Array(img.data);
   const des: number[] = [];
   for (let i = 0; i < data.length; i += 4) {
@@ -16,7 +16,7 @@ export function snapToPalette(img: Img): { img: Img; stats: SnapStats } {
       data.fill(0, i, i + 4);
       continue;
     }
-    const { rgb, de } = snap(data[i]!, data[i + 1]!, data[i + 2]!);
+    const { rgb, de } = snap(data[i]!, data[i + 1]!, data[i + 2]!, set);
     data.set([rgb[0], rgb[1], rgb[2], 255], i);
     des.push(de);
   }

@@ -263,3 +263,33 @@ a station kind can now also have a local reaction of its own, decided inside the
 That is one more thing to check when reading it, but the alternative — every call site knowing on
 its own "oh, and if this is the vault, also open it" — drifts the moment one of the four is
 missed; a future station with its own local reaction (none planned yet) follows the same pattern.
+
+## Scenery palette
+
+**Status:** Accepted (2026-09-27, visual refresh)
+**Why:** Cristian's painted scenery (moonlit mountains, moss, maples, wooden bridges) needs greens,
+browns, violets and saturated blues the 29-color brand palette never had; snapping it to the core
+ramps (p95 OKLab ΔE 0.126) muddied it. Rather than let each image keep its own colors (which
+would end "one palette"), 32 **scenery ramps** (`night`, `mist`, `cliff`, `moss`, `leaf`, `bark`,
+`bloom`) were added to `palette.json` / `tokens.css`: k-means in OKLab over the six delivered
+images at their final sizes (props weighted ×4 against the large backdrops), with the core colors
+held fixed so new entries only fill gaps, then named by hue family and lightness. That brings
+p95 ΔE to 0.044–0.063 per asset. 24 colors gave p95 0.057 and 48 gave 0.044 — 32 is the knee.
+Only manifest entries with `palette: "scenery"` snap to them (`SCENERY_FAMILIES`); everything
+else still snaps to the core, so the panda and UI art are unchanged.
+**Trade-off:** 61 palette entries instead of 29, most of them never used by code. A future
+scenery delivery with new hues may need the extraction re-run (and every scenery asset
+re-checked) instead of a one-off color.
+
+## Full-screen handheld, no START
+
+**Status:** Accepted (2026-09-27, visual refresh) — supersedes the Phase 6 top-half handheld
+**Why:** Cristian's mobile mock-up is a full-screen game with translucent controls over the
+bottom; the half-screen Game Boy split left ~40 % of a phone as a dark pad area, and the
+portrait backdrop only reads at full height. Both touch modes now share one overlay pad (◀ ▶
+bottom-left, B / A bottom-right) and the camera lifts the ground above it (`belowGround`). START
+was removed: the HUD's Map button is always on screen and does the same. Dialogs on a phone are
+full-screen sheets; while one is open the pad hides all but B, which still closes it like Esc.
+**Trade-off:** the game view no longer has a fixed "screen" box on phones, so the panda and the
+pad share pixels — `belowGround` must stay ≥ the pad's height in art px on any phone (checked by
+`tests/e2e/scenery.spec.ts` at 390×844).

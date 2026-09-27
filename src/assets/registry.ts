@@ -5,7 +5,7 @@
  */
 import manifestJson from '../../art/manifest.json' with { type: 'json' };
 
-export const ASSET_KINDS = ['strip', 'sprite', 'set', 'layer', 'tile-strip'] as const;
+export const ASSET_KINDS = ['strip', 'sprite', 'set', 'layer', 'tile-strip', 'backdrop'] as const;
 export type AssetKind = (typeof ASSET_KINDS)[number];
 export type Wave = 'A' | 'B' | 'C' | 'D';
 /** `high` assets load only on the high quality tier (desktop ambience). */
@@ -30,6 +30,11 @@ interface AssetBase {
   anchors?: Record<string, Rect>;
   /** Black flood-fill threshold override for `art/raw/<id>.png` (default: border max + 4). */
   backgroundThreshold?: number;
+  /**
+   * `scenery`: snap to the whole palette, scenery ramps included (DECISIONS.md → _Scenery
+   * palette_). Omitted: the core ramps only, so characters and UI art never pick up a moss green.
+   */
+  palette?: 'scenery';
 }
 
 export interface StripAsset extends AssetBase {
@@ -58,6 +63,9 @@ export interface SpriteAsset extends AssetBase {
   /** Maximum height; the sprite is fitted inside `maxSize` preserving aspect. */
   targetHeight: number;
   maxSize: Size;
+  /** `[x, y, w, h]` in **source** px: only this part of the raw file is used (e.g. a bridge
+   * delivered between two terrain ends). */
+  sourceCrop?: Rect;
 }
 
 export interface SetItem {
@@ -92,7 +100,23 @@ export interface TileStripAsset extends AssetBase {
   seamless: 'x';
 }
 
-export type AssetEntry = StripAsset | SpriteAsset | SetAsset | LayerAsset | TileStripAsset;
+/**
+ * A full-screen painted background, drawn in screen space behind everything. Scaled to
+ * `size[0]` wide, then padded at the top with its own top-row color up to `size[1]`, so it covers
+ * any view height without resampling at runtime.
+ */
+export interface BackdropAsset extends AssetBase {
+  kind: 'backdrop';
+  size: Size;
+}
+
+export type AssetEntry =
+  | StripAsset
+  | SpriteAsset
+  | SetAsset
+  | LayerAsset
+  | TileStripAsset
+  | BackdropAsset;
 
 export interface AssetManifest {
   version: number;
@@ -114,7 +138,7 @@ const isRect = (v: unknown): v is Rect =>
 function geometryOf(a: Record<string, unknown>): Size | undefined {
   if (a.kind === 'strip') return a.cell as Size;
   if (a.kind === 'sprite') return [(a.maxSize as Size)[0], a.targetHeight as number];
-  if (a.kind === 'layer' || a.kind === 'tile-strip') return a.size as Size;
+  if (a.kind === 'layer' || a.kind === 'tile-strip' || a.kind === 'backdrop') return a.size as Size;
   return undefined;
 }
 
@@ -160,6 +184,11 @@ export function parseManifest(json: unknown): AssetManifest {
         if (!isSize(a.maxSize)) fail(`${id}: maxSize must be [w, h]`);
         if ((a.targetHeight as number) > (a.maxSize as Size)[1])
           fail(`${id}: targetHeight must fit in maxSize`);
+        if (a.sourceCrop !== undefined && !isRect(a.sourceCrop))
+          fail(`${id}: sourceCrop must be [x, y, w, h]`);
+        break;
+      case 'backdrop':
+        if (!isSize(a.size)) fail(`${id}: size must be [w, h]`);
         break;
       case 'set':
         if (!Array.isArray(a.items) || a.items.length === 0) fail(`${id}: items`);
@@ -188,6 +217,9 @@ export function parseManifest(json: unknown): AssetManifest {
         break;
     }
 
+    if (a.palette !== undefined && a.palette !== 'scenery')
+      fail(`${id}: palette must be "scenery" when set`);
+
     if (
       a.backgroundThreshold !== undefined &&
       (!Number.isInteger(a.backgroundThreshold) ||
@@ -198,7 +230,7 @@ export function parseManifest(json: unknown): AssetManifest {
 
     if (a.anchors !== undefined) {
       const box = geometryOf(a);
-      if (!box) fail(`${id}: anchors are only supported on strips, sprites and layers`);
+      if (!box) fail(`${id}: anchors are only supported on strips, sprites, layers and backdrops`);
       for (const [name, rect] of Object.entries(a.anchors as Record<string, unknown>)) {
         if (!isRect(rect)) fail(`${id}: anchor "${name}" must be [x, y, w, h]`);
         const [x, y, w, h] = rect as Rect;

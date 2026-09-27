@@ -1,11 +1,11 @@
 ---
 /**
- * The handheld pad (BACKLOG.md Phase 6 — ARCHITECTURE.md → Layout modes, Input → Touch pad):
- * D-pad ◀ ▶, A (jump), B (interact / close), START (menu). Markup only — `shell.css`'s
- * `html[data-mode]` rules (set by `src/shared/layout-mode.ts`) show it only under `handheld`
- * (bottom half of the viewport) and `landscape-touch` (a translucent overlay); `src/ui/pad.ts`
- * does the pointer handling. `aria-label`s are set client-side (bilingual, like the HUD prompt)
- * so they are never missing here.
+ * The touch pad (BACKLOG.md Phase 6 — ARCHITECTURE.md → Layout modes, Input → Touch pad):
+ * D-pad ◀ ▶ bottom-left, B (interact / close) and A (jump) bottom-right, overlaid on the bottom
+ * of the full-screen game in both touch modes. There is no START: the HUD's Map button is always
+ * on screen. Markup only — `shell.css`'s `html[data-mode]` sets the mode (from
+ * `src/shared/layout-mode.ts`) and `src/ui/pad.ts` does the pointer handling. `aria-label`s are
+ * set client-side (bilingual, like the HUD prompt) so they are never missing here.
  */
 ---
 
@@ -18,9 +18,6 @@
       <span aria-hidden="true">▶</span>
     </button>
   </div>
-  <button type="button" class="pad__btn pad__btn--start" data-pad-btn="start">
-    <span aria-hidden="true">START</span>
-  </button>
   <div class="pad__actions">
     <button type="button" class="pad__btn pad__btn--face pad__btn--b" data-pad-btn="b">
       <span aria-hidden="true">B</span>
@@ -35,14 +32,26 @@
   .pad {
     display: none;
     position: fixed;
+    inset: auto 0 0 0;
     z-index: var(--z-pad);
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: var(--space-4);
+    padding: var(--space-6) max(var(--space-4), env(safe-area-inset-right))
+      max(var(--space-4), env(safe-area-inset-bottom))
+      max(var(--space-4), env(safe-area-inset-left));
     /* Chrome only — the buttons themselves decide what happens (Golden Rule 7: the game never
-     * touches these elements); the container just must not eat taps meant for the canvas
-     * underneath in `landscape-touch` (a translucent overlay, not a solid panel). */
+     * touches these elements); the strip must not eat taps meant for the canvas underneath. */
     pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--c-navy-950) 55%, transparent)
+    );
+  }
+
+  html[data-mode='handheld'] .pad,
+  html[data-mode='landscape-touch'] .pad {
+    display: flex;
   }
 
   .pad__dpad,
@@ -58,17 +67,18 @@
     display: grid;
     place-items: center;
     box-sizing: border-box;
-    min-width: 48px;
-    min-height: 48px;
+    width: var(--pad-btn, 64px);
+    height: var(--pad-btn, 64px);
     margin: 0;
     padding: 0;
     border: 2px solid var(--c-ink-900);
-    border-radius: 0;
-    background: var(--c-ink-600);
     color: var(--c-paper-100);
     font-family: var(--font-display);
-    font-size: 0.75rem;
     line-height: 1;
+    /* A 2-px light top edge and dark bottom edge: a raised pixel button. */
+    box-shadow:
+      inset 0 2px 0 color-mix(in srgb, var(--c-white) 22%, transparent),
+      inset 0 -3px 0 color-mix(in srgb, var(--c-ink-900) 45%, transparent);
     touch-action: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
@@ -76,20 +86,23 @@
   }
 
   .pad__btn[data-pressed] {
-    background: var(--c-ink-500);
+    box-shadow: inset 0 3px 0 color-mix(in srgb, var(--c-ink-900) 45%, transparent);
   }
 
   .pad__btn--dir {
-    width: 56px;
-    height: 56px;
-    font-size: 1.5rem;
+    border-radius: 10px;
+    border-color: var(--c-ink-500);
+    background: color-mix(in srgb, var(--c-ink-800) 72%, transparent);
+    font-size: 1.6rem;
+  }
+
+  .pad__btn--dir[data-pressed] {
+    background: color-mix(in srgb, var(--c-ink-600) 85%, transparent);
   }
 
   .pad__btn--face {
-    width: 56px;
-    height: 56px;
     border-radius: 50%;
-    font-size: 1.1rem;
+    font-size: 1.4rem;
   }
 
   .pad__btn--b {
@@ -109,30 +122,20 @@
     background: var(--c-scarlet-500);
   }
 
-  .pad__btn--start {
-    min-width: 96px;
-    height: 48px;
-    letter-spacing: 0.08em;
-  }
-
-  html[data-mode='handheld'] .pad {
-    display: flex;
-    top: 50dvh;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    padding: var(--space-4) max(var(--space-4), env(safe-area-inset-right))
-      max(var(--space-4), env(safe-area-inset-bottom))
-      max(var(--space-4), env(safe-area-inset-left));
-    background: var(--c-ink-800);
-  }
-
   html[data-mode='landscape-touch'] .pad {
-    display: flex;
-    inset: auto 0 0 0;
-    padding: var(--space-2) max(var(--space-6), env(safe-area-inset-right))
-      max(var(--space-2), env(safe-area-inset-bottom))
-      max(var(--space-6), env(safe-area-inset-left));
-    background: color-mix(in srgb, var(--c-navy-950) 45%, transparent);
+    --pad-btn: 56px;
+    padding-top: var(--space-2);
+    padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
+  }
+
+  /* A panel or the menu is open: it fills the screen, and only B (which closes it, like Esc)
+   * stays on top of it — the rest of the pad has nothing to do until it closes. */
+  html[data-modal] .pad {
+    background: none;
+  }
+
+  html[data-modal] .pad__dpad,
+  html[data-modal] .pad__btn--a {
+    visibility: hidden;
   }
 </style>

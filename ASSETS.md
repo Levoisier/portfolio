@@ -5,8 +5,8 @@ launch status and kinds in sync). Cristian produces the media; agents never edit
 
 ## TL;DR
 
-- **28 images total — 23 needed for launch (1 already delivered: `panda-portrait`), 5
-  optional.** Each image is **one generation**: an animation strip, or a set of separate props.
+- **34 images total — 23 needed for launch (1 already delivered: `panda-portrait`), 11
+  optional (6 delivered: the painted scenery — backdrops, terrain, bridge, trees).** Each image is **one generation**: an animation strip, or a set of separate props.
   You never deliver single frames.
 - Save each file as **`art/raw/<id>.png`** (ids in the registry table at the bottom), then commit
   it or hand it to an agent. `pnpm assets` normalizes it; the game picks it up with no code change.
@@ -72,7 +72,9 @@ _"Draw on the last attached image: keep its exact size and shape and fill it edg
 ## Delivery rules (every image)
 
 1. **Background:** one flat, solid, pure green `#00FF00` over the whole image (or real
-   transparency, as PixelLab exports it). No gradient, noise, floor, vignette, checkerboard or
+   transparency, as PixelLab exports it). A painted "transparency" checkerboard (what many
+   generators output when asked for a transparent PNG) is also keyed, but prefer real alpha.
+   Backdrops are the exception: fully painted, edge to edge. No gradient, noise, floor, vignette, checkerboard or
    border. **Deliver Nano Banana images exactly as generated — never run a background remover on
    them** (the pipeline keys the green itself, and panda strips' ruler frame depends on it).
 2. **No text** of any kind — no labels, letters, numbers, watermarks, frame numbers or grid lines.
@@ -128,7 +130,7 @@ Use the last attached image as the canvas (21:9).
 ### Environment block — add after the style block for world, station and prop images
 
 ```
-Flat side view (front elevation). Setting: a chemical plant at night — steel, pipes, tanks, catwalks, rivets, warning lights. Structures in navy and ink tones, lights in scarlet and amber, cream highlights.
+Flat side view (front elevation). Setting: a moonlit mountain night in the style of the delivered backdrops — mossy stone, dark timber, a few chemical-plant details (pipes, tanks, gauges) where the station calls for them. Deep blues and violets, warm amber lamp light, scarlet accents, cream highlights.
 Chunky pixels in the same style as the attached scale card (its panda is 48 pixels tall and its square is one 16-pixel floor tile). Draw the object as if it is the given size in pixels — so a 160-pixel-tall object is about 3.3 times as tall as that panda — with no detail smaller than one of those pixels, and leave empty green on every side. The scale card is only a ruler: do NOT draw its panda or its square in the image. The object stands on an invisible ground line at the bottom.
 ```
 
@@ -194,9 +196,24 @@ Prompts go after the style + environment blocks unless noted.
 | bg-fore        | 640×64, tiles       | _(optional, desktop only; style + environment; 21:9)_ FOREGROUND layer. Everything sits in the bottom 25 % of the image. Near-black (#070F1F, #0A0A0A) pipes, railings and valve wheels in the lower half of the drawn strip, plus at most two thin vertical pipes that reach its top; at least 70 % green; the leftmost and rightmost tenth contain only a low railing at the same height at both edges, so copies join invisibly.                                                                                                                   |
 | flare-flame    | 4 × 16×32           | _(optional, desktop only; style block; 21:9)_ FLARE STACK FLAME, 4 frames, drawn as if 16×32 pixels: a small flickering flame (#FFE6A0 core, #FFB23F, #D9731A, #E11D2A edges), each frame a different flame shape for a looping flicker, no smoke.                                                                                                                                                                                                                                                                                                    |
 
+## Painted scenery (delivered)
+
+Snapped to the scenery ramps (`palette: "scenery"` — DECISIONS.md → _Scenery palette_), so greens
+and browns are fine here and only here.
+
+- `backdrop-landscape` / `backdrop-portrait` — full paintings (sky, moon, mountains, pagodas,
+  waterfalls, lake), 16:9-ish and ~9:19.5. The game scales each once to 960 / 288 art px wide and
+  pads the top with its own sky; the `horizon` anchor in the manifest is the lake line, measured
+  on the output. A replacement must keep the lake at about the same height (≈ 76 % / 74 % down).
+- `terrain` — one mossy stone block with rounded ends; tufts above the walking line are fine. The
+  pipeline finds the walking line and a repeatable middle, so any length of ground tiles from it.
+- `bridge` — delivered between two terrain ends; `sourceCrop` keeps only the deck and posts.
+- `tree-start` (maple + lantern, at the gate) and `tree-decor` (maple, between stations).
+
 ## Drawn in code — never deliver
 
-- Sky gradient (night → sunrise), stars, moon and the sunrise sun.
+- The dawn wash over the backdrop toward the lookout; without a backdrop, the fallback sky
+  gradient (night → sunrise), stars, moon and the sunrise sun.
 - All in-world text: gate sign lines, station name labels on a code-drawn plate, the
   `CLASIFICADO / CLASSIFIED` sign plate and text, interact-prompt key/button glyphs,
   element-tile symbols and numbers.
@@ -230,6 +247,12 @@ Status: `needed` → `delivered` (file in `art/raw/`) → `approved` (Cristian s
 | `bg-far`                 | B    | required | layer      | 640×160 seamless                       | needed    |
 | `bg-mid`                 | B    | required | layer      | 640×128 seamless                       | needed    |
 | `bg-fore`                | D    | optional | layer      | 640×64 seamless (high tier)            | needed    |
+| `backdrop-landscape`     | B    | optional | backdrop   | 960 wide, padded to 960×900, `horizon` | delivered |
+| `backdrop-portrait`      | B    | optional | backdrop   | 288 wide, padded to 288×900, `horizon` | delivered |
+| `terrain`                | B    | optional | sprite     | ≤ 448×96, `surface`, `tile`            | delivered |
+| `bridge`                 | B    | optional | sprite     | ≤ 160×56 (deck cropped), `surface`     | delivered |
+| `tree-start`             | D    | optional | sprite     | ≤ 176×176 (maple + lantern)            | delivered |
+| `tree-decor`             | D    | optional | sprite     | ≤ 128×128 (maple)                      | delivered |
 | `station-spawn-gate`     | C    | required | sprite     | ≤ 224×176, anchor `sign`               | needed    |
 | `station-fiora`          | C    | required | sprite     | ≤ 160×160                              | needed    |
 | `station-japaniracer`    | C    | required | sprite     | ≤ 176×160                              | needed    |

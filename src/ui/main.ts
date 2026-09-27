@@ -53,7 +53,7 @@ function closeTopmost(): boolean {
 function openPanelIfFree(id: string): void {
   if (!(panelsApi?.isOpen() ?? false) && !(menuApi?.isOpen() ?? false)) panelsApi?.open(id);
 }
-// The HUD menu button shares the M/Esc/START precedence: close what's open, else open the menu.
+// The HUD menu button shares the M/Esc precedence: close what's open, else open the menu.
 function toggleMenu(): void {
   if (!closeTopmost()) menuApi?.open();
 }
@@ -67,6 +67,10 @@ if (hint) mountHint(hint, hudStore);
 // regardless of its own z-index.
 if (debug) mountDebugOverlay(document.body);
 if (pad) mountPad(pad, { onClose: () => closeTopmost() });
+// Lets CSS tuck the touch pad away behind an open panel/menu (all but B, which closes it).
+bus.on('ui:modal', ({ open }) => document.documentElement.toggleAttribute('data-modal', open), {
+  replay: true,
+});
 forwardWheel();
 mountAudio();
 void loadFonts();

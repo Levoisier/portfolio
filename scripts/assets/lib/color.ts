@@ -1,5 +1,5 @@
 /** Palette snapping in OKLab and HSV helpers for chroma keying. */
-import { PALETTE } from '../../../src/design/palette.ts';
+import { isSceneryColor, PALETTE } from '../../../src/design/palette.ts';
 
 export type RGB = readonly [number, number, number];
 
@@ -35,7 +35,6 @@ export const hexToRgb = (hex: string): RGB => [
 ];
 
 export const PALETTE_RGB: readonly RGB[] = Object.values(PALETTE).map(hexToRgb);
-const PALETTE_LAB = PALETTE_RGB.map(oklab);
 const PALETTE_KEYS = new Set(PALETTE_RGB.map(([r, g, b]) => (r << 16) | (g << 8) | b));
 
 export const isPaletteColor = (r: number, g: number, b: number) =>
@@ -43,25 +42,51 @@ export const isPaletteColor = (r: number, g: number, b: number) =>
 
 export const paletteRgb = (name: keyof typeof PALETTE): RGB => hexToRgb(PALETTE[name]);
 
-const snapCache = new Map<number, { rgb: RGB; de: number }>();
+/** Which palette a pixel may snap to: `core` (default) or `scenery` (core + scenery ramps). */
+export type PaletteSet = 'core' | 'scenery';
+
+const SETS: Record<PaletteSet, { rgb: RGB[]; lab: RGB[] }> = {
+  core: { rgb: [], lab: [] },
+  scenery: { rgb: [], lab: [] },
+};
+for (const [name, value] of Object.entries(PALETTE)) {
+  const rgb = hexToRgb(value);
+  const targets: PaletteSet[] = isSceneryColor(name) ? ['scenery'] : ['core', 'scenery'];
+  for (const set of targets) {
+    SETS[set].rgb.push(rgb);
+    SETS[set].lab.push(oklab(rgb));
+  }
+}
+
+const snapCache: Record<PaletteSet, Map<number, { rgb: RGB; de: number }>> = {
+  core: new Map(),
+  scenery: new Map(),
+};
 
 /** Nearest palette color in OKLab (memoized) plus the ΔE it moved. */
-export function snap(r: number, g: number, b: number): { rgb: RGB; de: number } {
+export function snap(
+  r: number,
+  g: number,
+  b: number,
+  set: PaletteSet = 'core'
+): { rgb: RGB; de: number } {
   const key = (r << 16) | (g << 8) | b;
-  const hit = snapCache.get(key);
+  const cache = snapCache[set];
+  const hit = cache.get(key);
   if (hit) return hit;
   const p = oklab([r, g, b]);
+  const { rgb, lab } = SETS[set];
   let best = 0;
   let bestD = Infinity;
-  PALETTE_LAB.forEach((q, i) => {
+  lab.forEach((q, i) => {
     const d = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2 + (p[2] - q[2]) ** 2;
     if (d < bestD) {
       bestD = d;
       best = i;
     }
   });
-  const out = { rgb: PALETTE_RGB[best]!, de: Math.sqrt(bestD) };
-  snapCache.set(key, out);
+  const out = { rgb: rgb[best]!, de: Math.sqrt(bestD) };
+  cache.set(key, out);
   return out;
 }
 

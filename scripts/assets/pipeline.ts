@@ -5,6 +5,7 @@
 import { existsSync } from 'node:fs';
 import type {
   AssetEntry,
+  BackdropAsset,
   Rect,
   SetAsset,
   SpriteAsset,
@@ -13,11 +14,12 @@ import type {
 import type { AssetSource, RuntimeAsset, RuntimeStrip } from '../../src/assets/runtime.ts';
 
 type Served = Exclude<AssetSource, 'missing'>;
-import { DOORWAY, detectHole, detectPanel } from './lib/anchors.ts';
+import { DOORWAY, detectHole, detectPanel, detectSurface, detectTile } from './lib/anchors.ts';
 import {
   cleanGreenEdges,
   detectBackground,
   floodBlack,
+  keyChecker,
   keyGreen,
   type Background,
 } from './lib/background.ts';
@@ -27,7 +29,8 @@ import {
   labelComponents,
   type Component,
 } from './lib/components.ts';
-import { crop, loadImg, opaqueBounds, resize, trim, type Img } from './lib/img.ts';
+import { createImg, crop, loadImg, opaqueBounds, resize, trim, type Img } from './lib/img.ts';
+import type { PaletteSet } from './lib/color.ts';
 import { buildAtlas } from './lib/output.ts';
 import { cropToLoop, packStrip, placeBottomCentre, placeLayer, seamError } from './lib/pack.ts';
 import { makePlaceholder } from './lib/placeholder.ts';
@@ -69,6 +72,11 @@ class Rejected extends Error {}
 
 const url = (id: string) => `/game/${id}.png`;
 const NATIVE_MAX_COLORS = 64;
+/** Source px eroded off a checker-keyed silhouette: its light anti-aliasing fringe. */
+const CHECKER_ERODE = 2;
+
+const paletteSet = (entry: AssetEntry): PaletteSet =>
+  entry.palette === 'scenery' ? 'scenery' : 'core';
 
 function mergeStats(all: SnapStats[]): SnapStats {
   if (!all.length) return { meanDE: 0, p95DE: 0 };
@@ -85,8 +93,8 @@ const unionRect = (a: Rect, b: Rect): Rect => {
 };
 
 /** Snap → orphan cleanup → trim for one normalized image. */
-function finish(img: Img, stats: SnapStats[]): Img {
-  const snapped = snapToPalette(img);
+function finish(img: Img, stats: SnapStats[], set: PaletteSet = 'core'): Img {
+  const snapped = snapToPalette(img, set);
   stats.push(snapped.stats);
   return trim(removeOrphans(snapped.img));
 }
@@ -107,7 +115,8 @@ function keyRaw(src: Img, threshold?: number): { keyed: Img; bg: Background; nat
   if (kind === 'alpha') keyed = src;
   else if (kind === 'green') keyed = keyGreen(src);
   else if (kind === 'black') keyed = floodBlack(src, threshold ?? borderMax + 4);
-  else throw new Rejected('background is neither transparent, #00FF00 nor black');
+  else if (kind === 'checker') keyed = keyChecker(src, CHECKER_ERODE);
+  else throw new Rejected('background is neither transparent, #00FF00, black nor a checkerboard');
   return { keyed, bg: kind, native: uniqueOpaqueColors([keyed]) <= NATIVE_MAX_COLORS };
 }
 
@@ -194,7 +203,7 @@ async function rawStrip(entry: StripAsset, src: Img): Promise<Output> {
     frames = await Promise.all(frames.map((f) => scaleFake(f, factor, bg)));
   }
   const stats: SnapStats[] = [];
-  frames = frames.map((f) => finish(f, stats));
+  frames = frames.map((f) => finish(f, stats, paletteSet(entry)));
   return finishStrip(entry, frames, 'raw', warnings, stats);
 }
 
@@ -210,7 +219,8 @@ function wholeObject(keyed: Img): Img {
 }
 
 async function rawSprite(entry: SpriteAsset, src: Img): Promise<Output> {
-  const { keyed, bg, native } = keyRaw(src, entry.backgroundThreshold);
+  const { keyed: whole, bg, native } = keyRaw(src, entry.backgroundThreshold);
+  const keyed = entry.sourceCrop ? crop(whole, ...entry.sourceCrop) : whole;
   let img = wholeObject(keyed);
   const warnings: string[] = [];
   if (native) {
@@ -226,11 +236,17 @@ async function rawSprite(entry: SpriteAsset, src: Img): Promise<Output> {
     img = await scaleFake(img, factor, bg);
   }
   const stats: SnapStats[] = [];
-  img = finish(img!, stats);
+  img = finish(img!, stats, paletteSet(entry));
   if (img.h < entry.targetHeight - 2) warnings.push(`height ${img.h}px: limited by maxSize width`);
   const anchors: Record<string, Rect> = { ...(entry.anchors ?? {}) };
+  const surface = detectSurface(img);
   for (const name of Object.keys(anchors)) {
-    const found = detectPanel(img);
+    const found =
+      name === 'surface'
+        ? surface
+        : name === 'tile'
+          ? surface && detectTile(img, surface[1])
+          : detectPanel(img);
     if (found) anchors[name] = found;
     else warnings.push(`${name} anchor not detected — using manifest default`);
   }
@@ -318,7 +334,7 @@ async function rawSet(entry: SetAsset, src: Img): Promise<Output> {
   const items: Record<string, Img> = {};
   const itemAnchors: Record<string, Record<string, Rect>> = {};
   entry.items.forEach((item, i) => {
-    const done = finish(imgs[i]!, stats);
+    const done = finish(imgs[i]!, stats, paletteSet(entry));
     const [w, h] = item.size;
     let placed: { img: Img; clipped: boolean };
     if (item.fill) {
@@ -357,7 +373,7 @@ async function rawLayer(
     if (img!.w !== w) warnings.push(`native width ${img!.w}px ≠ ${w}px`);
   } else img = await scaleFake(img, w / img.w, bg);
   const stats: SnapStats[] = [];
-  const snapped = snapToPalette(img!);
+  const snapped = snapToPalette(img!, paletteSet(entry));
   stats.push(snapped.stats);
   img = removeOrphans(snapped.img);
   const placed = placeLayer(img, entry.size, entry.kind === 'layer' ? 'bottom' : 'top');
@@ -377,6 +393,53 @@ async function rawLayer(
     ...(entry.kind === 'layer' ? { scrollFactor: entry.scrollFactor } : {}),
   };
   return { runtime, png: placed.img, stats: mergeStats(stats), seam };
+}
+
+/** Most frequent color of row 0 — the backdrop's sky above everything it painted. */
+function topRowColor(img: Img): number[] {
+  const counts = new Map<number, number>();
+  for (let x = 0; x < img.w; x++) {
+    const i = x * 4;
+    const key = (img.data[i]! << 16) | (img.data[i + 1]! << 8) | img.data[i + 2]!;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const [key] = [...counts.entries()].reduce((a, b) => (b[1] > a[1] ? b : a));
+  return [(key >> 16) & 255, (key >> 8) & 255, key & 255, 255];
+}
+
+/** Opaque painting → `size[0]` wide (lanczos) → palette → padded at the top to `size[1]`. */
+async function rawBackdrop(entry: BackdropAsset, src: Img): Promise<Output> {
+  const [w, h] = entry.size;
+  const warnings: string[] = [];
+  let img = await resize(src, w, (src.h * w) / src.w, 'lanczos3');
+  const snapped = snapToPalette(img, paletteSet(entry));
+  img = snapped.img;
+  let out = img;
+  if (img.h > h) {
+    warnings.push(`scaled height ${img.h}px exceeds ${h}px — the top was cropped`);
+    out = crop(img, 0, img.h - h, w, h);
+  } else if (img.h < h) {
+    out = createImg(w, h);
+    const sky = topRowColor(img);
+    for (let p = 0; p < w * (h - img.h); p++) out.data.set(sky, p * 4);
+    out.data.set(img.data, w * (h - img.h) * 4);
+  }
+  return {
+    runtime: {
+      id: entry.id,
+      kind: 'backdrop',
+      tier: entry.tier,
+      required: entry.required,
+      source: 'raw',
+      url: url(entry.id),
+      ...(entry.anchors ? { anchors: entry.anchors } : {}),
+      warnings,
+      width: w,
+      height: h,
+    },
+    png: out,
+    stats: snapped.stats,
+  };
 }
 
 /** Interim frames from the reference sheet: array order, shadows stripped, one sheet scale. */
@@ -456,6 +519,8 @@ async function fromRaw(entry: AssetEntry, src: Img): Promise<Output> {
       return rawSprite(entry, src);
     case 'set':
       return rawSet(entry, src);
+    case 'backdrop':
+      return rawBackdrop(entry, src);
     default:
       return rawLayer(entry, src);
   }

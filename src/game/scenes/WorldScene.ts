@@ -22,6 +22,7 @@ import { REGISTRY_KEY, type GameContext } from '../context';
 import { applyParallaxMotion, buildParallax, type ParallaxHandle } from '../fx/parallax';
 import { blinkBeacons, ClassifiedWing } from '../fx/classified';
 import { Ambience } from '../fx/ambience';
+import { Scenery } from '../fx/scenery';
 import { SkyRenderer } from '../fx/sky';
 import type { SourcedIntent } from '../input/intent';
 import { KeyboardSource } from '../input/keyboard';
@@ -49,6 +50,7 @@ import {
 } from '../travel/plan';
 import { buildProps } from '../world/props';
 import { WORLD_LAYOUT, zoneAt, type PlatformSize, type Station } from '../world/layout';
+import { cameraScrollY } from '../world/scenery';
 
 /** Stations rendered by the generic single-sprite adapter (BACKLOG.md Phase 5's 6 project
  * stations, plus Phase 8's 4 dossier stands — `confidential-dossier` is a `sprite` asset too);
@@ -97,6 +99,9 @@ const PLATFORM_FALLBACK_SIZE: Record<PlatformSize, { w: number; h: number }> = {
   m: { w: 80, h: 16 },
   l: { w: 128, h: 16 },
 };
+/** Depth of the placeholder ground fill below the floor strip: deep enough for any view's
+ * `belowGround()` (world/scenery.ts), which can reach past the world's own bottom edge. */
+const GROUND_FILL_H = 400;
 /** Full star field on the high tier; scaled by `tierFlags().particleScale` on low, and capped
  * further under `prefers-reduced-motion` (ARCHITECTURE.md → Motion preference: "particles
  * minimal"). */
@@ -106,8 +111,10 @@ const REDUCED_MOTION_STAR_CAP = 12;
 export class WorldScene extends Phaser.Scene {
   private ctx!: GameContext;
   private panda!: PandaSprite;
-  private sky!: SkyRenderer;
-  private parallax!: ParallaxHandle;
+  /** The code-drawn sky and skyline: only when no painted backdrop was delivered. */
+  private sky: SkyRenderer | null = null;
+  private parallax: ParallaxHandle = { layers: [] };
+  private scenery!: Scenery;
   private story!: Story;
   private ambience!: Ambience;
   private fpsGuard = new FpsGuard();
@@ -149,6 +156,7 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(num('navy-900'));
     this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H);
 
+    this.scenery = new Scenery(this, this.ctx.manifest, WORLD_LAYOUT);
     this.buildGround();
     const platforms = this.buildPlatforms();
     this.stations = new Stations(
@@ -156,7 +164,9 @@ export class WorldScene extends Phaser.Scene {
       INTERACTIVE_STATIONS,
       this.ctx.manifest,
       GROUND_Y,
-      (station) => this.handleStationClick(station)
+      (station) => this.handleStationClick(station),
+      bus.last('lang:change')?.lang ?? DEFAULT_LANG,
+      this.ctx.mode
     );
     this.story = new Story(
       this,
@@ -217,15 +227,17 @@ export class WorldScene extends Phaser.Scene {
     this.physics.add.collider(this.panda.sprite, platforms);
     this.physics.add.collider(this.panda.sprite, this.skills.bodies);
 
-    this.sky = new SkyRenderer(this, WORLD_LAYOUT.zones, WORLD_LAYOUT.width, this.starCount());
-    this.parallax = buildParallax(
-      this,
-      this.ctx.manifest,
-      this.ctx.tier,
-      WORLD_LAYOUT.width,
-      GROUND_Y
-    );
-    applyParallaxMotion(this.parallax, prefersReducedMotion());
+    if (!this.scenery.hasBackdrop) {
+      this.sky = new SkyRenderer(this, WORLD_LAYOUT.zones, WORLD_LAYOUT.width, this.starCount());
+      this.parallax = buildParallax(
+        this,
+        this.ctx.manifest,
+        this.ctx.tier,
+        WORLD_LAYOUT.width,
+        GROUND_Y
+      );
+      applyParallaxMotion(this.parallax, prefersReducedMotion());
+    }
 
     this.keyboard = new KeyboardSource(this);
     this.cleanup.push(
@@ -250,12 +262,16 @@ export class WorldScene extends Phaser.Scene {
       }),
       bus.on('travel:to', ({ id }) => this.startFastTravel(id)),
       bus.on('skills:reset', () => this.skills.reset()),
-      bus.on('lang:change', ({ lang }) => this.story.drawSign(lang)),
+      bus.on('lang:change', ({ lang }) => {
+        this.story.drawSign(lang);
+        this.stations.drawLabels(lang);
+      }),
       bus.on(
         'fonts:ready',
         () => {
           this.ctx.pixelFont = this.story.drawSign();
           this.classifiedWing.drawSign();
+          this.stations.drawLabels();
         },
         { replay: true }
       ),
@@ -290,7 +306,7 @@ export class WorldScene extends Phaser.Scene {
     this.layout();
     this.setZone(zoneAt(this.panda.sprite.x).id);
     this.setStation(stationAt(this.panda.sprite.x, TRIGGER_STATIONS));
-    this.sky.update(this.panda.sprite.x);
+    this.updateMood(this.panda.sprite.x);
     this.updateDebugState();
 
     this.ctx.ready = true;
@@ -409,7 +425,7 @@ export class WorldScene extends Phaser.Scene {
     this.applyCamera();
     this.setZone(zoneAt(this.panda.sprite.x).id);
     this.setStation(stationAt(this.panda.sprite.x, TRIGGER_STATIONS));
-    this.sky.update(this.panda.sprite.x);
+    this.updateMood(this.panda.sprite.x);
     if (this.ctx.debug) this.updateDebugState();
   }
 
@@ -503,12 +519,19 @@ export class WorldScene extends Phaser.Scene {
     this.applyCamera();
     this.setZone(zoneAt(x).id);
     this.setStation(stationAt(x, TRIGGER_STATIONS));
-    this.sky.update(x);
+    this.updateMood(x);
     this.updateDebugState();
+  }
+
+  /** The level's sky phase at `x`: the code sky, or the sunrise wash over the backdrop. */
+  private updateMood(x: number): void {
+    this.sky?.update(x);
+    this.scenery.updateMood(x);
   }
 
   private applyCamera(): void {
     this.cameras.main.scrollX = this.followState.scrollX;
+    this.scenery.update(this.followState.scrollX);
     this.ctx.camera = { scrollX: this.cameras.main.scrollX, scrollY: this.cameras.main.scrollY };
   }
 
@@ -557,20 +580,17 @@ export class WorldScene extends Phaser.Scene {
     };
   }
 
-  /** Ground: a `floor-plant` strip tiled across the world, `ink-900` filling the rest, one solid
-   * collider. */
+  /** Ground: one solid collider under either the painted terrain (`fx/scenery.ts`, bridges
+   * included — they are visual only) or, without it, a `floor-plant` strip tiled across the
+   * world with `ink-900` filling below it. */
   private buildGround(): void {
-    const key = this.textures.exists(FLOOR_ID) ? FLOOR_ID : ensureFloorPlaceholder(this);
-    this.add.tileSprite(0, GROUND_Y, WORLD_W, FLOOR_HEIGHT, key).setOrigin(0, 0);
-    this.add
-      .rectangle(
-        0,
-        GROUND_Y + FLOOR_HEIGHT,
-        WORLD_W,
-        WORLD_H - (GROUND_Y + FLOOR_HEIGHT),
-        num('ink-900')
-      )
-      .setOrigin(0, 0);
+    if (!this.scenery.hasTerrain) {
+      const key = this.textures.exists(FLOOR_ID) ? FLOOR_ID : ensureFloorPlaceholder(this);
+      this.add.tileSprite(0, GROUND_Y, WORLD_W, FLOOR_HEIGHT, key).setOrigin(0, 0);
+      this.add
+        .rectangle(0, GROUND_Y + FLOOR_HEIGHT, WORLD_W, GROUND_FILL_H, num('ink-900'))
+        .setOrigin(0, 0);
+    }
     this.groundBody = this.physics.add.staticBody(0, GROUND_Y, WORLD_W, WORLD_H - GROUND_Y);
   }
 
@@ -607,14 +627,20 @@ export class WorldScene extends Phaser.Scene {
     return item ?? PLATFORM_FALLBACK_SIZE[size];
   }
 
-  /** Integer positions only: camera size + bottom anchoring (ARCHITECTURE.md → Camera). */
+  /** Integer positions only: camera size + ground anchoring per layout mode (ARCHITECTURE.md →
+   * Camera; `world/scenery.ts` → `belowGround`). */
   private layout(): void {
     const { width, height } = this.scale;
     const cam = this.cameras.main;
+    const scrollY = cameraScrollY(this.ctx.mode, height, GROUND_Y);
     cam.setSize(width, height);
-    cam.setBounds(0, WORLD_H - height, WORLD_W, height);
-    cam.scrollY = WORLD_H - height;
-    this.sky.resize(width, height);
+    cam.setBounds(0, scrollY, WORLD_W, height);
+    cam.scrollY = scrollY;
+    this.sky?.resize(width, height);
+    this.scenery.resize(width, height, GROUND_Y - scrollY);
+    this.ctx.backdrop = this.scenery.backdropId;
+    this.stations?.setMode(this.ctx.mode);
+    this.scenery.update(this.followState.scrollX);
     if (this.panda) {
       this.followState = snapFollow({
         targetX: this.panda.sprite.x,

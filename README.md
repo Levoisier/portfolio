@@ -1,6 +1,6 @@
 # Cristian Cartagena — Portfolio (the game)
 
-A 2D pixel-art side-scroller: play the panda through a chemical plant at night and discover
+A 2D pixel-art side-scroller: play the panda along a mossy path through moonlit mountains and discover
 each project on the way to a sunrise contact lookout. Full Stack Developer & Chemical Engineer.
 
 **Stack:** Astro · Phaser 4 · TypeScript strict · Vitest · Playwright · Vercel static

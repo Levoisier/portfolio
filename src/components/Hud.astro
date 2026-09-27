@@ -35,15 +35,44 @@ const img =
     </button>
   </div>
   <div class="hud__slot hud__slot--right" data-slot="actions">
-    <button type="button" class="hud__action" data-hud-contact></button>
+    <button type="button" class="hud__action" data-hud-contact>
+      <svg class="hud__icon" viewBox="0 0 12 12" aria-hidden="true">
+        <path
+          d="M0 2h12v1H0zM0 9h12v1H0zM0 3h1v6H0zM11 3h1v6h-1zM1 3h1v1H1zM10 3h1v1h-1zM2 4h1v1H2zM9 4h1v1H9zM3 5h1v1H3zM8 5h1v1H8zM4 6h4v1H4z"
+        ></path>
+      </svg>
+      <span class="hud__label" data-hud-contact-label></span>
+    </button>
     <button type="button" class="hud__action hud__action--lang" data-hud-lang>
       <span data-lang-code="es">ES</span> · <span data-lang-code="en">EN</span>
     </button>
-    <button type="button" class="hud__action" data-hud-sound aria-pressed="false"></button>
-    <button type="button" class="hud__action" data-hud-menu></button>
+    <button
+      type="button"
+      class="hud__action hud__action--compact"
+      data-hud-sound
+      aria-pressed="false"
+    >
+      <svg class="hud__icon" viewBox="0 0 12 12" aria-hidden="true">
+        <path d="M1 4h2v4H1zM3 3h1v6H3zM4 2h1v8H4zM5 1h1v10H5z"></path>
+        <path data-icon="sound-on" d="M7 4h1v4H7zM9 2h1v8H9z"></path>
+        <path data-icon="sound-off" d="M7 4h1v1H7zM10 4h1v1h-1zM8 5h2v2H8zM7 7h1v1H7zM10 7h1v1h-1z"
+        ></path>
+      </svg>
+      <span class="hud__label" data-hud-sound-label></span>
+    </button>
+    <button type="button" class="hud__action hud__action--compact" data-hud-menu>
+      <svg class="hud__icon" viewBox="0 0 12 12" aria-hidden="true">
+        <path
+          fill-rule="evenodd"
+          d="M0 2h4v9H0zM1 3v7h2V3zM4 1h4v9H4zM5 2v7h2V2zM8 2h4v9H8zM9 3v7h2V3z"></path>
+      </svg>
+      <span class="hud__label" data-hud-menu-label></span>
+    </button>
   </div>
-  <p class="hud__hint" data-slot="hint" hidden></p>
-  <p class="hud__prompt" data-slot="prompt" aria-live="polite"></p>
+  <div class="hud__bottom">
+    <p class="hud__hint" data-slot="hint" hidden></p>
+    <p class="hud__prompt" data-slot="prompt" aria-live="polite"></p>
+  </div>
 </div>
 
 <style>
@@ -76,46 +105,97 @@ const img =
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: var(--space-2);
-    /* Narrow phones can't fit 4 buttons on one line ("Sonido desactivado" alone runs long) —
-     * wrap instead of overflowing past the badge on the opposite side. The subtracted amount
-     * clears the badge (40px) + its own inset + a visible gap. */
+    /* Safety net for very narrow screens: wrap rather than run under the badge. */
     max-width: calc(100vw - 72px);
+  }
+
+  .hud__badge,
+  .hud__action {
+    box-sizing: border-box;
+    min-height: 44px;
+    border: 2px solid var(--c-navy-500);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--c-navy-900) 82%, transparent);
+    box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--c-ink-900) 40%, transparent);
+    cursor: pointer;
   }
 
   .hud__badge {
     display: grid;
     place-items: center;
-    box-sizing: border-box;
-    min-width: 40px;
-    min-height: 40px;
+    min-width: 44px;
     padding: 0;
-    border: 2px solid var(--c-ink-900);
-    background: var(--c-navy-700);
-    cursor: pointer;
   }
 
   .hud__badge-img {
     display: block;
     width: auto;
-    height: 36px;
+    height: 38px;
     image-rendering: pixelated;
   }
 
   .hud__action {
-    box-sizing: border-box;
-    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
     padding: var(--space-1) var(--space-3);
-    border: 2px solid var(--c-ink-900);
-    background: var(--c-navy-700);
     color: var(--color-text);
     font-family: var(--font-display);
-    font-size: 0.75rem;
-    cursor: pointer;
+    font-size: 0.875rem;
   }
 
+  .hud__badge:hover,
+  .hud__badge:focus-visible,
   .hud__action:hover,
   .hud__action:focus-visible {
-    background: var(--c-navy-500);
+    border-color: var(--c-navy-400);
+    background: color-mix(in srgb, var(--c-navy-700) 90%, transparent);
+  }
+
+  .hud__icon {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+    shape-rendering: crispEdges;
+  }
+
+  [data-hud-sound][aria-pressed='true'] [data-icon='sound-off'],
+  [data-hud-sound][aria-pressed='false'] [data-icon='sound-on'] {
+    display: none;
+  }
+
+  [data-hud-sound][aria-pressed='false'] {
+    color: var(--color-text-muted);
+  }
+
+  /* Phones: the sound and map buttons go icon-only (their names stay as aria-labels) so the
+   * whole row fits on one line. */
+  @media (max-width: 560px) {
+    .hud__action {
+      font-size: 0.8rem;
+    }
+
+    .hud__action--compact {
+      justify-content: center;
+      min-width: 44px;
+      padding: var(--space-1);
+    }
+
+    .hud__action--compact .hud__label {
+      display: none;
+    }
+  }
+
+  /* Landscape phones are wide but short: same icon-only row, so the game keeps its sky. */
+  html[data-mode='landscape-touch'] .hud__action--compact {
+    justify-content: center;
+    min-width: 44px;
+    padding: var(--space-1);
+  }
+
+  html[data-mode='landscape-touch'] .hud__action--compact .hud__label {
+    display: none;
   }
 
   .hud__action--lang [data-lang-code] {
@@ -128,14 +208,29 @@ const img =
     opacity: 1;
   }
 
-  .hud__hint {
+  /* The hint and the prompt share one bottom-centred column so a two-line hint never runs into
+   * the prompt; in touch modes it sits above the pad (`--pad-clearance`, shell.css). */
+  .hud__bottom {
     position: absolute;
     left: 50%;
-    bottom: calc(var(--space-6) + 1.6em);
-    max-width: min(90vw, 480px);
+    bottom: calc(var(--space-6) + var(--pad-clearance, 0px));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    width: min(90vw, 480px);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .hud__bottom > * {
+    pointer-events: auto;
+  }
+
+  .hud__hint {
     margin: 0;
     padding: var(--space-2) var(--space-3);
-    transform: translateX(-50%);
+    border-radius: 6px;
     background: color-mix(in srgb, var(--c-navy-950) 72%, transparent);
     color: var(--color-text);
     font-family: var(--font-body);
@@ -144,11 +239,10 @@ const img =
   }
 
   .hud__prompt {
-    position: absolute;
-    left: 50%;
-    bottom: var(--space-6);
     margin: 0;
-    transform: translateX(-50%);
+    padding: var(--space-1) var(--space-3);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--c-navy-950) 60%, transparent);
     font-family: var(--font-display);
     color: var(--color-text);
   }
