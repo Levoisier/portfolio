@@ -22,6 +22,20 @@ import { ui } from '../i18n/ui';
 
 const manifest = readRuntimeManifest();
 const roles = (lang: 'es' | 'en') => profile.roles.map((r) => r[lang]).join(' · ');
+const title = `${profile.name} — ${roles(DEFAULT_LANG)}`;
+const sameAs = profile.contact
+  .filter((c) => c.channel === 'github' || c.channel === 'linkedin')
+  .map((c) => c.href);
+const email = profile.contact.find((c) => c.channel === 'email')?.href;
+const personLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: profile.name,
+  jobTitle: profile.roles.map((r) => r[DEFAULT_LANG]),
+  description: profile.summary[DEFAULT_LANG],
+  ...(email ? { email } : {}),
+  sameAs,
+};
 ---
 
 <!doctype html>
@@ -30,7 +44,16 @@ const roles = (lang: 'es' | 'en') => profile.roles.map((r) => r[lang]).join(' ·
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content={profile.summary[DEFAULT_LANG]} />
-    <title>{profile.name} — {roles(DEFAULT_LANG)}</title>
+    <title>{title}</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={profile.summary[DEFAULT_LANG]} />
+    <meta property="og:locale" content="es_419" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={profile.summary[DEFAULT_LANG]} />
+    <script is:inline type="application/ld+json" set:html={inlineJson(personLd)} />
     <script is:inline define:vars={{ key: LANG_STORAGE_KEY, htmlLang: HTML_LANG }}>
       try {
         const stored = localStorage.getItem(key);

@@ -140,6 +140,8 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
     const dossier = confidentialProjects.find((c) => c.id === id);
     if (dossier) return dossier.industry[lang];
     if (id === 'classified') return ui.menuClassified[lang];
+    if (id === 'gate' || id === 'intro') return ui.menuGate[lang];
+    if (id === 'contact') return ui.contactLabel[lang];
     if (id === 'lab' || id === 'stack') return ui.menuLab[lang];
     if (id in skillCategoryLabels) return skillCategoryLabels[id as SkillCategory][lang];
     return null;

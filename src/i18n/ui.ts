@@ -17,6 +17,7 @@ export const ui = {
   },
   // ─── Stations & panels (Phase 5) ─────────────────────────────────────────
   close: { es: 'Cerrar', en: 'Close' },
+  finaleThanks: { es: '¡Gracias por visitar!', en: 'Thanks for visiting!' },
   stackSymbol: { es: 'Símbolo', en: 'Symbol' },
   stackName: { es: 'Tecnología', en: 'Technology' },
   stackCategory: { es: 'Categoría', en: 'Category' },

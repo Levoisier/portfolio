@@ -375,9 +375,9 @@ the hook, board complete, panel lists all 34 skills in ES and EN.
 
 ---
 
-## Phase 10 — Gate intro & sunrise contact
+## Phase 10 — Gate intro & sunrise contact ✅
 
-### [ ] feat(story): gate intro, contact post, finale, meta/OG basics
+### [x] feat(story): gate intro, contact post, finale, meta/OG basics
 
 **Depends on:** P7. **Media:** station-spawn-gate, contact-post, props-misc crate (+ optional
 panda-sleep, panda-celebrate).

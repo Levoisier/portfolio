@@ -5,7 +5,7 @@
  * LESSONS.md for what changed.
  */
 import Phaser from 'phaser';
-import { profile } from '../../content';
+import { DEFAULT_LANG } from '../../i18n/lang';
 import { num, rgbChannels } from '../../design/palette';
 import { bus } from '../../shared/bus';
 import { onReducedMotionChange, prefersReducedMotion } from '../../shared/motion';
@@ -34,9 +34,9 @@ import { RefreshMeter } from '../render/refresh';
 import { Skills } from '../stations/Skills';
 import { bumpedBlock } from '../stations/skills-logic';
 import { Stations } from '../stations/Stations';
+import { Story } from '../stations/Story';
 import { stationAt } from '../stations/trigger';
 import { Vault } from '../stations/Vault';
-import { PIXEL_FONT, PIXEL_FONT_SIZE, registerPixelFont } from '../text/bitmap-font';
 import { parseDeepLink } from '../travel/deep-link';
 import {
   autoWalkStep,
@@ -54,12 +54,14 @@ import { WORLD_LAYOUT, zoneAt, type PlatformSize, type Station } from '../world/
  * the gate/blocks/contact kinds have no panel yet — later phases build those without touching
  * this filter. The vault (`kind: 'vault'`) is a different shape (`stations/Vault.ts`, below). */
 const INTERACTIVE_STATIONS: Station[] = WORLD_LAYOUT.stations.filter(
-  (s) => s.kind === 'project' || s.kind === 'dossier'
+  (s) => s.kind === 'gate' || s.kind === 'project' || s.kind === 'dossier'
 );
 const VAULT_STATION: Station | null = WORLD_LAYOUT.stations.find((s) => s.kind === 'vault') ?? null;
 /** The Reagent lab's 8 skill-category element blocks (BACKLOG.md Phase 9), in `world/layout.ts`
  * x order — a different shape from every sprite-kind station (`stations/Skills.ts`). */
 const SKILL_STATIONS: Station[] = WORLD_LAYOUT.stations.filter((s) => s.kind === 'block');
+const GATE_STATION = WORLD_LAYOUT.stations.find((s) => s.kind === 'gate')!;
+const CONTACT_STATION = WORLD_LAYOUT.stations.find((s) => s.kind === 'contact')!;
 /** Every station tracked for triggers/prompt (`stations/trigger.ts`'s `stationAt`): the ones
  * above plus the vault (shares the same approach/prompt/interact loop despite opening no DOM
  * panel of its own) and the 8 skill blocks (same, plus their own local bump reaction). */
@@ -67,6 +69,7 @@ const TRIGGER_STATIONS: Station[] = [
   ...INTERACTIVE_STATIONS,
   ...(VAULT_STATION ? [VAULT_STATION] : []),
   ...SKILL_STATIONS,
+  CONTACT_STATION,
 ];
 /** Decorative props this scene renders so far (BACKLOG.md Phase 8's classified wing, Phase 9's
  * lab); a later phase widens this (or drops the filter) as it adds its own (`world/props.ts` is
@@ -100,7 +103,7 @@ export class WorldScene extends Phaser.Scene {
   private panda!: PandaSprite;
   private sky!: SkyRenderer;
   private parallax!: ParallaxHandle;
-  private label: Phaser.GameObjects.BitmapText | null = null;
+  private story!: Story;
   private fpsGuard = new FpsGuard();
   private refreshMeter = new RefreshMeter();
   private keyboard!: KeyboardSource;
@@ -147,6 +150,15 @@ export class WorldScene extends Phaser.Scene {
       INTERACTIVE_STATIONS,
       this.ctx.manifest,
       GROUND_Y,
+      (station) => this.handleStationClick(station)
+    );
+    this.story = new Story(
+      this,
+      this.ctx.manifest,
+      GATE_STATION,
+      CONTACT_STATION,
+      GROUND_Y,
+      bus.last('lang:change')?.lang ?? DEFAULT_LANG,
       (station) => this.handleStationClick(station)
     );
     if (VAULT_STATION) {
@@ -225,10 +237,11 @@ export class WorldScene extends Phaser.Scene {
       }),
       bus.on('travel:to', ({ id }) => this.startFastTravel(id)),
       bus.on('skills:reset', () => this.skills.reset()),
+      bus.on('lang:change', ({ lang }) => this.story.drawSign(lang)),
       bus.on(
         'fonts:ready',
         () => {
-          this.addLabel();
+          this.ctx.pixelFont = this.story.drawSign();
           this.classifiedWing.drawSign();
         },
         { replay: true }
@@ -268,6 +281,7 @@ export class WorldScene extends Phaser.Scene {
     this.ctx.ready = true;
     bus.emit('game:ready', {});
     if (deepLink) this.openStation(deepLink);
+    else this.story.startIntro(spawnX, GROUND_Y - PANDA_ART_H);
   }
 
   update(_time: number, delta: number) {
@@ -337,7 +351,8 @@ export class WorldScene extends Phaser.Scene {
     // A menu fast-travel keeps `modalOpen` true throughout (merge.ts) but must still walk/run
     // and animate normally — only a genuinely paused game (a panel/menu open, nothing driving
     // the panda) poses it as `interact`.
-    this.panda.update(intent, delta, this.modalOpen && !this.fastTravel ? 'interact' : null);
+    const storyPose = this.story.update(delta, manualInput);
+    this.panda.update(intent, delta, this.modalOpen && !this.fastTravel ? 'interact' : storyPose);
     // Bump from below: the head hit a block's static body during the last physics step.
     const head = this.panda.sprite.body;
     const bumped = bumpedBlock(
@@ -498,7 +513,9 @@ export class WorldScene extends Phaser.Scene {
       if (this.stationId) bus.emit('station:leave', { id: this.stationId });
       this.stationId = id;
       if (id) bus.emit('station:enter', { id });
+      if (id === CONTACT_STATION.id) this.story.maybeFinale();
     }
+    this.story.setContactActive(this.stationId === CONTACT_STATION.id);
     const activeId = this.modalOpen ? null : this.stationId;
     this.stations.setActive(activeId);
     this.vault?.setActive(activeId !== null && activeId === VAULT_STATION?.id);
@@ -572,15 +589,6 @@ export class WorldScene extends Phaser.Scene {
         ? asset.items[PLATFORM_FRAME[size]]
         : undefined;
     return item ?? PLATFORM_FALLBACK_SIZE[size];
-  }
-
-  private addLabel(): void {
-    if (this.label || !registerPixelFont(this)) return;
-    this.label = this.add
-      .bitmapText(0, GROUND_Y - PANDA_ART_H - 24, PIXEL_FONT, profile.name, PIXEL_FONT_SIZE)
-      .setTint(num('paper-100'));
-    this.label.setX(Math.floor(SPAWN_X - this.label.width / 2));
-    this.ctx.pixelFont = true;
   }
 
   /** Integer positions only: camera size + bottom anchoring (ARCHITECTURE.md → Camera). */
