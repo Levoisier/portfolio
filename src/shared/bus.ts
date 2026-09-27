@@ -50,6 +50,8 @@ export interface Events {
   /** The first manual move/jump/interact of the session (BACKLOG.md Phase 7 — the first-visit
    * controls hint hides on this and never comes back). Fires once. */
   'input:first-move': Record<string, never>;
+  /** The stack panel's "reset lab" control: every element block back to idle. */
+  'skills:reset': Record<string, never>;
   'fonts:ready': Record<string, never>;
   'tier:change': { tier: Tier };
   /** Emitted about twice a second, only in debug mode. */

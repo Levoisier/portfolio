@@ -183,6 +183,8 @@ const PROPS: Prop[] = [
   { id: 'classified-fence-3', asset: 'props-zones', item: 'fence', x: 2875, y: GROUND_Y },
   { id: 'classified-beacon-2', asset: 'props-zones', item: 'beacon', x: 3025, y: GROUND_Y },
   { id: 'classified-fence-4', asset: 'props-zones', item: 'fence', x: 3162, y: GROUND_Y },
+  { id: 'lab-fume-hood', asset: 'props-zones', item: 'fume-hood', x: 3226, y: GROUND_Y },
+  { id: 'lab-shelf', asset: 'props-zones', item: 'lab-shelf', x: 3972, y: GROUND_Y },
 ];
 
 export const WORLD_LAYOUT: WorldLayout = {

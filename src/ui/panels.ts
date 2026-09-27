@@ -4,8 +4,8 @@
  * Golden Rule 7); this module decides whether a panel exists for an id, shows/hides it, owns
  * `ui:modal`, focus, the HUD prompt text, visited marks and the URL hash.
  */
-import { confidentialProjects, projects } from '../content';
-import type { Lang } from '../content/types';
+import { confidentialProjects, projects, skillCategoryLabels } from '../content';
+import type { Lang, SkillCategory } from '../content/types';
 import { hashFor } from '../game/travel/deep-link';
 import { getLang, safeLocalStorage } from '../i18n/lang';
 import { ui } from '../i18n/ui';
@@ -21,7 +21,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1
  * and `intro` end up sharing one visited mark, matching GAME_DESIGN.md's "`/#gate` = `/#intro`".
  * Exported: `src/ui/menu.ts` (Phase 7) checks the same id when it reads a menu entry's visited
  * mark. */
-export const PANEL_FOR_STOP: Record<string, string> = { gate: 'intro' };
+export const PANEL_FOR_STOP: Record<string, string> = { gate: 'intro', lab: 'stack' };
 
 export function panelIdFor(stopId: string): string {
   return PANEL_FOR_STOP[stopId] ?? stopId;
@@ -140,6 +140,8 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
     const dossier = confidentialProjects.find((c) => c.id === id);
     if (dossier) return dossier.industry[lang];
     if (id === 'classified') return ui.menuClassified[lang];
+    if (id === 'lab' || id === 'stack') return ui.menuLab[lang];
+    if (id in skillCategoryLabels) return skillCategoryLabels[id as SkillCategory][lang];
     return null;
   }
 
@@ -222,6 +224,10 @@ export function mountPanels(root: HTMLElement, hud: HTMLElement): PanelsApi {
 
   root.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
+    if (target.closest('[data-skills-reset]')) {
+      bus.emit('skills:reset', {});
+      return;
+    }
     if (target.closest('[data-panel-close]')) {
       closePanel();
       return;

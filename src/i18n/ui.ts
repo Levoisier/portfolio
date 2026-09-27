@@ -17,6 +17,11 @@ export const ui = {
   },
   // ─── Stations & panels (Phase 5) ─────────────────────────────────────────
   close: { es: 'Cerrar', en: 'Close' },
+  stackSymbol: { es: 'Símbolo', en: 'Symbol' },
+  stackName: { es: 'Tecnología', en: 'Technology' },
+  stackCategory: { es: 'Categoría', en: 'Category' },
+  stackProficiency: { es: 'Dominio', en: 'Proficiency' },
+  stackReset: { es: 'Reiniciar laboratorio', en: 'Reset lab' },
   stackHeading: { es: 'Stack', en: 'Stack' },
   viewLive: { es: 'Ver sitio en vivo', en: 'View live site' },
   galleryPrev: { es: 'Anterior', en: 'Previous' },

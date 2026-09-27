@@ -349,9 +349,9 @@ the content test still guards the data.
 
 ---
 
-## Phase 9 — Reagent lab (stack)
+## Phase 9 — Reagent lab (stack) ✅
 
-### [ ] feat(skills): element blocks, periodic board, stack panel
+### [x] feat(skills): element blocks, periodic board, stack panel
 
 **Depends on:** P7. **Media:** skill-block, props-zones (placeholders until then).
 

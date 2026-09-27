@@ -14,7 +14,7 @@ import ConfidentialPanel from '../components/panels/ConfidentialPanel.astro';
 import ContactPanel from '../components/panels/ContactPanel.astro';
 import IntroPanel from '../components/panels/IntroPanel.astro';
 import Panels from '../components/panels/Panels.astro';
-import StubPanels from '../components/panels/StubPanels.astro';
+import StackPanel from '../components/panels/StackPanel.astro';
 import { inlineJson, readRuntimeManifest } from '../assets/inline';
 import { profile } from '../content';
 import { DEFAULT_LANG, HTML_LANG, LANG_STORAGE_KEY } from '../i18n/lang';
@@ -60,7 +60,7 @@ const roles = (lang: 'es' | 'en') => profile.roles.map((r) => r[lang]).join(' ·
       <IntroPanel />
       <ContactPanel />
       <ConfidentialPanel />
-      <StubPanels />
+      <StackPanel />
     </div>
     <Menu />
     <noscript>

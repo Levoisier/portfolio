@@ -31,6 +31,8 @@ import { PandaSprite } from '../player/PandaSprite';
 import { FpsGuard, tierFlags } from '../quality';
 import { follow, snapFollow, type FollowState } from '../render/follow';
 import { RefreshMeter } from '../render/refresh';
+import { Skills } from '../stations/Skills';
+import { bumpedBlock } from '../stations/skills-logic';
 import { Stations } from '../stations/Stations';
 import { stationAt } from '../stations/trigger';
 import { Vault } from '../stations/Vault';
@@ -55,15 +57,22 @@ const INTERACTIVE_STATIONS: Station[] = WORLD_LAYOUT.stations.filter(
   (s) => s.kind === 'project' || s.kind === 'dossier'
 );
 const VAULT_STATION: Station | null = WORLD_LAYOUT.stations.find((s) => s.kind === 'vault') ?? null;
+/** The Reagent lab's 8 skill-category element blocks (BACKLOG.md Phase 9), in `world/layout.ts`
+ * x order — a different shape from every sprite-kind station (`stations/Skills.ts`). */
+const SKILL_STATIONS: Station[] = WORLD_LAYOUT.stations.filter((s) => s.kind === 'block');
 /** Every station tracked for triggers/prompt (`stations/trigger.ts`'s `stationAt`): the ones
- * above plus the vault, which shares the same approach/prompt/interact loop despite opening no
- * DOM panel of its own. */
-const TRIGGER_STATIONS: Station[] = VAULT_STATION
-  ? [...INTERACTIVE_STATIONS, VAULT_STATION]
-  : INTERACTIVE_STATIONS;
-/** Decorative props this scene renders so far (BACKLOG.md Phase 8's classified wing); a later
- * phase widens this (or drops the filter) as it adds its own (`world/props.ts` is generic). */
+ * above plus the vault (shares the same approach/prompt/interact loop despite opening no DOM
+ * panel of its own) and the 8 skill blocks (same, plus their own local bump reaction). */
+const TRIGGER_STATIONS: Station[] = [
+  ...INTERACTIVE_STATIONS,
+  ...(VAULT_STATION ? [VAULT_STATION] : []),
+  ...SKILL_STATIONS,
+];
+/** Decorative props this scene renders so far (BACKLOG.md Phase 8's classified wing, Phase 9's
+ * lab); a later phase widens this (or drops the filter) as it adds its own (`world/props.ts` is
+ * generic). */
 const CLASSIFIED_PROPS = WORLD_LAYOUT.props.filter((p) => p.id.startsWith('classified-'));
+const LAB_PROPS = WORLD_LAYOUT.props.filter((p) => p.id.startsWith('lab-'));
 
 const SPAWN_X = 160;
 const FLOOR_ID = 'floor-plant';
@@ -105,6 +114,7 @@ export class WorldScene extends Phaser.Scene {
   private zoneId = '';
   private stations!: Stations;
   private vault: Vault | null = null;
+  private skills!: Skills;
   private classifiedWing!: ClassifiedWing;
   private stationId: string | null = null;
   /** Click/tap-to-open (ARCHITECTURE.md → Input → Pointer/tap): a plain walk toward the clicked
@@ -154,6 +164,14 @@ export class WorldScene extends Phaser.Scene {
       this.ctx.tier
     );
     blinkBeacons(this, buildProps(this, this.ctx.manifest, CLASSIFIED_PROPS));
+    buildProps(this, this.ctx.manifest, LAB_PROPS);
+    this.skills = new Skills(
+      this,
+      SKILL_STATIONS,
+      this.ctx.manifest,
+      (station) => this.handleStationClick(station),
+      () => bus.emit('station:open', { id: 'stack' })
+    );
 
     // Deep link (GAME_DESIGN.md → Deep links): `/#<id>` spawns at that station's x. An id with
     // no panel yet (gate/block/contact) still resolves — `station:open` below is a no-op until
@@ -172,6 +190,7 @@ export class WorldScene extends Phaser.Scene {
     this.ctx.pandaTexture = this.panda.textureKey;
     this.physics.add.collider(this.panda.sprite, this.groundBody);
     this.physics.add.collider(this.panda.sprite, platforms);
+    this.physics.add.collider(this.panda.sprite, this.skills.bodies);
 
     this.sky = new SkyRenderer(this, WORLD_LAYOUT.zones, WORLD_LAYOUT.width, this.starCount());
     this.parallax = buildParallax(
@@ -205,6 +224,7 @@ export class WorldScene extends Phaser.Scene {
         if (!this.modalOpen) this.touch.handle(e);
       }),
       bus.on('travel:to', ({ id }) => this.startFastTravel(id)),
+      bus.on('skills:reset', () => this.skills.reset()),
       bus.on(
         'fonts:ready',
         () => {
@@ -318,6 +338,14 @@ export class WorldScene extends Phaser.Scene {
     // and animate normally — only a genuinely paused game (a panel/menu open, nothing driving
     // the panda) poses it as `interact`.
     this.panda.update(intent, delta, this.modalOpen && !this.fastTravel ? 'interact' : null);
+    // Bump from below: the head hit a block's static body during the last physics step.
+    const head = this.panda.sprite.body;
+    const bumped = bumpedBlock(
+      this.panda.sprite.x,
+      head.blocked.up || head.touching.up,
+      SKILL_STATIONS
+    );
+    if (bumped) this.skills.bump(bumped);
     // Snapshot now: `world.postUpdate()` (already queued for this frame) resets it to 0.
     this.stepsThisFrame = this.physics.world.stepsLastFrame;
 
@@ -415,6 +443,12 @@ export class WorldScene extends Phaser.Scene {
    * through here, so the vault's own local, game-side reaction (Golden Rule 7 again: the UI is
    * never told) lives in this one choke point instead of at each call site. */
   private openStation(id: string): void {
+    // A skill block reacts in the game only (bump → used, tiles fly to the board); the stack
+    // panel opens once the board completes, from Skills' own callback.
+    if (SKILL_STATIONS.some((s) => s.id === id)) {
+      this.skills.bump(id);
+      return;
+    }
     bus.emit('station:open', { id });
     if (VAULT_STATION && id === VAULT_STATION.id) {
       this.vault?.open();
