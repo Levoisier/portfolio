@@ -40,12 +40,11 @@
     ]
   },
   "derived": {
-    "$comment": "Interim strips animated from ONE sliced frame (win over `strips` for the same id; a raw delivery still wins over both). panda-idle: the concept sheet's IDLE row is front-facing while every other strip is a side profile, so the panda turned to the camera whenever it stopped. Instead the standing walk frame (index 1) breathes: `cuts` are rows above the feet (12 = mid-belly, 30 = just under the face), and frame f lifts everything above cuts[k] by lifts[f][k] whole pixels (belly up 1, then the head 1 more) while the feet stay on the baseline.",
+    "$comment": "Interim strips animated from ONE pose (win over `strips` for the same id; a raw delivery still wins over both). The source is either frame `frame` of `strips[from]`, or the `sprites[sprite]` pose keyed on its own and scaled so its art is `height` px tall. panda-idle: the sheet's IDLE row is front-facing while every other strip is a side profile, and the standing walk frame has its legs apart (so starting to walk barely changed the pose). Instead the RIGHT directional sprite (side view, legs together, scarf hanging) breathes at the walk's height: `cuts` are rows above the feet (10 = mid-belly, 29 = the jaw), and frame f lifts everything above cuts[k] by lifts[f][k] whole pixels (belly up 1, then the head 1 more) while the feet stay on the baseline.",
     "panda-idle": {
-      "from": "panda-walk",
-      "frame": 1,
-      "bodyOnly": true,
-      "cuts": [12, 30],
+      "sprite": "panda-right",
+      "height": 47,
+      "cuts": [10, 29],
       "lifts": [
         [0, 0],
         [1, 0],

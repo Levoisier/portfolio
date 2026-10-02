@@ -8,6 +8,7 @@ const slices = JSON.parse(
 ) as {
   strips: Record<string, number[][]>;
   derived?: Record<string, unknown>;
+  sprites?: Record<string, { box: number[] }>;
 };
 
 /** Registry rows of ASSETS.md: `| \`id\` | wave | launch | kind | geometry | status |`. */
@@ -43,14 +44,29 @@ describe('art/manifest.json', () => {
     }
   });
 
-  it('derived interim strips name a sliced frame and give one whole-pixel lift per cut', () => {
+  it('derived interim strips name a sliced pose and give one whole-pixel lift per cut', () => {
     for (const [id, raw] of Object.entries(slices.derived ?? {})) {
       if (id.startsWith('$')) continue;
-      const spec = raw as { from: string; frame: number; cuts: number[]; lifts: number[][] };
+      const spec = raw as {
+        from?: string;
+        frame?: number;
+        sprite?: string;
+        height?: number;
+        cuts: number[];
+        lifts: number[][];
+      };
       const entry = ASSET_MANIFEST.assets.find((a) => a.id === id);
       expect(entry?.kind, id).toBe('strip');
       if (entry?.kind === 'strip') expect(spec.lifts.length).toBeLessThanOrEqual(entry.frames);
-      expect(slices.strips[spec.from]?.[spec.frame], `${id} → ${spec.from}`).toHaveLength(4);
+      if (spec.sprite !== undefined) {
+        expect(slices.sprites?.[spec.sprite]?.box, `${id} → ${spec.sprite}`).toHaveLength(4);
+        if (entry?.kind === 'strip') {
+          expect(spec.height).toBeGreaterThan(0);
+          expect(spec.height!).toBeLessThanOrEqual(entry.targetHeight);
+        }
+      } else {
+        expect(slices.strips[spec.from!]?.[spec.frame!], `${id} → ${spec.from}`).toHaveLength(4);
+      }
       for (const lift of spec.lifts) {
         expect(lift).toHaveLength(spec.cuts.length);
         for (const px of lift) expect(Number.isInteger(px) && px >= 0).toBe(true);

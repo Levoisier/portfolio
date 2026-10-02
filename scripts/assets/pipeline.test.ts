@@ -16,7 +16,7 @@ import {
 import { isSceneryColor, PALETTE } from '../../src/design/palette.ts';
 import { hexToRgb, paletteRgb, snap } from './lib/color.ts';
 import { groupComponents, labelComponents } from './lib/components.ts';
-import { createImg, fillRect, liftAbove, opaqueBounds, type Img } from './lib/img.ts';
+import { createImg, fillRect, liftAbove, loadImg, opaqueBounds, type Img } from './lib/img.ts';
 import { encodePng, isPaletteExact } from './lib/output.ts';
 import { cropToLoop, packStrip, seamError } from './lib/pack.ts';
 import { makePlaceholder } from './lib/placeholder.ts';
@@ -243,10 +243,12 @@ describe('processEntry', () => {
     readFileSync(join(root, 'art/reference/panda-sheet-v1.slices.json'), 'utf8')
   ) as Slices;
   let sheet: Promise<Img> | undefined;
+  let rawSheet: Promise<Img> | undefined;
   const ctx = (rawPath: (id: string) => string) => ({
     rawPath,
     slices,
     sheet: () => (sheet ??= loadSheet(join(root, 'art/reference', slices.source), slices)),
+    rawSheet: () => (rawSheet ??= loadImg(join(root, 'art/reference', slices.source))),
   });
 
   it('resolves optional assets without a source to `missing`', async () => {
@@ -272,7 +274,7 @@ describe('processEntry', () => {
     expect(isPaletteExact(img)).toBe(true);
   });
 
-  it('derives the interim idle from one standing frame: it breathes, the feet stay planted', async () => {
+  it('derives the interim idle from one standing pose: it breathes, the feet stay planted', async () => {
     const out = await processEntry(entry('panda-idle'), ctx(noRaw));
     expect(out.runtime.source).toBe('reference');
     if (out.runtime.source === 'missing' || out.runtime.kind !== 'strip')

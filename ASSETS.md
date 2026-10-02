@@ -13,8 +13,8 @@ launch status and kinds in sync). Cristian produces the media; agents never edit
 - **Pure green `#00FF00` background (or real transparency), no text, no ground shadows, no baked
   glow/steam/sparkles, character facing right.**
 - Until a file exists, the game uses interim panda frames cut from
-  `art/reference/panda-sheet-v1.png` (the interim `panda-idle` is the standing walk frame made to
-  breathe by the pipeline) or a same-size placeholder. Placeholder panda strips are never played:
+  `art/reference/panda-sheet-v1.png` (the interim `panda-idle` is the sheet's side-view standing
+  sprite, made to breathe by the pipeline) or a same-size placeholder. Placeholder panda strips are never played:
   the panda shows its idle instead. Development never waits on media.
 - **Order:** wave A (panda) → the gate (`station-spawn-gate`, it becomes the environment style
   anchor) → the rest of waves B and C → wave D.

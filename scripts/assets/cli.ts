@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ASSET_MANIFEST } from '../../src/assets/registry.ts';
 import type { RuntimeAsset, RuntimeManifest } from '../../src/assets/runtime.ts';
+import { loadImg } from './lib/img.ts';
 import { encodePng } from './lib/output.ts';
 import { loadSheet, processEntry, type Slices } from './pipeline.ts';
 
@@ -42,6 +43,7 @@ const slices = existsSync(slicesPath)
   : undefined;
 const sheetPath = slices ? join(REF, slices.source) : '';
 let sheet: ReturnType<typeof loadSheet> | undefined;
+let rawSheet: ReturnType<typeof loadImg> | undefined;
 
 const rawPath = (id: string) => join(root, 'art/raw', `${id}.png`);
 
@@ -93,6 +95,7 @@ async function main() {
       rawPath,
       slices,
       sheet: slices ? () => (sheet ??= loadSheet(sheetPath, slices)) : undefined,
+      rawSheet: slices ? () => (rawSheet ??= loadImg(sheetPath)) : undefined,
     });
     const files: string[] = [];
     if (out.png) {

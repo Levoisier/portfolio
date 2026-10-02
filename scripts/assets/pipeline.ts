@@ -60,6 +60,13 @@ export interface Slices {
   strips: Record<string, [number, number, number, number][]>;
   /** Interim strips built from one sliced frame instead of their own boxes (wins over `strips`). */
   derived?: Record<string, DerivedStrip>;
+  /** Single poses on the sheet (the directional sprites), each with its own key threshold. */
+  sprites?: Record<string, SheetSprite>;
+}
+
+export interface SheetSprite {
+  box: [number, number, number, number];
+  backgroundThreshold?: number;
 }
 
 /**
@@ -67,8 +74,12 @@ export interface Slices {
  * `cuts[k]` (rows above the feet) by `lifts[f][k]` px — a breathing idle from a standing pose.
  */
 export interface DerivedStrip {
-  from: string;
-  frame: number;
+  /** Source: frame `frame` of `strips[from]`… */
+  from?: string;
+  frame?: number;
+  /** …or the `sprites` entry `sprite`, scaled so its art is `height` px tall. */
+  sprite?: string;
+  height?: number;
   /** Keep only the largest component (drops a detached paw the stride left floating). */
   bodyOnly?: boolean;
   cuts: number[];
@@ -89,6 +100,8 @@ export interface Context {
   rawPath: (id: string) => string;
   slices?: Slices;
   sheet?: () => Promise<Img>;
+  /** The reference sheet as delivered (unkeyed), for `sprites` that key with their own threshold. */
+  rawSheet?: () => Promise<Img>;
 }
 
 /** Thrown when a raw delivery can't be used; the next source is tried. */
@@ -466,6 +479,36 @@ async function rawBackdrop(entry: BackdropAsset, src: Img): Promise<Output> {
   };
 }
 
+/** One keyed sheet box → the character only: its largest component plus every other piece of
+ * ≥ 20 px except detached ground-shadow blobs, and the baked shadow band cleared. */
+function cleanBox(box: Img, slices: Slices): Img | null {
+  const { bandRows, minMax, maxMax, maxChroma } = slices.shadow;
+  const { labels, comps } = labelComponents(box);
+  const body = comps.reduce<Component | undefined>(
+    (a, c) => (!a || c.area > a.area ? c : a),
+    undefined
+  );
+  if (!body) return null;
+  const bodyBottom = body.y + body.h;
+  const keep = new Set(
+    comps
+      .filter((c) => c.area >= 20)
+      .filter((c) => !(c !== body && c.h <= 10 && c.w > 3 * c.h && c.y >= bodyBottom - 12))
+      .map((c) => c.id)
+  );
+  const { w, h } = box;
+  const data = new Uint8Array(box.data);
+  for (let p = 0; p < w * h; p++) {
+    const i = p * 4;
+    const inBand = Math.floor(p / w) >= h - bandRows;
+    const max = Math.max(data[i]!, data[i + 1]!, data[i + 2]!);
+    const min = Math.min(data[i]!, data[i + 1]!, data[i + 2]!);
+    const shadow = inBand && max >= minMax && max <= maxMax && max - min <= maxChroma;
+    if (!keep.has(labels[p]!) || shadow) data[i + 3] = 0;
+  }
+  return { w, h, data };
+}
+
 /** Sheet boxes → finished frames: array order, shadows stripped, one sheet scale. */
 async function referenceFrames(
   boxes: [number, number, number, number][],
@@ -473,35 +516,33 @@ async function referenceFrames(
   sheet: Img,
   stats: SnapStats[]
 ): Promise<Img[]> {
-  const { bandRows, minMax, maxMax, maxChroma } = slices.shadow;
   const frames: Img[] = [];
   for (const [bx, by, bw, bh] of boxes) {
-    const box = crop(sheet, bx, by, bw, bh);
-    const { labels, comps } = labelComponents(box);
-    const body = comps.reduce<Component | undefined>(
-      (a, c) => (!a || c.area > a.area ? c : a),
-      undefined
-    );
-    if (!body) continue;
-    const bodyBottom = body.y + body.h;
-    const keep = new Set(
-      comps
-        .filter((c) => c.area >= 20)
-        .filter((c) => !(c !== body && c.h <= 10 && c.w > 3 * c.h && c.y >= bodyBottom - 12))
-        .map((c) => c.id)
-    );
-    const data = new Uint8Array(box.data);
-    for (let p = 0; p < bw * bh; p++) {
-      const i = p * 4;
-      const inBand = Math.floor(p / bw) >= bh - bandRows;
-      const max = Math.max(data[i]!, data[i + 1]!, data[i + 2]!);
-      const min = Math.min(data[i]!, data[i + 1]!, data[i + 2]!);
-      const shadow = inBand && max >= minMax && max <= maxMax && max - min <= maxChroma;
-      if (!keep.has(labels[p]!) || shadow) data[i + 3] = 0;
-    }
-    frames.push(await scaleFake({ w: bw, h: bh, data }, slices.scale, 'black'));
+    const clean = cleanBox(crop(sheet, bx, by, bw, bh), slices);
+    if (clean) frames.push(await scaleFake(clean, slices.scale, 'black'));
   }
   return frames.map((f) => finish(f, stats));
+}
+
+/** A `sprites` entry → one finished frame `height` art px tall. It is keyed on its own (its
+ * `backgroundThreshold`, from the unkeyed sheet) and scaled to `height`, not by the sheet's
+ * `scale`: the directional sprites are drawn a little larger than the animation rows. */
+async function spriteFrame(
+  sprite: SheetSprite,
+  height: number,
+  slices: Slices,
+  rawSheet: Img,
+  stats: SnapStats[]
+): Promise<Img | null> {
+  const [bx, by, bw, bh] = sprite.box;
+  const keyed = floodBlack(
+    crop(rawSheet, bx, by, bw, bh),
+    sprite.backgroundThreshold ?? slices.backgroundThreshold
+  );
+  const clean = cleanBox(keyed, slices);
+  const b = clean && opaqueBounds(clean);
+  if (!clean || !b) return null;
+  return finish(await scaleFake(clean, height / b.h, 'black'), stats);
 }
 
 /** Interim frames from the reference sheet. */
@@ -529,12 +570,17 @@ async function derivedStrip(
   entry: StripAsset,
   spec: DerivedStrip,
   slices: Slices,
-  sheet: Img
+  ctx: Context
 ): Promise<Output | null> {
-  const box = slices.strips[spec.from]?.[spec.frame];
-  if (!box) return null;
   const stats: SnapStats[] = [];
-  const [cut] = await referenceFrames([box], slices, sheet, stats);
+  let cut: Img | null | undefined;
+  const sprite = spec.sprite ? slices.sprites?.[spec.sprite] : undefined;
+  if (sprite && spec.height && ctx.rawSheet) {
+    cut = await spriteFrame(sprite, spec.height, slices, await ctx.rawSheet(), stats);
+  } else if (spec.from !== undefined && spec.frame !== undefined && ctx.sheet) {
+    const box = slices.strips[spec.from]?.[spec.frame];
+    if (box) [cut] = await referenceFrames([box], slices, await ctx.sheet(), stats);
+  }
   if (!cut) return null;
   const base = spec.bodyOnly ? largestComponent(cut) : cut;
   // Highest cut first: a lift never moves the rows below it, so lower cuts keep their height.
@@ -596,8 +642,8 @@ async function fromRaw(entry: AssetEntry, src: Img): Promise<Output> {
 
 async function derivedFor(entry: AssetEntry, ctx: Context): Promise<Output | null> {
   const spec = entry.kind === 'strip' ? ctx.slices?.derived?.[entry.id] : undefined;
-  if (entry.kind !== 'strip' || !spec || !ctx.slices || !ctx.sheet) return null;
-  return derivedStrip(entry, spec, ctx.slices, await ctx.sheet());
+  if (entry.kind !== 'strip' || !spec || !ctx.slices) return null;
+  return derivedStrip(entry, spec, ctx.slices, ctx);
 }
 
 /** No usable raw delivery: sheet slices, else a placeholder (required) or `missing`. */

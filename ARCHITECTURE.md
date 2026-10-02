@@ -389,7 +389,7 @@ sunrise`); `sky.ts`'s `MOODS` maps each to a 4-color top→horizon ramp, a star 
   animation and shows `panda-idle` frame 0 — every action (walk, run, landing, wave, interact)
   ends on the standing pose, never on whatever frame it was on. After 250 ms standing the idle
   strip loops (the breath) whenever it is real art (`raw`, or the interim `reference` strip the
-  pipeline derives from the standing walk frame — Asset pipeline → Sources); with no idle art
+  pipeline derives from the sheet's side-view standing sprite — Asset pipeline → Sources); with no idle art
   frame 0 just holds still.
 - **Only real art plays.** `PandaSprite` builds animations on the scene's global manager and
   tracks which ones it built; a `placeholder` strip (a grey box) is never built, and a pose with
@@ -722,13 +722,16 @@ snap to khaki.
 
 - Reference sources use the slices boxes in **array order** (no sorting); frames = boxes; baked
   ground shadows are stripped (`shadow` params in the slices file), then frames are re-trimmed.
-- Derived reference strips (`derived[id]` = `{ from, frame, bodyOnly?, cuts, lifts }`) cut one
-  frame of `strips[from]` the same way (`bodyOnly` keeps its largest component) and animate it
-  with `liftAbove`: output frame f moves every row at least `cuts[k]` rows above the feet up by
-  `lifts[f][k]` whole pixels, repeating the cut row to fill the gap. No resampling, so the result
-  stays palette-exact and the feet stay on the baseline. The interim `panda-idle` is the standing
-  walk frame breathing (belly +1, head +1 more at the peak): the sheet's own idle row is
-  front-facing while every other strip is a side profile.
+- Derived reference strips (`derived[id]` = `{ from, frame | sprite, height, bodyOnly?, cuts,
+lifts }`) cut one pose — frame `frame` of `strips[from]` the same way as above, or the
+  `sprites[sprite]` pose keyed with its own `backgroundThreshold` from the unkeyed sheet and scaled
+  so its art is `height` px tall (`bodyOnly` keeps the largest component) — and animate it with
+  `liftAbove`: output frame f moves every row at least `cuts[k]` rows above the feet up by
+  `lifts[f][k]` whole pixels, repeating the cut row to fill the gap. The lift does no resampling, so
+  the result stays palette-exact and the feet stay on the baseline. The interim `panda-idle` is
+  the sheet's RIGHT directional sprite (side view, legs together, scarf hanging) at the walk's
+  47 px, breathing (belly +1, head +1 more at the peak): the sheet's idle row is front-facing, and
+  the standing walk frame has its legs apart, so starting to walk barely changed the pose.
 - Raw sources: components are grouped into rows by vertical overlap and read **row-major** (grids
   from PixelLab work). Frames = the N largest components, where N = manifest frames (+1 ruler) or
   the item count; for loops, frame candidates are the components ≥ 30 % of the largest (the ruler
