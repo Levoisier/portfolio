@@ -89,10 +89,11 @@ keys):
 
 `approach → prompt → open panel → read / click → close → keep walking`
 
-- Each station has a trigger zone. Entering it shows a small pixel key glyph above the prop
-  (canvas, no words) and the localized prompt bottom-centre in the HUD (DOM, `aria-live`, e.g.
-  `E — Fiora` / `B — Fiora` / `Toca — Fiora`). Interact with `E` / `Enter`, **B** on the pad, or
-  click/tap the prop.
+- Each station has a trigger zone. Entering it shows a small bobbing **quest scroll** above the
+  prop (canvas — "something to read here, stop") and "Press E / B to interact" on the station
+  itself (in its card, or next to the scroll). The same prompt goes to screen readers through a
+  visually hidden live region in the HUD (`E — Fiora` / `Toca — Fiora`). Interact with
+  `E` / `Enter`, **B** on the pad, or click/tap the prop.
 - Opening a station opens its **DOM panel** over the game; the game pauses input and the
   panda plays `panda-interact`. `Esc`, the close button, or **B** closes it and returns focus.
 - A station is marked **visited** (persisted in `localStorage`); the menu shows ✓ marks.
@@ -121,7 +122,8 @@ Gamepad support is a nice-to-have (Phase 12), not required.
 - Top-right: **Contact** (opens the contact panel from anywhere), language `ES · EN`, sound on/off,
   **Map** (the menu) — pixel-icon buttons with labels; on phones sound and Map are icon-only so
   the row fits on one line.
-- Bottom-centre: the interact prompt (DOM text, `aria-live="polite"`) when near a station.
+- Bottom-centre: the interact prompt for screen readers only (visually hidden, `aria-live="polite"`)
+  when near a station — sighted players read it on the station.
 - First visit: a controls hint that disappears after the first move (desktop: keys + "or just
   scroll"; mobile: points at the pad).
 

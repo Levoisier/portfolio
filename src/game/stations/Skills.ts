@@ -4,8 +4,8 @@
  * projects' single-frame `sprite`, and each block needs its own solid physics body (so the panda
  * can bump it from below) plus a category-colored "window" and a periodic-board tile arc no
  * other station kind has — a different enough shape from `Stations.ts`'s generic single-sprite
- * adapter to get its own, the same reasoning `stations/Vault.ts` gives for the vault. Reuses
- * `Stations.ts`'s glyph so every station reads as the same "interact here" badge, and
+ * adapter to get its own, the same reasoning `stations/Vault.ts` gives for the vault. Its
+ * "interact here" marker is the shared `stations/cue.ts` (from `cueAnchor`), and it uses
  * `stations/skills-logic.ts`'s pure bump/board math (unit-tested there) for anything that isn't
  * a Phaser call.
  */
@@ -23,11 +23,10 @@ import {
   readUsedCategories,
   resetUsedCategories,
 } from '../../shared/skills-progress';
-import { STATION_GLYPH_GAP } from '../config';
 import { PIXEL_FONT, PIXEL_FONT_SIZE, registerPixelFont } from '../text/bitmap-font';
 import type { Station } from '../world/layout';
+import type { CueAnchor } from './cue';
 import { BOARD_COLUMNS, boardRows, boardSlot, skillsInCategory } from './skills-logic';
-import { drawGlyph } from './Stations';
 
 type BlockFrame = 'idle' | 'bump' | 'used';
 const BLOCK_FRAME_NAMES: readonly BlockFrame[] = ['idle', 'bump', 'used'];
@@ -171,7 +170,6 @@ export class Skills {
   private readonly scene: Phaser.Scene;
   private readonly store = safeLocalStorage();
   private readonly blocks = new Map<string, Block>();
-  private readonly glyph: Phaser.GameObjects.Graphics;
   private readonly onBoardComplete: () => void;
   private readonly boardX: number;
   private readonly boardTopY: number;
@@ -256,9 +254,6 @@ export class Skills {
       this.blocks.set(station.id, block);
       if (alreadyUsed) this.placeTiles(station.id as SkillCategory, x, top + wh / 2, false);
     }
-
-    this.glyph = scene.add.graphics().setVisible(false);
-    drawGlyph(this.glyph);
   }
 
   /** Whether `id` is one of these 8 blocks (`WorldScene.openStation`'s local-reaction check). */
@@ -266,16 +261,11 @@ export class Skills {
     return this.blocks.has(id);
   }
 
-  /** Shows the "interact here" glyph above `id`'s block, or hides it — same contract as
-   * `Stations.setActive`/`Vault.setActive`. */
-  setActive(id: string | null): void {
-    const block = id ? this.blocks.get(id) : undefined;
-    if (!block) {
-      this.glyph.setVisible(false);
-      return;
-    }
-    this.glyph.setPosition(block.geometry.x, Math.round(block.geometry.topY - STATION_GLYPH_GAP));
-    this.glyph.setVisible(true);
+  /** Where the cue goes over `id`'s block (null if `id` is not a block); blocks carry no text,
+   * so the cue shows the hint. */
+  cueAnchor(id: string): CueAnchor | null {
+    const block = this.blocks.get(id);
+    return block ? { x: block.geometry.x, topY: block.geometry.topY, hint: 'above' } : null;
   }
 
   /** Draws every window's category symbol once the pixel font is ready (`fonts:ready`) — a

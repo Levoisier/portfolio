@@ -16,6 +16,7 @@ import { readVisited } from '../../shared/visited';
 import type { Pose } from '../player/types';
 import { PIXEL_FONT, PIXEL_FONT_SIZE, registerPixelFont } from '../text/bitmap-font';
 import type { Station } from '../world/layout';
+import type { CueAnchor } from './cue';
 
 const INTRO_KEY = 'portfolio:intro-played';
 const SLEEP_MS = 1400;
@@ -45,7 +46,7 @@ export function everythingVisited(visited: ReadonlySet<string>): boolean {
 
 export class Story {
   private readonly scene: Phaser.Scene;
-  private readonly signRect: Rect;
+  private signRect: Rect;
   private signTexts: Phaser.GameObjects.BitmapText[] = [];
   private readonly post: Phaser.GameObjects.Sprite | Phaser.GameObjects.Image;
   private readonly postIsStrip: boolean;
@@ -151,6 +152,19 @@ export class Story {
     });
     this.thanks?.setText(ui.finaleThanks[lang]);
     return true;
+  }
+
+  /** The gate's card was resized for a layout mode (`Stations.signRect`): move the sign text. */
+  setSignRect(rect: Rect): void {
+    const [x, y, w, h] = this.signRect;
+    if (rect[0] === x && rect[1] === y && rect[2] === w && rect[3] === h) return;
+    this.signRect = rect;
+    if (this.signTexts.length) this.drawSign();
+  }
+
+  /** Where the cue goes over the contact post (it has no text, so the cue carries the hint). */
+  contactCueAnchor(): CueAnchor {
+    return { x: this.postX, topY: this.postTopY, hint: 'above' };
   }
 
   setContactActive(active: boolean): void {

@@ -530,3 +530,12 @@ set of animations `PandaSprite` built), never play placeholder strips, and expos
 `player.texture`/`player.frameIndex` in the debug state so e2e asserts what is actually drawn.
 **Rule of thumb:** When an animation "doesn't play", read the sprite's texture key and frame
 index, not the requested animation name.
+
+## 2026-10-02 — `setTexture` on an interactive Image keeps the old hit area
+
+**Context:** narrowing the station cards in the `handheld` layout swaps each card's texture.
+**Finding:** `Image.setTexture()` resizes the image to the new frame, but the input hit area
+created by `setInteractive()` keeps the old texture's rectangle, so a narrowed card stayed
+clickable over its old, wider footprint (and a widened one would miss taps at its edges).
+**Rule of thumb:** after swapping an interactive object's texture to one of a different size,
+resize `obj.input.hitArea` (`setTo(0, 0, w, h)`) too.

@@ -3,8 +3,8 @@
  * set asset's `wall` and `door` items, the door sliding aside over the wall's `doorway` anchor on
  * interact (integer-pixel tween; instant under reduced motion) with a small camera nudge (off
  * under reduced motion). A different shape from every other station — two images, one animated —
- * so it gets its own adapter instead of `stations/Stations.ts`'s generic single-sprite one; it
- * shares that module's glyph so both read as the same "interact here" badge.
+ * so it gets its own adapter instead of `stations/Stations.ts`'s generic single-sprite one. Its
+ * "interact here" marker is the shared `stations/cue.ts`, placed from `cueAnchor()`.
  *
  * Golden Rule 3 / GAME_DESIGN.md → Canonical ids: the vault opens no DOM panel of its own — the
  * game still emits the usual `station:open` on the bus (a harmless no-op UI-side, same as any
@@ -16,9 +16,8 @@ import { getAsset, type Rect } from '../../assets/registry';
 import type { RuntimeManifest } from '../../assets/runtime';
 import { num } from '../../design/palette';
 import { prefersReducedMotion } from '../../shared/motion';
-import { STATION_GLYPH_GAP } from '../config';
 import type { Station } from '../world/layout';
-import { drawGlyph } from './Stations';
+import type { CueAnchor } from './cue';
 
 /** Slide duration and the gap the door clears past the wall's edge once open. */
 const DOOR_OPEN_MS = 500;
@@ -90,9 +89,8 @@ export class Vault {
   private readonly door: Phaser.GameObjects.Image;
   private readonly doorClosedX: number;
   private readonly doorOpenX: number;
-  private readonly glyph: Phaser.GameObjects.Graphics;
-  private readonly glyphX: number;
-  private readonly glyphY: number;
+  private readonly cueX: number;
+  private readonly cueTopY: number;
   private opened = false;
 
   constructor(
@@ -117,21 +115,14 @@ export class Vault {
     this.door = scene.add.image(this.doorClosedX, doorY, door.key, door.frame).setOrigin(0, 0);
     this.doorOpenX = this.doorClosedX - door.w - DOOR_MARGIN;
 
-    this.glyphX = x;
-    this.glyphY = wallTop - STATION_GLYPH_GAP;
-    this.glyph = scene.add.graphics().setVisible(false);
-    drawGlyph(this.glyph);
+    this.cueX = x;
+    this.cueTopY = wallTop;
   }
 
-  /** Shows the "interact here" glyph above the wall, or hides it (no station nearby, or a
-   * panel/menu open — the same contract as `Stations.setActive`). */
-  setActive(active: boolean): void {
-    if (!active) {
-      this.glyph.setVisible(false);
-      return;
-    }
-    this.glyph.setPosition(this.glyphX, this.glyphY);
-    this.glyph.setVisible(true);
+  /** The cue sits on the wall's top; the vault has no text of its own, so the cue's hint goes on
+   * the wall's face — above it is the classified sign. */
+  cueAnchor(): CueAnchor {
+    return { x: this.cueX, topY: this.cueTopY, hint: 'inside' };
   }
 
   isOpen(): boolean {

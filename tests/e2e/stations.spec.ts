@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { projects } from '../../src/content';
+import { WORLD_LAYOUT } from '../../src/game/world/layout';
 import { waitForGame } from './helpers';
 
 /** Phase 5 — Stations & project panels (BACKLOG.md). */
@@ -176,4 +177,19 @@ test('a project with a stack renders its chips', async ({ page }) => {
   await page.evaluate(() => window.__PORTFOLIO__!.openStation('fiora'));
   const panel = page.locator('[data-panel="fiora"] [lang="es-419"]');
   await expect(panel.locator('.panel__chip')).toHaveCount(3);
+});
+
+test('the interact prompt is announced to screen readers but not shown under the panda', async ({
+  page,
+}) => {
+  await page.goto('/?debug');
+  await waitForGame(page);
+  const fioraX = WORLD_LAYOUT.stations.find((s) => s.id === 'fiora')!.x;
+  await page.evaluate((x) => window.__PORTFOLIO__!.teleport(x), fioraX);
+
+  const prompt = page.locator('[data-slot="prompt"]');
+  await expect(prompt).toContainText('Fiora');
+  await expect(prompt).toHaveAttribute('aria-live', 'polite');
+  const box = await prompt.boundingBox();
+  expect((box?.width ?? 0) * (box?.height ?? 0)).toBeLessThanOrEqual(1);
 });

@@ -52,7 +52,7 @@ export const CAMERA_TAU_MS = 90;
 export const CAMERA_LOOKAHEAD = 24;
 
 // ─── Stations (Phase 5) ───────────────────────────────────────────────────────
-/** Gap (art px) between a station's top edge and the interact-prompt glyph above it. */
+/** Gap (art px) between a station's top edge and the quest-scroll cue above it. */
 export const STATION_GLYPH_GAP = 6;
 
 // ─── Fast travel (Phase 7 — the menu) ────────────────────────────────────────

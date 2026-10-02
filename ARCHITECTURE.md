@@ -69,7 +69,7 @@ src/
     player/                   ← logic.ts (pure state machine) + PandaSprite.ts
     input/                    ← intent sources: keyboard, wheel, pointer, touch pad, travel; merge.ts (pure)
     world/                    ← layout.ts (data) + validate.ts / scenery.ts (pure) + builders
-    stations/                 ← trigger.ts (pure) + Stations.ts (prop sprites, glyph, click)
+    stations/                 ← trigger.ts, cue-logic.ts (pure) + Stations.ts (props, cards, click), cue.ts (marker)
     fx/                       ← scenery (backdrop, terrain, trees), sky, parallax, particles, filters
     travel/                   ← plan.ts (pure walk-to-x + fast-travel run/fade — Phase 7) +
                                 deep-link.ts (pure hash parsing)
@@ -505,13 +505,18 @@ down, timeStamp }` (a `PadButton` — `'left' | 'right' | 'a' | 'b'`), the pad's
 ## Stations & panels
 
 - **Station cards** (`stations/Stations.ts`): until a station's prop art is delivered (`source:
-raw`), it renders as a card at its design size — `night-700` at 62 % opacity with a 1-px
-  `night-400` edge, drawn in code so the backdrop shows through (the gate's card also gets its
-  `sign` plate). A card ≥ 120 px wide shows the project title in pixel text at the top and, while
-  the panda is in its trigger, the interact hint under it (`ui.stationHintKey` "Pulsa E…" on
-  desktop, `ui.stationHintTouch` "Pulsa B…" in touch modes), redrawn on `fonts:ready`,
-  `lang:change` and a layout-mode change. Narrower cards (dossier stands) keep only the glyph and
-  the HUD prompt.
+raw`), it renders as a card — `night-700` at 62 % opacity with a 1-px `night-400` edge, drawn in
+  code so the backdrop shows through (the gate's card also gets its `sign` plate). Desktop and
+  `landscape-touch` use the design size; the portrait `handheld` layout (a view only ~216–234 art
+  px wide) narrows cards to `HANDHELD_CARD_MAX_W` = 128 (the gate, which holds the name sign, to
+  144, its plate inset 8 px from both sides; `Story` moves the sign text with it) —
+  `stations/cue-logic.ts`'s `cardWidth`/`cardSign`, re-applied on a layout-mode change (new
+  texture, resized hit area). A card ≥ 120 px wide shows the project title in pixel text at the
+  top and, while the panda is in its trigger, the interact hint under it (under the sign plate
+  for the gate, which has no title) — `ui.stationHintKey` "Pulsa E…" on desktop,
+  `ui.stationHintTouch` "Pulsa B…" in touch modes — redrawn on `fonts:ready`, `lang:change` and
+  a layout-mode change. Every other station (dossier stands, the vault, skill blocks, the contact
+  post) gets the same hint from the cue (below).
 
 - A station = layout entry (`id`, `kind`, `x`, `asset`, `trigger` width) + (for a `kind` with a
   panel) a matching `data-panel` id. The 6 `project` stations and the 4 `dossier` stands have one;
@@ -525,15 +530,20 @@ raw`), it renders as a card at its design size — `night-700` at 62 % opacity w
   stations, the 4 dossier stands and the vault — `TRIGGER_STATIONS`); it is called from the same
   `POST_UPDATE`/teleport step that tracks the zone, emitting `station:enter`/`station:leave` only
   on a change.
-- **Prompt:** entering a trigger shows a small pixel "interact here" badge above the prop
-  (`game/stations/Stations.ts`'s `drawGlyph`, exported and reused as-is by `stations/Vault.ts`:
-  flat `ink-900`/`amber-400` rects, no words, no rotation — crisp at any zoom) and the localized
-  prompt bottom-centre in `#hud` (DOM, `aria-live="polite"`, e.g. `E — Fiora` on desktop,
+- **Cue and prompt:** entering a trigger shows the **quest scroll** above the prop
+  (`game/stations/cue.ts`, owned by `WorldScene`, placed every frame from the owning adapter's
+  `cueAnchor` — `Stations`, `Vault`, `Skills`, `Story` for the contact post; the pixel map is
+  `cue-logic.ts`'s `QUEST_ICON`, flat palette rects, no rotation — crisp at any zoom). It bobs one
+  whole pixel every 420 ms, and stays still under reduced motion. A station without its own card
+  hint gets the hint from the cue: on a plate above the scroll, or on the vault's wall face (the
+  classified sign floats right above the wall). The localized prompt in `#hud` is
+  **screen-reader only** (`.sr-only`, `aria-live="polite"` — sighted players read the hint on the
+  station; a visible copy under the panda was a duplicate), e.g. `E — Fiora` on desktop,
   `Toca — Fiora` on a touch layout mode — read from `html[data-mode]`, set by
   `shared/layout-mode.ts`, never inspected ad hoc). `src/ui/panels.ts`'s `promptTitle(id, lang)`
   resolves the `{title}`: a project's fixed name, a dossier's localized `industry`, or the vault's
   own fixed label (`ui.menuClassified`) — a station kind with no title yet (gate/lab/contact/
-  block) shows no prompt. Both prompt and glyph hide while a panel is open.
+  block) shows no prompt. Prompt, cue and card hint all hide while a panel is open.
 - **Opening:** interacting (`E`/Enter while inside a trigger) or clicking/tapping the station's
   prop (Pointer / tap, above) makes the game emit `station:open { id }` on the bus — nothing else;
   the UI (`src/ui/panels.ts`) resolves `id` through `panelIdFor` (a stop whose panel is filed under

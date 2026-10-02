@@ -33,6 +33,7 @@ import { PandaSprite } from '../player/PandaSprite';
 import { FpsGuard, tierFlags } from '../quality';
 import { follow, snapFollow, type FollowState } from '../render/follow';
 import { RefreshMeter } from '../render/refresh';
+import { StationCue, type CueAnchor } from '../stations/cue';
 import { Skills } from '../stations/Skills';
 import { bumpedBlock } from '../stations/skills-logic';
 import { Stations } from '../stations/Stations';
@@ -131,6 +132,7 @@ export class WorldScene extends Phaser.Scene {
   private stations!: Stations;
   private vault: Vault | null = null;
   private skills!: Skills;
+  private cue!: StationCue;
   private classifiedWing!: ClassifiedWing;
   private stationId: string | null = null;
   /** Click/tap-to-open (ARCHITECTURE.md → Input → Pointer/tap): a plain walk toward the clicked
@@ -222,6 +224,9 @@ export class WorldScene extends Phaser.Scene {
     const spawnX = spawnStation?.x ?? SPAWN_X;
 
     this.panda = new PandaSprite(this, spawnX, GROUND_Y, this.ctx.manifest);
+    // After the panda: the cue and its floating hint draw over everything they float above.
+    this.cue = new StationCue(this, prefersReducedMotion());
+    this.syncGateSign();
     this.ctx.pandaTexture = this.panda.textureKey;
     this.physics.add.collider(this.panda.sprite, this.groundBody);
     this.physics.add.collider(this.panda.sprite, platforms);
@@ -265,6 +270,7 @@ export class WorldScene extends Phaser.Scene {
       bus.on('lang:change', ({ lang }) => {
         this.story.drawSign(lang);
         this.stations.drawLabels(lang);
+        this.cue.drawLabels(lang, this.ctx.mode);
       }),
       bus.on(
         'fonts:ready',
@@ -272,6 +278,7 @@ export class WorldScene extends Phaser.Scene {
           this.ctx.pixelFont = this.story.drawSign();
           this.classifiedWing.drawSign();
           this.stations.drawLabels();
+          this.cue.drawLabels(bus.last('lang:change')?.lang ?? DEFAULT_LANG, this.ctx.mode);
         },
         { replay: true }
       ),
@@ -281,6 +288,7 @@ export class WorldScene extends Phaser.Scene {
         this.classifiedWing.refresh(tier, prefersReducedMotion());
       }),
       onReducedMotionChange((reduced) => {
+        this.cue.setReducedMotion(reduced);
         applyParallaxMotion(this.parallax, reduced);
         this.classifiedWing.refresh(this.ctx.tier, reduced);
         this.ambience.refresh(this.ctx.tier, reduced);
@@ -545,7 +553,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Emits `station:enter`/`station:leave` only on an actual change (ARCHITECTURE.md → Stations
-   * & panels) and keeps the canvas glyph in sync — hidden while a panel/menu is open, since the
+   * & panels) and keeps the station cue in sync — hidden while a panel/menu is open, since the
    * prompt no longer applies once the player has already opened it. */
   private setStation(id: string | null): void {
     if (id !== this.stationId) {
@@ -557,7 +565,20 @@ export class WorldScene extends Phaser.Scene {
     this.story.setContactActive(this.stationId === CONTACT_STATION.id);
     const activeId = this.modalOpen ? null : this.stationId;
     this.stations.setActive(activeId);
-    this.vault?.setActive(activeId !== null && activeId === VAULT_STATION?.id);
+    this.cue.show(activeId === null ? null : this.cueAnchor(activeId), this.time.now);
+  }
+
+  /** The station adapter that owns `id` says where its cue goes. */
+  private cueAnchor(id: string): CueAnchor | null {
+    if (id === VAULT_STATION?.id) return this.vault?.cueAnchor() ?? null;
+    if (id === CONTACT_STATION.id) return this.story.contactCueAnchor();
+    return this.stations.cueAnchor(id) ?? this.skills.cueAnchor(id);
+  }
+
+  /** The gate's card narrows in the handheld layout; its sign text follows the plate. */
+  private syncGateSign(): void {
+    const sign = this.stations?.signRect(GATE_STATION.id);
+    if (sign) this.story?.setSignRect(sign);
   }
 
   private starCount(): number {
@@ -642,6 +663,8 @@ export class WorldScene extends Phaser.Scene {
     this.scenery.resize(width, height, GROUND_Y - scrollY);
     this.ctx.backdrop = this.scenery.backdropId;
     this.stations?.setMode(this.ctx.mode);
+    this.syncGateSign();
+    this.cue?.drawLabels(bus.last('lang:change')?.lang ?? DEFAULT_LANG, this.ctx.mode);
     this.scenery.update(this.followState.scrollX);
     if (this.panda) {
       this.followState = snapFollow({

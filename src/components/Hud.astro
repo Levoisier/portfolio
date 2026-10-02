@@ -71,7 +71,9 @@ const img =
   </div>
   <div class="hud__bottom">
     <p class="hud__hint" data-slot="hint" hidden></p>
-    <p class="hud__prompt" data-slot="prompt" aria-live="polite"></p>
+    <!-- Screen readers only: sighted players read the hint on the station itself (the card, or
+         the cue over a station without one), so a visible copy here was a duplicate. -->
+    <p class="hud__prompt sr-only" data-slot="prompt" aria-live="polite"></p>
   </div>
 </div>
 
@@ -208,8 +210,8 @@ const img =
     opacity: 1;
   }
 
-  /* The hint and the prompt share one bottom-centred column so a two-line hint never runs into
-   * the prompt; in touch modes it sits above the pad (`--pad-clearance`, shell.css). */
+  /* The bottom-centred column for the controls hint (the interact prompt in it is screen-reader
+   * only); in touch modes it sits above the pad (`--pad-clearance`, shell.css). */
   .hud__bottom {
     position: absolute;
     left: 50%;
@@ -240,14 +242,5 @@ const img =
 
   .hud__prompt {
     margin: 0;
-    padding: var(--space-1) var(--space-3);
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--c-navy-950) 60%, transparent);
-    font-family: var(--font-display);
-    color: var(--color-text);
-  }
-
-  .hud__prompt:empty {
-    display: none;
   }
 </style>
