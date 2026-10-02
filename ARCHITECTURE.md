@@ -385,11 +385,17 @@ sunrise`); `sky.ts`'s `MOODS` maps each to a 4-color top→horizon ramp, a star 
   `body.blocked.down && body.vy >= 0` (not `blocked.down` alone): on a frame where Arcade runs no
   physics step right after a jump fires, `blocked.down` still reads the previous step's `true`
   while `vy` is already the launch speed, and would otherwise wipe out the jump.
-- **Rest pose:** whenever `step()` returns `idle`, `PandaSprite` stops the running animation
-  and shows `panda-idle` frame 0 held still — every action (walk, run, landing, wave, interact)
-  ends on the standing pose, never on whatever frame it was on. The idle strip loops (after
-  2.5 s standing) only when it is a delivered `raw` strip; the interim frames cut from the
-  concept sheet are mid-step poses and would read as the panda frozen mid-stride.
+- **Rest pose and breath:** whenever `step()` returns `idle`, `PandaSprite` stops the running
+  animation and shows `panda-idle` frame 0 — every action (walk, run, landing, wave, interact)
+  ends on the standing pose, never on whatever frame it was on. After 250 ms standing the idle
+  strip loops (the breath) whenever it is real art (`raw`, or the interim `reference` strip the
+  pipeline derives from the standing walk frame — Asset pipeline → Sources); with no idle art
+  frame 0 just holds still.
+- **Only real art plays.** `PandaSprite` builds animations on the scene's global manager and
+  tracks which ones it built; a `placeholder` strip (a grey box) is never built, and a pose with
+  no built animation (today `panda-wave`, `panda-interact`) shows the idle instead. Check
+  `scene.anims.exists()`, never `sprite.anims.exists()` — the latter only sees animations local
+  to that sprite, so it is always `false` here and nothing but the air frames would ever show.
 - Constants (`config.ts`, tune by feel): gravity 900 px/s², walk 90, run 150, jump velocity −330,
   coyote 90 ms, jump buffer 120 ms, jump-cut ×0.5 on early release. Arcade integrates
   semi-implicitly at a fixed step, so the real apex at 60 Hz is **57.75 px** (not v²/2g = 60.5);
@@ -681,7 +687,8 @@ reuses `ASSET_MANIFEST` and `PALETTE` from `src/`). `pnpm dev` and `pnpm build` 
 explicitly (`pnpm assets && astro …`) — don't rely on `pre*` lifecycle scripts.
 
 **Sources**, in order: (1) `art/raw/<id>.png`; (2) reference slices
-(`art/reference/*.slices.json`); (3) for **required** assets only, a generated placeholder.
+(`art/reference/*.slices.json`): a `derived` spec for the id if there is one, else its `strips`
+boxes; (3) for **required** assets only, a generated placeholder.
 Optional assets with no raw file and no slices resolve to `source: 'missing'` (no file) and the
 game applies its documented fallback.
 
@@ -705,6 +712,13 @@ snap to khaki.
 
 - Reference sources use the slices boxes in **array order** (no sorting); frames = boxes; baked
   ground shadows are stripped (`shadow` params in the slices file), then frames are re-trimmed.
+- Derived reference strips (`derived[id]` = `{ from, frame, bodyOnly?, cuts, lifts }`) cut one
+  frame of `strips[from]` the same way (`bodyOnly` keeps its largest component) and animate it
+  with `liftAbove`: output frame f moves every row at least `cuts[k]` rows above the feet up by
+  `lifts[f][k]` whole pixels, repeating the cut row to fill the gap. No resampling, so the result
+  stays palette-exact and the feet stay on the baseline. The interim `panda-idle` is the standing
+  walk frame breathing (belly +1, head +1 more at the peak): the sheet's own idle row is
+  front-facing while every other strip is a side profile.
 - Raw sources: components are grouped into rows by vertical overlap and read **row-major** (grids
   from PixelLab work). Frames = the N largest components, where N = manifest frames (+1 ruler) or
   the item count; for loops, frame candidates are the components ≥ 30 % of the largest (the ruler
@@ -813,7 +827,8 @@ frame sizes, baked shadows, black-on-black fur).
   `page.mouse.wheel`.
 - **Debug/test hook:** with `?debug` (or in dev), `window.__PORTFOLIO__` exposes `getState()`
   (ready, paused, tier, mode, zoom, dpr, backing size, fps, lang, pixelFont, pandaTexture, and —
-  Phase 3 — `player` (x, y, vx, vy, state, anim, frame, flipX, grounded), `camera` (scrollX,
+  Phase 3 — `player` (x, y, vx, vy, state, anim, frame, texture, frameIndex, flipX, grounded —
+  `texture`/`frameIndex` are what the sprite actually shows, `anim` only what the machine asked for), `camera` (scrollX,
   scrollY), `physicsHz`), `setTier(t)`, `teleport(x)` (places the panda on the ground at `x`, zero
   velocity, camera snapped — `GameContext.teleport` is set by `WorldScene.create()` and called
   through it) and `emit(event, payload)` (a typed passthrough onto the bus, e.g.

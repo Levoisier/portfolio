@@ -16,6 +16,9 @@ export interface PlayerDebugState {
   state: string;
   anim: string;
   frame?: string;
+  /** What is actually on screen: the sprite's texture key and frame index. */
+  texture: string;
+  frameIndex: number;
   flipX: boolean;
   grounded: boolean;
 }

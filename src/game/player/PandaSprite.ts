@@ -22,8 +22,9 @@ import { ANIM, initialPlayerState, step } from './logic';
 import type { AirFrame, BodyReport, Pose } from './types';
 
 const PLACEHOLDER_KEY = 'panda-placeholder';
-/** Standing still this long before a delivered idle loop starts (a breath, a blink). */
-const IDLE_LOOP_DELAY_MS = 2500;
+/** The rest pose holds this long after any action before the idle loop (the breath) starts, so
+ * a quick stop-and-go or a landing settles on the standing frame instead of a breath. */
+const IDLE_LOOP_DELAY_MS = 250;
 
 /** Air-strip frames this module plays (`crouch` is unused — ARCHITECTURE.md → Player). */
 const AIR_FRAME_ORDER: readonly AirFrame[] = ['takeoff', 'rise', 'apex', 'fall', 'land'];
@@ -45,6 +46,8 @@ export class PandaSprite {
   private state = initialPlayerState(1);
   private readonly usingPlaceholder: boolean;
   private readonly hasRun: boolean;
+  /** Animations built from real art (raw or reference) — see `buildAnim`. */
+  private readonly built = new Set<string>();
   private readonly hasAir: boolean;
   private readonly airFrames: Record<AirFrame, number>;
   private currentAnim = '';
@@ -54,11 +57,7 @@ export class PandaSprite {
    * air frame (ARCHITECTURE.md → Testing strategy / the player-logic implementer's notes). */
   private forceGrounded = true;
   private lastAnim: string = ANIM.idle;
-  /**
-   * Whether `panda-idle` may loop. Only a delivered strip does: the interim frames cut from the
-   * concept sheet are mid-step poses, so looping them reads as the panda frozen mid-stride (or
-   * marching in place) after every action. Otherwise idle is the rest pose, frame 0, held still.
-   */
+  /** Whether `panda-idle` loops (the breath); without real art idle holds frame 0 still. */
   private readonly idleLoops: boolean;
   private idleMs = 0;
   private lastFrame: AirFrame | undefined;
@@ -73,15 +72,14 @@ export class PandaSprite {
     this.lockBody();
 
     this.hasRun = !this.usingPlaceholder && this.buildAnim(scene, ANIM.run, manifest);
+    this.idleLoops = !this.usingPlaceholder && this.buildAnim(scene, ANIM.idle, manifest);
     if (!this.usingPlaceholder) {
-      this.buildAnim(scene, ANIM.idle, manifest);
       this.buildAnim(scene, ANIM.walk, manifest);
       this.buildAnim(scene, ANIM.interact, manifest);
       this.buildAnim(scene, ANIM.wave, manifest);
     }
     this.hasAir = !this.usingPlaceholder && scene.textures.exists(ANIM.air);
     this.airFrames = resolveAirFrames(manifest, this.hasAir);
-    this.idleLoops = manifest?.assets[ANIM.idle]?.source === 'raw';
     this.restPose();
   }
 
@@ -142,8 +140,8 @@ export class PandaSprite {
     this.lockBody();
   }
 
-  /** Every action ends here: the standing frame, held still (idle's frame 0), with the idle
-   * loop — when there is a delivered one — starting only after `IDLE_LOOP_DELAY_MS`. */
+  /** Every action ends here: the standing frame (idle's frame 0), with the idle loop — when
+   * there is real art for it — starting after `IDLE_LOOP_DELAY_MS`. */
   private restPose(): void {
     if (this.usingPlaceholder) return;
     this.sprite.anims.stop();
@@ -155,19 +153,10 @@ export class PandaSprite {
   }
 
   /** `panda-air` is never played by fps — it is set to the named frame every step. Everything
-   * else is a normal loop; `panda-run` falls back to `panda-walk` sped up when it is missing. */
+   * else is a normal loop; `panda-run` falls back to `panda-walk` sped up when it is missing, and
+   * a pose with no real art (a placeholder `panda-wave`/`panda-interact`) shows the idle. */
   private applyAnim(anim: string, frame: AirFrame | undefined, dtMs: number): void {
     if (this.usingPlaceholder) return;
-
-    if (anim === ANIM.idle) {
-      if (this.currentAnim !== ANIM.idle) this.restPose();
-      else if (this.idleLoops && !this.sprite.anims.isPlaying) {
-        this.idleMs += dtMs;
-        if (this.idleMs >= IDLE_LOOP_DELAY_MS && this.sprite.anims.exists(ANIM.idle))
-          this.sprite.play(ANIM.idle);
-      }
-      return;
-    }
 
     if (anim === ANIM.air) {
       if (!this.hasAir) return;
@@ -191,7 +180,17 @@ export class PandaSprite {
       key = ANIM.walk;
       timeScale = RUN_SPEED / WALK_SPEED;
     }
-    if (!this.sprite.anims.exists(key)) return;
+    if (!this.built.has(key)) key = ANIM.idle;
+
+    if (key === ANIM.idle) {
+      if (this.currentAnim !== ANIM.idle) this.restPose();
+      else if (this.idleLoops && !this.sprite.anims.isPlaying) {
+        this.idleMs += dtMs;
+        if (this.idleMs >= IDLE_LOOP_DELAY_MS) this.sprite.play(ANIM.idle);
+      }
+      return;
+    }
+
     if (this.currentAnim !== key) {
       this.sprite.play(key);
       this.currentAnim = key;
@@ -199,12 +198,18 @@ export class PandaSprite {
     this.sprite.anims.timeScale = timeScale;
   }
 
-  /** Builds `key`'s animation from the resolved manifest strip, if both exist. Returns whether
-   * it did — the caller uses this to decide `panda-run`'s walk+timeScale fallback. */
+  /**
+   * Builds `key`'s animation from the resolved manifest strip, if both exist and it is real art.
+   * A pipeline placeholder (a grey box) is never played on the panda. Returns whether it built —
+   * `applyAnim` only plays what is in `built` (the `panda-run` fallback and missing poses rely on
+   * it). Animations live on the scene's global manager: `sprite.anims.exists()` only sees
+   * animations local to the sprite, so it is not a usable check here (LESSONS.md).
+   */
   private buildAnim(scene: Phaser.Scene, key: string, manifest: RuntimeManifest | null): boolean {
     if (!scene.textures.exists(key)) return false;
     const asset = manifest?.assets[key];
-    if (!asset || asset.source === 'missing' || asset.kind !== 'strip') return false;
+    if (!asset || asset.kind !== 'strip') return false;
+    if (asset.source === 'missing' || asset.source === 'placeholder') return false;
     if (!scene.anims.exists(key))
       scene.anims.create({
         key,
@@ -212,6 +217,7 @@ export class PandaSprite {
         frameRate: asset.fps,
         repeat: asset.loop ? -1 : 0,
       });
+    this.built.add(key);
     return true;
   }
 

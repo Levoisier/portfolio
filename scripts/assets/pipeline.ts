@@ -29,7 +29,16 @@ import {
   labelComponents,
   type Component,
 } from './lib/components.ts';
-import { createImg, crop, loadImg, opaqueBounds, resize, trim, type Img } from './lib/img.ts';
+import {
+  createImg,
+  crop,
+  liftAbove,
+  loadImg,
+  opaqueBounds,
+  resize,
+  trim,
+  type Img,
+} from './lib/img.ts';
 import type { PaletteSet } from './lib/color.ts';
 import { buildAtlas } from './lib/output.ts';
 import { cropToLoop, packStrip, placeBottomCentre, placeLayer, seamError } from './lib/pack.ts';
@@ -49,6 +58,21 @@ export interface Slices {
   scale: number;
   shadow: { bandRows: number; minMax: number; maxMax: number; maxChroma: number };
   strips: Record<string, [number, number, number, number][]>;
+  /** Interim strips built from one sliced frame instead of their own boxes (wins over `strips`). */
+  derived?: Record<string, DerivedStrip>;
+}
+
+/**
+ * One frame of `strips[from]`, animated with `liftAbove`: frame f lifts the rows above each
+ * `cuts[k]` (rows above the feet) by `lifts[f][k]` px — a breathing idle from a standing pose.
+ */
+export interface DerivedStrip {
+  from: string;
+  frame: number;
+  /** Keep only the largest component (drops a detached paw the stride left floating). */
+  bodyOnly?: boolean;
+  cuts: number[];
+  lifts: number[][];
 }
 
 export interface Output {
@@ -442,11 +466,16 @@ async function rawBackdrop(entry: BackdropAsset, src: Img): Promise<Output> {
   };
 }
 
-/** Interim frames from the reference sheet: array order, shadows stripped, one sheet scale. */
-async function referenceStrip(entry: StripAsset, slices: Slices, sheet: Img): Promise<Output> {
+/** Sheet boxes → finished frames: array order, shadows stripped, one sheet scale. */
+async function referenceFrames(
+  boxes: [number, number, number, number][],
+  slices: Slices,
+  sheet: Img,
+  stats: SnapStats[]
+): Promise<Img[]> {
   const { bandRows, minMax, maxMax, maxChroma } = slices.shadow;
   const frames: Img[] = [];
-  for (const [bx, by, bw, bh] of slices.strips[entry.id]!) {
+  for (const [bx, by, bw, bh] of boxes) {
     const box = crop(sheet, bx, by, bw, bh);
     const { labels, comps } = labelComponents(box);
     const body = comps.reduce<Component | undefined>(
@@ -472,9 +501,48 @@ async function referenceStrip(entry: StripAsset, slices: Slices, sheet: Img): Pr
     }
     frames.push(await scaleFake({ w: bw, h: bh, data }, slices.scale, 'black'));
   }
+  return frames.map((f) => finish(f, stats));
+}
+
+/** Interim frames from the reference sheet. */
+async function referenceStrip(entry: StripAsset, slices: Slices, sheet: Img): Promise<Output> {
   const stats: SnapStats[] = [];
-  const done = frames.map((f) => finish(f, stats));
-  return finishStrip(entry, done, 'reference', [], stats);
+  const frames = await referenceFrames(slices.strips[entry.id]!, slices, sheet, stats);
+  return finishStrip(entry, frames, 'reference', [], stats);
+}
+
+/** Keeps only the largest 8-connected component. */
+function largestComponent(img: Img): Img {
+  const { labels, comps } = labelComponents(img);
+  const body = comps.reduce<Component | undefined>(
+    (a, c) => (!a || c.area > a.area ? c : a),
+    undefined
+  );
+  if (!body) return img;
+  const data = new Uint8Array(img.data);
+  for (let p = 0; p < img.w * img.h; p++) if (labels[p] !== body.id) data[p * 4 + 3] = 0;
+  return trim({ w: img.w, h: img.h, data });
+}
+
+/** An interim strip animated from one sliced frame (`Slices.derived`); null if it can't be cut. */
+async function derivedStrip(
+  entry: StripAsset,
+  spec: DerivedStrip,
+  slices: Slices,
+  sheet: Img
+): Promise<Output | null> {
+  const box = slices.strips[spec.from]?.[spec.frame];
+  if (!box) return null;
+  const stats: SnapStats[] = [];
+  const [cut] = await referenceFrames([box], slices, sheet, stats);
+  if (!cut) return null;
+  const base = spec.bodyOnly ? largestComponent(cut) : cut;
+  // Highest cut first: a lift never moves the rows below it, so lower cuts keep their height.
+  const order = spec.cuts.map((_, k) => k).sort((a, b) => spec.cuts[b]! - spec.cuts[a]!);
+  const frames = spec.lifts.map((lift) =>
+    order.reduce((img, k) => liftAbove(img, spec.cuts[k]!, lift[k] ?? 0), base)
+  );
+  return finishStrip(entry, frames, 'reference', [], stats);
 }
 
 function placeholder(entry: AssetEntry): Output {
@@ -526,6 +594,29 @@ async function fromRaw(entry: AssetEntry, src: Img): Promise<Output> {
   }
 }
 
+async function derivedFor(entry: AssetEntry, ctx: Context): Promise<Output | null> {
+  const spec = entry.kind === 'strip' ? ctx.slices?.derived?.[entry.id] : undefined;
+  if (entry.kind !== 'strip' || !spec || !ctx.slices || !ctx.sheet) return null;
+  return derivedStrip(entry, spec, ctx.slices, await ctx.sheet());
+}
+
+/** No usable raw delivery: sheet slices, else a placeholder (required) or `missing`. */
+async function interim(entry: AssetEntry, ctx: Context): Promise<Output> {
+  if (entry.kind === 'strip' && ctx.slices?.strips[entry.id] && ctx.sheet)
+    return referenceStrip(entry, ctx.slices, await ctx.sheet());
+  if (entry.required) return placeholder(entry);
+  return {
+    runtime: {
+      id: entry.id,
+      kind: entry.kind,
+      tier: entry.tier,
+      required: false,
+      source: 'missing',
+      warnings: [],
+    },
+  };
+}
+
 export async function processEntry(entry: AssetEntry, ctx: Context): Promise<Output> {
   const notes: string[] = [];
   const rawPath = ctx.rawPath(entry.id);
@@ -537,23 +628,7 @@ export async function processEntry(entry: AssetEntry, ctx: Context): Promise<Out
       notes.push(`raw delivery rejected: ${err.message}`);
     }
   }
-  let out: Output;
-  if (entry.kind === 'strip' && ctx.slices?.strips[entry.id] && ctx.sheet) {
-    out = await referenceStrip(entry, ctx.slices, await ctx.sheet());
-  } else if (entry.required) {
-    out = placeholder(entry);
-  } else {
-    out = {
-      runtime: {
-        id: entry.id,
-        kind: entry.kind,
-        tier: entry.tier,
-        required: false,
-        source: 'missing',
-        warnings: [],
-      },
-    };
-  }
+  const out = (await derivedFor(entry, ctx)) ?? (await interim(entry, ctx));
   out.runtime.warnings.unshift(...notes);
   return out;
 }

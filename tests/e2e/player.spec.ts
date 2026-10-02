@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { waitForGame } from './helpers';
 
 /** Phase 3 — Panda controller (BACKLOG.md). Runs on desktop + mobile; the no-assets projects
@@ -21,6 +21,55 @@ test('ArrowRight walks right, ArrowLeft walks left, and flips to face it', async
     .toBeLessThan(0);
   expect(await page.evaluate(() => window.__PORTFOLIO__!.getState().player?.flipX)).toBe(true);
   await page.keyboard.up('ArrowLeft');
+});
+
+/** Distinct `texture:frameIndex` values the panda shows over `frames` animation frames. */
+async function framesShown(page: Page, frames: number): Promise<string[]> {
+  return page.evaluate(
+    (n) =>
+      new Promise<string[]>((resolve) => {
+        const seen = new Set<string>();
+        let left = n;
+        const tick = () => {
+          const p = window.__PORTFOLIO__!.getState().player;
+          if (p) seen.add(`${p.texture}:${p.frameIndex}`);
+          if (--left > 0) requestAnimationFrame(tick);
+          else resolve([...seen]);
+        };
+        requestAnimationFrame(tick);
+      }),
+    frames
+  );
+}
+
+test('walking plays the walk strip, not a held frame', async ({ page }) => {
+  await page.goto('/?debug');
+  await waitForGame(page);
+
+  await page.keyboard.down('ArrowRight');
+  await expect
+    .poll(async () => (await page.evaluate(() => window.__PORTFOLIO__!.getState().player))?.state)
+    .toBe('walk');
+  const shown = await framesShown(page, 60);
+  await page.keyboard.up('ArrowRight');
+
+  expect(shown.every((s) => s.startsWith('panda-walk:'))).toBe(true);
+  expect(shown.length).toBeGreaterThan(2);
+});
+
+test('standing still breathes: the idle loop plays in place', async ({ page }) => {
+  await page.goto('/?debug');
+  await waitForGame(page);
+
+  await expect
+    .poll(async () => (await page.evaluate(() => window.__PORTFOLIO__!.getState().player))?.state)
+    .toBe('idle');
+  const x = await page.evaluate(() => window.__PORTFOLIO__!.getState().player?.x);
+  const shown = await framesShown(page, 90);
+
+  expect(shown.every((s) => s.startsWith('panda-idle:'))).toBe(true);
+  expect(shown.length).toBeGreaterThan(1);
+  expect(await page.evaluate(() => window.__PORTFOLIO__!.getState().player?.x)).toBe(x);
 });
 
 test('Space leaves the ground and returns', async ({ page }) => {

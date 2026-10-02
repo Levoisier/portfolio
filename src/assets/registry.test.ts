@@ -5,7 +5,10 @@ import { ASSET_MANIFEST, parseManifest } from './registry';
 const assetsDoc = readFileSync(new URL('../../ASSETS.md', import.meta.url), 'utf8');
 const slices = JSON.parse(
   readFileSync(new URL('../../art/reference/panda-sheet-v1.slices.json', import.meta.url), 'utf8')
-) as { strips: Record<string, number[][]> };
+) as {
+  strips: Record<string, number[][]>;
+  derived?: Record<string, unknown>;
+};
 
 /** Registry rows of ASSETS.md: `| \`id\` | wave | launch | kind | geometry | status |`. */
 const registryRows = [
@@ -37,6 +40,21 @@ describe('art/manifest.json', () => {
       expect(entry?.kind, id).toBe('strip');
       if (entry?.kind === 'strip') expect(boxes.length).toBeLessThanOrEqual(entry.frames);
       for (const box of boxes) expect(box).toHaveLength(4);
+    }
+  });
+
+  it('derived interim strips name a sliced frame and give one whole-pixel lift per cut', () => {
+    for (const [id, raw] of Object.entries(slices.derived ?? {})) {
+      if (id.startsWith('$')) continue;
+      const spec = raw as { from: string; frame: number; cuts: number[]; lifts: number[][] };
+      const entry = ASSET_MANIFEST.assets.find((a) => a.id === id);
+      expect(entry?.kind, id).toBe('strip');
+      if (entry?.kind === 'strip') expect(spec.lifts.length).toBeLessThanOrEqual(entry.frames);
+      expect(slices.strips[spec.from]?.[spec.frame], `${id} → ${spec.from}`).toHaveLength(4);
+      for (const lift of spec.lifts) {
+        expect(lift).toHaveLength(spec.cuts.length);
+        for (const px of lift) expect(Number.isInteger(px) && px >= 0).toBe(true);
+      }
     }
   });
 });

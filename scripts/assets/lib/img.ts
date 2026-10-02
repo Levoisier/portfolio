@@ -51,6 +51,23 @@ export function trim(img: Img): Img {
   return b ? crop(img, b.x, b.y, b.w, b.h) : createImg(1, 1);
 }
 
+/**
+ * Whole-pixel "breath": the rows at least `fromBottom` rows above the last row move up `px`
+ * rows and the row at the cut repeats to fill the gap, so the image grows by `px` while its
+ * bottom (the feet) stays put. No resampling — every output pixel is a copy of an input one.
+ */
+export function liftAbove(img: Img, fromBottom: number, px: number): Img {
+  const cut = img.h - 1 - fromBottom;
+  if (px <= 0 || cut < 0) return img;
+  const out = createImg(img.w, img.h + px);
+  const rowBytes = img.w * 4;
+  for (let y = 0; y < out.h; y++) {
+    const from = y <= cut ? y : y <= cut + px ? cut : y - px;
+    out.data.set(img.data.subarray(from * rowBytes, (from + 1) * rowBytes), y * rowBytes);
+  }
+  return out;
+}
+
 /** Copies `src` into `dst` at (dx, dy); returns true if any opaque pixel was clipped. */
 export function blit(dst: Img, src: Img, dx: number, dy: number): boolean {
   let clipped = false;

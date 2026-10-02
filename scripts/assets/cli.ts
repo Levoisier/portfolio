@@ -48,7 +48,8 @@ const rawPath = (id: string) => join(root, 'art/raw', `${id}.png`);
 function sourceKey(id: string): string {
   const raw = rawPath(id);
   if (existsSync(raw)) return sha('raw', readFileSync(raw));
-  if (slices?.strips[id]) return sha('ref', readFileSync(sheetPath), readFileSync(slicesPath));
+  if (slices?.strips[id] || slices?.derived?.[id])
+    return sha('ref', readFileSync(sheetPath), readFileSync(slicesPath));
   return 'none';
 }
 

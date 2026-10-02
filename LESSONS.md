@@ -515,3 +515,18 @@ looked frozen mid-stride or marching in place. Now idle holds frame 0 (the stand
 only a delivered idle strip loops, after 2.5 s.
 **Rule of thumb:** When a pose "freezes", compare the reported `anim` with what the strip's frames
 actually depict before debugging the state machine.
+
+## 2026-10-02 — The walk never played: `sprite.anims.exists()` is local-only
+
+**Context:** Cristian reported walking looked static while jumping animated fine.
+**Finding:** `PandaSprite` guarded `play()` with `this.sprite.anims.exists(key)`. In Phaser that
+only checks animations _local to the sprite_; the panda's animations live on the scene's global
+manager, so the guard was always `false` and walk, run, wave, interact and the idle loop never
+played — the panda slid along on `panda-idle` frame 0. Only `panda-air` animated, because it is
+`setFrame()`'d directly. The debug state reported `anim: 'panda-walk'` throughout, which is what
+the machine asked for, not what was on screen. The guard dates from Phase 3, so it was already in place when the
+2026-09-27 "freeze after running" entry above was written. Fixes: check `scene.anims.exists()` (via the
+set of animations `PandaSprite` built), never play placeholder strips, and expose
+`player.texture`/`player.frameIndex` in the debug state so e2e asserts what is actually drawn.
+**Rule of thumb:** When an animation "doesn't play", read the sprite's texture key and frame
+index, not the requested animation name.

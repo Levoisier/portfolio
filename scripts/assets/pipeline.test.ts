@@ -16,7 +16,7 @@ import {
 import { isSceneryColor, PALETTE } from '../../src/design/palette.ts';
 import { hexToRgb, paletteRgb, snap } from './lib/color.ts';
 import { groupComponents, labelComponents } from './lib/components.ts';
-import { createImg, fillRect, opaqueBounds, type Img } from './lib/img.ts';
+import { createImg, fillRect, liftAbove, opaqueBounds, type Img } from './lib/img.ts';
 import { encodePng, isPaletteExact } from './lib/output.ts';
 import { cropToLoop, packStrip, seamError } from './lib/pack.ts';
 import { makePlaceholder } from './lib/placeholder.ts';
@@ -163,6 +163,25 @@ describe('packing and layers', () => {
     expect(Math.floor((feet[0]! + feet[feet.length - 1]!) / 2)).toBe(32);
   });
 
+  it('lifts the rows above a cut by whole pixels, repeating the cut row and keeping the feet', () => {
+    const img = createImg(3, 4);
+    fillRect(img, 0, 0, 3, 1, rgba('paper-100')); // head
+    fillRect(img, 0, 1, 3, 1, rgba('scarlet-500')); // cut row (1 row above the feet row)
+    fillRect(img, 0, 2, 3, 2, rgba('ink-700')); // legs + feet
+    const lifted = liftAbove(img, 2, 2);
+    expect(lifted.h).toBe(6);
+    expect([...Array(6).keys()].map((y) => at(lifted, 1, y))).toEqual([
+      rgba('paper-100'),
+      rgba('scarlet-500'),
+      rgba('scarlet-500'),
+      rgba('scarlet-500'),
+      rgba('ink-700'),
+      rgba('ink-700'),
+    ]);
+    expect(liftAbove(img, 2, 0)).toBe(img);
+    expect(liftAbove(img, 9, 1)).toBe(img); // cut above the image: nothing to lift
+  });
+
   it('crops a layer to its loop point so it tiles seamlessly', () => {
     const img = createImg(27, 4);
     for (let x = 0; x < 27; x++)
@@ -250,6 +269,34 @@ describe('processEntry', () => {
       expect(Math.max(...rows)).toBe(59);
       expect(Math.max(...rows) - Math.min(...rows) + 1).toBeLessThanOrEqual(50);
     }
+    expect(isPaletteExact(img)).toBe(true);
+  });
+
+  it('derives the interim idle from one standing frame: it breathes, the feet stay planted', async () => {
+    const out = await processEntry(entry('panda-idle'), ctx(noRaw));
+    expect(out.runtime.source).toBe('reference');
+    if (out.runtime.source === 'missing' || out.runtime.kind !== 'strip')
+      throw new Error('strip expected');
+    expect(out.runtime.warnings).toEqual([]);
+    expect(out.runtime.frames).toBe(4);
+    const img = out.png!;
+    const tops: number[] = [];
+    const feet: string[] = [];
+    for (let f = 0; f < 4; f++) {
+      const rows = [...Array(64).keys()].filter((y) =>
+        [...Array(64).keys()].some((x) => at(img, f * 64 + x, y)[3])
+      );
+      expect(Math.max(...rows)).toBe(59);
+      tops.push(Math.min(...rows));
+      feet.push(
+        JSON.stringify(
+          [...Array(64 * 8).keys()].map((p) => at(img, f * 64 + (p % 64), 52 + (p >> 6)))
+        )
+      );
+    }
+    // Head height over the loop: rest, +1, +2 (peak), +1 — then back to rest.
+    expect(tops.map((t) => tops[0]! - t)).toEqual([0, 1, 2, 1]);
+    expect(new Set(feet).size).toBe(1);
     expect(isPaletteExact(img)).toBe(true);
   });
 

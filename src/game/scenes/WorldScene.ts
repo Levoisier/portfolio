@@ -575,6 +575,8 @@ export class WorldScene extends Phaser.Scene {
       state: this.panda.stateName,
       anim: this.panda.animKey,
       frame: this.panda.frameName,
+      texture: this.panda.sprite.texture.key,
+      frameIndex: Number(this.panda.sprite.frame.name) || 0,
       flipX: this.panda.sprite.flipX,
       grounded: body.blocked.down || body.touching.down,
     };
